@@ -16,15 +16,15 @@ def get_img_as_base64(file_path):
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
 
-# --- CSS ANTI DARK-MODE ---
+# --- CSS FULL ANTI DARK-MODE (TERMASUK KOTAK INPUT) ---
 st.markdown(f"""
     <style>
-        /* Paksa background utama jadi terang */
+        /* Background utama */
         .stApp {{
             background-color: #F8F9FA !important;
         }}
         
-        /* Header Bendera Merah Putih */
+        /* Header */
         header[data-testid="stHeader"] {{
             background: linear-gradient(90deg, #E53935 0%, #E53935 50%, #FFFFFF 50%, #FFFFFF 100%) !important;
         }}
@@ -35,12 +35,28 @@ st.markdown(f"""
             border-right: 3px solid #E53935 !important;
         }}
         
-        /* Paksa SEMUA teks di sidebar jadi gelap */
-        [data-testid="stSidebar"] * {{
+        /* Teks umum jadi gelap */
+        * {{
             color: #1E1E1E !important;
         }}
 
-        /* Wadah konten utama dengan watermark */
+        /* WADAH KOTAK INPUT (Biar warnanya putih terang) */
+        div[data-baseweb="base-input"], 
+        div[data-baseweb="select"] > div, 
+        div[data-testid="stFileUploader"] > section,
+        div[data-baseweb="input"] {{
+            background-color: #FFFFFF !important;
+            border: 1px solid #CCCCCC !important;
+            color: #1E1E1E !important;
+        }}
+        
+        /* Paksa Teks di dalam kotak input biar gelap */
+        input, select, textarea, div[data-baseweb="select"] * {{
+            color: #1E1E1E !important;
+            -webkit-text-fill-color: #1E1E1E !important;
+        }}
+
+        /* Main container dengan watermark */
         .block-container {{
             background-color: rgba(255, 255, 255, 0.95) !important;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
@@ -51,11 +67,6 @@ st.markdown(f"""
             border-radius: 20px;
             padding: 3rem;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.05);
-        }}
-        
-        /* Paksa SEMUA teks di area kanan jadi gelap */
-        .block-container * {{
-            color: #1E1E1E !important;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -104,23 +115,19 @@ if uploaded_file is not None:
     if selected_bakul:
         row_bakul = df[df[name_col] == selected_bakul].iloc[0]
         
-        # FUNGSI ANTI NAN (DIJAMIN AMAN DARI ERROR EXCEL)
         def get_valid_float(col_name):
             try:
                 if not col_name or col_name not in df.columns:
                     return 0.0
                 val = row_bakul[col_name]
-                # Paksa ubah ke angka, kalau error/kosong langsung jadikan NaN, lalu diganti ke 0.0
                 num = pd.to_numeric(val, errors='coerce')
                 return 0.0 if pd.isna(num) else float(num)
             except:
                 return 0.0
 
-        # Ambil nilai otomatis box
         col_ket = next((c for c in df.columns if 'KET' in c), 'KET')
         auto_box = get_valid_float(col_ket)
 
-        # Input Manual Qty Peti & Box
         col_in1, col_in2 = st.columns(2)
         with col_in1:
             qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
@@ -128,13 +135,11 @@ if uploaded_file is not None:
             qty_box = st.number_input("Jumlah Box (Manual)", value=round(auto_box, 2), step=0.1)
             st.info(f"ℹ️ Otomatis dari Excel: {auto_box:.2f} Box")
 
-        # Tarik semua data kuantitas
         qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
         qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
         qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
         qty_telur = get_valid_float(next((c for c in df.columns if 'TELUR' in c), ''))
 
-        # Hitung total
         tot_glondong = qty_tonase * harga_glondong
         tot_jeroan = qty_jeroan * harga_jeroan
         tot_usus = qty_usus * harga_usus
@@ -174,7 +179,6 @@ if uploaded_file is not None:
             df_nota['Harga'] = df_nota['Harga'].map("Rp {:,.0f}".format)
             df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format)
             
-            # Kembalikan ke tabel standar Streamlit biar otomatis ngikut styling baru
             st.table(df_nota)
             st.markdown(f"<h3 style='color: #1E1E1E !important; text-align: left; margin-top: 15px;'>TOTAL JUMLAH: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
         else:
