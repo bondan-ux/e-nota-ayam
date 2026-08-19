@@ -36,6 +36,15 @@ st.markdown(f"""
             padding: 3rem;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.05);
         }}
+        /* Sembunyikan elemen sidebar & kontrol saat diprint */
+        @media print {{
+            [data-testid="stSidebar"], .stFileUploader, div[data-baseweb="select"], .stDateInput, hr {{
+                display: none !important;
+            }}
+            button {{
+                display: none !important;
+            }}
+        }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -102,7 +111,6 @@ if uploaded_file is not None:
         with col_in1:
             qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
         with col_in2:
-            # Nilainya selalu di-set 0.0 default dan murni manual input
             qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=0.1)
 
         qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
@@ -150,6 +158,16 @@ if uploaded_file is not None:
             df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format)
             
             st.table(df_nota)
-            st.markdown(f"<h3 style='text-align: right; margin-top: 15px;'>TOTAL JUMLAH: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
+            
+            col_t1, col_t2 = st.columns([2, 1])
+            with col_t1:
+                # Tombol Print Langsung
+                st.markdown("""
+                    <button onclick="window.print()" style="background-color: #E53935; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">
+                        🖨️ Cetak / Print Nota
+                    </button>
+                """, unsafe_allow_html=True)
+            with col_t2:
+                st.markdown(f"<h3 style='text-align: right; margin-top: 0px;'>TOTAL: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
         else:
             st.warning("Tidak ada item pembelian untuk bakul ini.")
