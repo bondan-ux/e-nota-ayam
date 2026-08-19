@@ -80,10 +80,10 @@ if uploaded_file is not None:
     
     selected_bakul = st.selectbox("Pilih Nama Bakul", df[name_col].unique())
     
-    # Reset state box manual kalau ganti bakul/sheet
+    # Reset state box manual setiap ganti bakul agar selalu 0.0
     if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
         st.session_state['last_bakul'] = selected_bakul
-        st.session_state['box_initialized'] = False
+        st.session_state['qty_box_val'] = 0.0
 
     if selected_bakul:
         row_bakul = df[df[name_col] == selected_bakul].iloc[0]
@@ -98,22 +98,12 @@ if uploaded_file is not None:
             except:
                 return 0.0
 
-        col_ket = next((c for c in df.columns if 'KET' in c), 'KET')
-        auto_box = get_valid_float(col_ket)
-
-        # Inisialisasi nilai awal box dari excel jika belum di-set
-        if not st.session_state.get('box_initialized', False):
-            st.session_state['qty_box_val'] = round(auto_box, 2)
-            st.session_state['box_initialized'] = True
-
         col_in1, col_in2 = st.columns(2)
         with col_in1:
             qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
         with col_in2:
-            # Gunakan key agar nilainya bisa dikontrol secara fleksibel tanpa auto-override terus
+            # Nilainya selalu di-set 0.0 default dan murni manual input
             qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=0.1)
-            if auto_box > 0:
-                st.info(f"ℹ️ Referensi Excel: {auto_box:.2f} Box (Bisa diubah manual di atas)")
 
         qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
         qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
