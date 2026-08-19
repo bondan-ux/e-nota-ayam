@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import base64
+import math
 
 st.set_page_config(page_title="E-Nota Bakul Ayam Segar", layout="wide")
 
@@ -16,49 +17,18 @@ def get_img_as_base64(file_path):
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
 
-# --- CSS FULL ANTI DARK-MODE (TERMASUK KOTAK INPUT) ---
+# --- CSS KHUSUS WATERMARK & SIDEBAR AJA ---
 st.markdown(f"""
     <style>
-        /* Background utama */
-        .stApp {{
-            background-color: #F8F9FA !important;
-        }}
-        
-        /* Header */
         header[data-testid="stHeader"] {{
             background: linear-gradient(90deg, #E53935 0%, #E53935 50%, #FFFFFF 50%, #FFFFFF 100%) !important;
         }}
-        
-        /* Sidebar */
         [data-testid="stSidebar"] {{
             background-color: #FFF4F4 !important;
             border-right: 3px solid #E53935 !important;
         }}
-        
-        /* Teks umum jadi gelap */
-        * {{
-            color: #1E1E1E !important;
-        }}
-
-        /* WADAH KOTAK INPUT (Biar warnanya putih terang) */
-        div[data-baseweb="base-input"], 
-        div[data-baseweb="select"] > div, 
-        div[data-testid="stFileUploader"] > section,
-        div[data-baseweb="input"] {{
-            background-color: #FFFFFF !important;
-            border: 1px solid #CCCCCC !important;
-            color: #1E1E1E !important;
-        }}
-        
-        /* Paksa Teks di dalam kotak input biar gelap */
-        input, select, textarea, div[data-baseweb="select"] * {{
-            color: #1E1E1E !important;
-            -webkit-text-fill-color: #1E1E1E !important;
-        }}
-
-        /* Main container dengan watermark */
         .block-container {{
-            background-color: rgba(255, 255, 255, 0.95) !important;
+            background-color: rgba(255, 255, 255, 0.95);
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
                               url("data:image/png;base64,{watermark_base64}");
             background-repeat: no-repeat;
@@ -74,12 +44,12 @@ st.markdown(f"""
 st.markdown(f"""
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
         <img src="data:image/jpeg;base64,{logo_base64}" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid #E53935;">
-        <h1 style="margin: 0; font-size: 38px; color: #1E1E1E !important;">E-Nota Bakul Ayam Segar</h1>
+        <h1 style="margin: 0; font-size: 38px;">E-Nota Bakul Ayam Segar</h1>
     </div>
 """, unsafe_allow_html=True)
 
 # 1. Sidebar - Master Harga
-st.sidebar.markdown("<h2 style='color:#1E1E1E;'>⚙️ Master Harga Harian</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2>⚙️ Master Harga Harian</h2>", unsafe_allow_html=True)
 harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=28500, step=500)
 harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=12000, step=500)
 harga_usus = st.sidebar.number_input("Harga Usus", value=16500, step=500)
@@ -150,8 +120,8 @@ if uploaded_file is not None:
         total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur + tot_peti + tot_box
         
         st.markdown("<hr style='border: 1px solid #ddd;'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='color: #E53935 !important; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #555 !important; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #E53935; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #555; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
         
         col_n1, col_n2 = st.columns(2)
         with col_n1:
@@ -180,6 +150,6 @@ if uploaded_file is not None:
             df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format)
             
             st.table(df_nota)
-            st.markdown(f"<h3 style='color: #1E1E1E !important; text-align: left; margin-top: 15px;'>TOTAL JUMLAH: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: right; margin-top: 15px;'>TOTAL JUMLAH: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
         else:
             st.warning("Tidak ada item pembelian untuk bakul ini.")
