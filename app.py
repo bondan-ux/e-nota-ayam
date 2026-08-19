@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import base64
-import math
 
 st.set_page_config(page_title="E-Nota Bakul Ayam Segar", layout="wide")
 
@@ -17,7 +16,6 @@ def get_img_as_base64(file_path):
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
 
-# --- CSS KHUSUS WATERMARK & SIDEBAR AJA ---
 st.markdown(f"""
     <style>
         header[data-testid="stHeader"] {{
@@ -82,6 +80,11 @@ if uploaded_file is not None:
     
     selected_bakul = st.selectbox("Pilih Nama Bakul", df[name_col].unique())
     
+    # Reset state box manual kalau ganti bakul/sheet
+    if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
+        st.session_state['last_bakul'] = selected_bakul
+        st.session_state['box_initialized'] = False
+
     if selected_bakul:
         row_bakul = df[df[name_col] == selected_bakul].iloc[0]
         
@@ -98,12 +101,19 @@ if uploaded_file is not None:
         col_ket = next((c for c in df.columns if 'KET' in c), 'KET')
         auto_box = get_valid_float(col_ket)
 
+        # Inisialisasi nilai awal box dari excel jika belum di-set
+        if not st.session_state.get('box_initialized', False):
+            st.session_state['qty_box_val'] = round(auto_box, 2)
+            st.session_state['box_initialized'] = True
+
         col_in1, col_in2 = st.columns(2)
         with col_in1:
             qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
         with col_in2:
-            qty_box = st.number_input("Jumlah Box (Manual)", value=round(auto_box, 2), step=0.1)
-            st.info(f"ℹ️ Otomatis dari Excel: {auto_box:.2f} Box")
+            # Gunakan key agar nilainya bisa dikontrol secara fleksibel tanpa auto-override terus
+            qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=0.1)
+            if auto_box > 0:
+                st.info(f"ℹ️ Referensi Excel: {auto_box:.2f} Box (Bisa diubah manual di atas)")
 
         qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
         qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
