@@ -36,16 +36,48 @@ st.markdown(f"""
             padding: 3rem;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.05);
         }}
-        /* Sembunyikan elemen sidebar & kontrol saat diprint */
+
+        /* PENGATURAN KHUSUS SAAT PRINT */
         @media print {{
-            [data-testid="stSidebar"], .stFileUploader, div[data-baseweb="select"], .stDateInput, hr {{
+            /* Sembunyikan semua elemen bawaan Streamlit & menu utama */
+            [data-testid="stSidebar"], 
+            header, 
+            .stFileUploader, 
+            div[data-baseweb="select"], 
+            .stDateInput, 
+            div[data-baseweb="base-input"],
+            hr, 
+            button,
+            .print-hidden {{
                 display: none !important;
             }}
-            button {{
-                display: none !important;
+            
+            /* Hilangkan background luar dan margin agar pas di kertas */
+            body, .stApp, .block-container {{
+                background: white !important;
+                background-image: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+            }}
+
+            /* Tampilkan hanya area nota */
+            .printable-area {{
+                display: block !important;
+                width: 100% !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                margin: 0 !important;
+                padding: 20px !important;
             }}
         }}
     </style>
+""", unsafe_allow_html=True)
+
+# Bagian ini disembunyikan saat dicetak
+st.markdown("""
+    <div class="print-hidden">
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
@@ -89,7 +121,6 @@ if uploaded_file is not None:
     
     selected_bakul = st.selectbox("Pilih Nama Bakul", df[name_col].unique())
     
-    # Reset state box manual setiap ganti bakul agar selalu 0.0
     if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
         st.session_state['last_bakul'] = selected_bakul
         st.session_state['qty_box_val'] = 0.0
@@ -128,46 +159,57 @@ if uploaded_file is not None:
         total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur + tot_peti + tot_box
         
         st.markdown("<hr style='border: 1px solid #ddd;'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='color: #E53935; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='color: #555; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
-        
-        col_n1, col_n2 = st.columns(2)
-        with col_n1:
-            st.write(f"**Nama Bakul:** {selected_bakul}")
-            st.write(f"**Group:** {selected_sheet}")
-        with col_n2:
-            st.write(f"**Tanggal:** {tanggal_transaksi.strftime('%d-%m-%Y')}")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)  # Tutup div print-hidden
 
-        items = [
-            {"Nama Barang": "GLONDONG", "KG": qty_tonase, "Harga": harga_glondong, "Jumlah": tot_glondong},
-            {"Nama Barang": "JEROAN", "KG": qty_jeroan, "Harga": harga_jeroan, "Jumlah": tot_jeroan},
-            {"Nama Barang": "USUS B", "KG": qty_usus, "Harga": harga_usus, "Jumlah": tot_usus},
-            {"Nama Barang": "TELUR", "KG": qty_telur, "Harga": harga_telur, "Jumlah": tot_telur},
-            {"Nama Barang": "PETI", "KG": qty_peti, "Harga": harga_peti, "Jumlah": tot_peti},
-            {"Nama Barang": "BOX", "KG": qty_box, "Harga": harga_box, "Jumlah": tot_box},
-        ]
+# --- AREA YANG AKAN DICETAK SAJA ---
+if uploaded_file is not None and selected_bakul:
+    st.markdown("""
+        <div class="printable-area">
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<h3 style='color: #E53935; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #555; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
+    
+    col_n1, col_n2 = st.columns(2)
+    with col_n1:
+        st.write(f"**Nama Bakul:** {selected_bakul}")
+        st.write(f"**Group:** {selected_sheet}")
+    with col_n2:
+        st.write(f"**Tanggal:** {tanggal_transaksi.strftime('%d-%m-%Y')}")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    items = [
+        {"Nama Barang": "GLONDONG", "KG": qty_tonase, "Harga": harga_glondong, "Jumlah": tot_glondong},
+        {"Nama Barang": "JEROAN", "KG": qty_jeroan, "Harga": harga_jeroan, "Jumlah": tot_jeroan},
+        {"Nama Barang": "USUS B", "KG": qty_usus, "Harga": harga_usus, "Jumlah": tot_usus},
+        {"Nama Barang": "TELUR", "KG": qty_telur, "Harga": harga_telur, "Jumlah": tot_telur},
+        {"Nama Barang": "PETI", "KG": qty_peti, "Harga": harga_peti, "Jumlah": tot_peti},
+        {"Nama Barang": "BOX", "KG": qty_box, "Harga": harga_box, "Jumlah": tot_box},
+    ]
+    
+    filtered_items = [i for i in items if i['KG'] > 0]
+    
+    if filtered_items:
+        df_nota = pd.DataFrame(filtered_items)
+        df_nota['KG'] = df_nota['KG'].apply(lambda x: f"{int(x)}" if isinstance(x, float) and x.is_integer() else f"{x:.2f}" if isinstance(x, float) else str(x))
+        df_nota['Harga'] = df_nota['Harga'].map("Rp {:,.0f}".format)
+        df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format)
         
-        filtered_items = [i for i in items if i['KG'] > 0]
+        st.table(df_nota)
         
-        if filtered_items:
-            df_nota = pd.DataFrame(filtered_items)
-            df_nota['KG'] = df_nota['KG'].apply(lambda x: f"{int(x)}" if isinstance(x, float) and x.is_integer() else f"{x:.2f}" if isinstance(x, float) else str(x))
-            df_nota['Harga'] = df_nota['Harga'].map("Rp {:,.0f}".format)
-            df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format)
-            
-            st.table(df_nota)
-            
-            col_t1, col_t2 = st.columns([2, 1])
-            with col_t1:
-                # Tombol Print Langsung
-                st.markdown("""
+        col_t1, col_t2 = st.columns([2, 1])
+        with col_t1:
+            st.markdown("""
+                <div class="print-hidden">
                     <button onclick="window.print()" style="background-color: #E53935; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">
                         🖨️ Cetak / Print Nota
                     </button>
-                """, unsafe_allow_html=True)
-            with col_t2:
-                st.markdown(f"<h3 style='text-align: right; margin-top: 0px;'>TOTAL: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
-        else:
-            st.warning("Tidak ada item pembelian untuk bakul ini.")
+                </div>
+            """, unsafe_allow_html=True)
+        with col_t2:
+            st.markdown(f"<h3 style='text-align: right; margin-top: 0px;'>TOTAL: Rp {total_bayar:,.0f}</h3>", unsafe_allow_html=True)
+    else:
+        st.warning("Tidak ada item pembelian untuk bakul ini.")
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Tutup printable-area
