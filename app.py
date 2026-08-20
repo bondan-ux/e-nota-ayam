@@ -23,7 +23,7 @@ watermark_base64 = get_img_as_base64("ASTremove.png")
 # --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
-        /* 3. Menghilangkan menu bawaan Streamlit di kanan atas */
+        /* Menghilangkan menu bawaan Streamlit di kanan atas */
         [data-testid="stToolbar"] {{
             display: none !important;
         }}
@@ -36,7 +36,7 @@ st.markdown(f"""
             display: none !important;
         }}
         
-        /* 1. Custom Navbar Merah di atas dengan Logo & Teks */
+        /* Custom Navbar Merah di atas dengan Logo & Teks */
         .custom-navbar {{
             position: fixed;
             top: 0;
@@ -64,12 +64,12 @@ st.markdown(f"""
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            margin-top: 60px; /* Menyesuaikan dengan tinggi navbar */
+            margin-top: 60px;
         }}
         
         /* Area Kerja Utama */
         .block-container {{
-            margin-top: 40px; /* Memberi jarak agar tidak tertutup custom navbar */
+            margin-top: 40px;
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
                               url("data:image/png;base64,{watermark_base64}");
@@ -119,14 +119,19 @@ def login():
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # 2. Logo AST besar di atas kotak login (menggantikan teks "Masuk Sistem")
+        # Logo AST besar di atas form login
         st.markdown(f"""
-            <div style='text-align: center; margin-bottom: 25px;'>
-                <img src="data:image/png;base64,{watermark_base64}" style="width: 220px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
+            <div style='text-align: center; margin-bottom: 20px;'>
+                <img src="data:image/png;base64,{watermark_base64}" style="width: 200px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
             </div>
         """, unsafe_allow_html=True)
         
+        # Kotak Form Login
         st.markdown("<div style='background-color: #FFEBEE; padding: 25px; border-radius: 12px; border: 2px solid #C62828; box-shadow: 0px 4px 10px rgba(0,0,0,0.05);'>", unsafe_allow_html=True)
+        
+        # Teks Sambutan Ramah
+        st.markdown("<h4 style='text-align: center; color: #C62828; margin-top: 0; margin-bottom: 15px;'>👋 Halo!<br><span style='font-size: 14px; color: #555; font-weight: normal;'>Silakan login untuk memulai aktivitas hari ini</span></h4>", unsafe_allow_html=True)
+        
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         
