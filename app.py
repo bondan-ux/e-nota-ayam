@@ -79,15 +79,29 @@ if os.path.exists(FILE_HARGA):
 else:
     saved_harga = default_harga
 
-# 1. Sidebar - Master Harga
+# 1. Sidebar - Master Harga (Dengan Format Angka Rapi / Pemisah Ribuan)
 st.sidebar.markdown("<h2>⚙️ Master Harga Harian</h2>", unsafe_allow_html=True)
-harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=saved_harga.get("glondong", 28500), step=500)
-harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=saved_harga.get("jeroan", 12000), step=500)
-harga_usus = st.sidebar.number_input("Harga Usus", value=saved_harga.get("usus", 16500), step=500)
-harga_telur_a = st.sidebar.number_input("Harga Telur A", value=saved_harga.get("telur_a", 269000), step=1000)
-harga_telur_b = st.sidebar.number_input("Harga Telur B", value=saved_harga.get("telur_b", 250000), step=1000)
-harga_peti = st.sidebar.number_input("Harga Peti", value=saved_harga.get("peti", 2000), step=100)
-harga_box = st.sidebar.number_input("Harga Box", value=saved_harga.get("box", 28500), step=500)
+
+harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=int(saved_harga.get("glondong", 28500)), step=500, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_glondong:,.0f}".replace(",", "."))
+
+harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=int(saved_harga.get("jeroan", 12000)), step=500, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_jeroan:,.0f}".replace(",", "."))
+
+harga_usus = st.sidebar.number_input("Harga Usus", value=int(saved_harga.get("usus", 16500)), step=500, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_usus:,.0f}".replace(",", "."))
+
+harga_telur_a = st.sidebar.number_input("Harga Telur A", value=int(saved_harga.get("telur_a", 269000)), step=1000, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_telur_a:,.0f}".replace(",", "."))
+
+harga_telur_b = st.sidebar.number_input("Harga Telur B", value=int(saved_harga.get("telur_b", 250000)), step=1000, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_telur_b:,.0f}".replace(",", "."))
+
+harga_peti = st.sidebar.number_input("Harga Peti", value=int(saved_harga.get("peti", 2000)), step=100, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_peti:,.0f}".replace(",", "."))
+
+harga_box = st.sidebar.number_input("Harga Box", value=int(saved_harga.get("box", 28500)), step=500, format="%d")
+st.sidebar.caption(f"💡 Rp {harga_box:,.0f}".replace(",", "."))
 
 current_harga = {
     "glondong": harga_glondong,
@@ -156,7 +170,6 @@ if uploaded_file is not None:
         qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
         qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
         
-        # Pengecekan kolom Telur A dan Telur B di Excel
         qty_telur_a = get_valid_float(next((c for c in df.columns if 'TELUR A' in c or 'TELUR' in c), ''))
         qty_telur_b = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
 
