@@ -42,7 +42,7 @@ st.markdown(f"""
             top: 0;
             left: 0;
             width: 100%;
-            height: 60px;
+            height: 70px; /* Dipertinggi sedikit agar logo besar muat */
             background-color: #C62828;
             z-index: 999999;
             display: flex;
@@ -50,13 +50,15 @@ st.markdown(f"""
             padding-left: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
+        
+        /* 1. Logo Navbar Diperbesar */
         .custom-navbar img {{
-            height: 45px;
+            height: 55px; /* Ukuran diperbesar */
             margin-right: 15px;
         }}
         .custom-navbar span {{
             color: white;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
         }}
 
@@ -64,12 +66,12 @@ st.markdown(f"""
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            margin-top: 60px;
+            margin-top: 70px;
         }}
         
         /* Area Kerja Utama */
         .block-container {{
-            margin-top: 40px;
+            margin-top: 50px;
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
                               url("data:image/png;base64,{watermark_base64}");
@@ -115,25 +117,30 @@ if "logged_in" not in st.session_state:
     st.session_state.role = ""
 
 def login():
-    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         # Logo AST besar di atas form login
         st.markdown(f"""
             <div style='text-align: center; margin-bottom: 20px;'>
-                <img src="data:image/png;base64,{watermark_base64}" style="width: 200px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
+                <img src="data:image/png;base64,{watermark_base64}" style="width: 220px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
             </div>
         """, unsafe_allow_html=True)
         
-        # Kotak Form Login
-        st.markdown("<div style='background-color: #FFEBEE; padding: 25px; border-radius: 12px; border: 2px solid #C62828; box-shadow: 0px 4px 10px rgba(0,0,0,0.05);'>", unsafe_allow_html=True)
+        # 2. Teks Sambutan Tanpa Kotak Merah Muda Terpisah
+        st.markdown("""
+            <div style='text-align: center; margin-bottom: 20px;'>
+                <h3 style='color: #C62828; margin: 0; font-weight: bold;'>👋 Halo!</h3>
+                <p style='color: #555; font-size: 15px; margin-top: 5px;'>Silakan login untuk memulai aktivitas hari ini</p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Teks Sambutan Ramah
-        st.markdown("<h4 style='text-align: center; color: #C62828; margin-top: 0; margin-bottom: 15px;'>👋 Halo!<br><span style='font-size: 14px; color: #555; font-weight: normal;'>Silakan login untuk memulai aktivitas hari ini</span></h4>", unsafe_allow_html=True)
-        
+        # Form Input Username & Password
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("Masuk / Login", use_container_width=True):
             if username == "admin" and password == "admin123":
@@ -146,7 +153,6 @@ def login():
                 st.rerun()
             else:
                 st.error("Username atau Password salah!")
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # Tampilkan Login jika belum masuk
 if not st.session_state.logged_in:
