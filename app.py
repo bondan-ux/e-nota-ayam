@@ -60,17 +60,16 @@ st.markdown(f"""
 # --- LOGIKA PENYIMPANAN HARGA MASTER ---
 FILE_HARGA = "master_harga.json"
 
-# Nilai bawaan (default) pertama kali kalau belum ada data tersimpan
 default_harga = {
     "glondong": 28500,
     "jeroan": 12000,
     "usus": 16500,
-    "telur": 269000,
+    "telur_a": 269000,
+    "telur_b": 250000,
     "peti": 2000,
     "box": 28500
 }
 
-# Cek apakah file simpanan harga udah ada di folder yang sama
 if os.path.exists(FILE_HARGA):
     try:
         with open(FILE_HARGA, "r") as f:
@@ -82,25 +81,24 @@ else:
 
 # 1. Sidebar - Master Harga
 st.sidebar.markdown("<h2>⚙️ Master Harga Harian</h2>", unsafe_allow_html=True)
-# Widget input akan mengambil 'value' dari data yang tersimpan
 harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=saved_harga.get("glondong", 28500), step=500)
 harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=saved_harga.get("jeroan", 12000), step=500)
 harga_usus = st.sidebar.number_input("Harga Usus", value=saved_harga.get("usus", 16500), step=500)
-harga_telur = st.sidebar.number_input("Harga Telur A", value=saved_harga.get("telur", 269000), step=1000)
+harga_telur_a = st.sidebar.number_input("Harga Telur A", value=saved_harga.get("telur_a", 269000), step=1000)
+harga_telur_b = st.sidebar.number_input("Harga Telur B", value=saved_harga.get("telur_b", 250000), step=1000)
 harga_peti = st.sidebar.number_input("Harga Peti", value=saved_harga.get("peti", 2000), step=100)
 harga_box = st.sidebar.number_input("Harga Box", value=saved_harga.get("box", 28500), step=500)
 
-# Kumpulkan nilai saat ini dari sidebar
 current_harga = {
     "glondong": harga_glondong,
     "jeroan": harga_jeroan,
     "usus": harga_usus,
-    "telur": harga_telur,
+    "telur_a": harga_telur_a,
+    "telur_b": harga_telur_b,
     "peti": harga_peti,
     "box": harga_box
 }
 
-# Simpan otomatis ke file JSON HANYA kalau ada angka yang diubah
 if current_harga != saved_harga:
     with open(FILE_HARGA, "w") as f:
         json.dump(current_harga, f)
@@ -131,7 +129,6 @@ if uploaded_file is not None:
     
     selected_bakul = st.selectbox("Pilih Nama Bakul", df[name_col].unique())
     
-    # Reset state box manual setiap ganti bakul agar selalu 0.0
     if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
         st.session_state['last_bakul'] = selected_bakul
         st.session_state['qty_box_val'] = 0.0
@@ -158,20 +155,23 @@ if uploaded_file is not None:
         qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
         qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
         qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
-        qty_telur = get_valid_float(next((c for c in df.columns if 'TELUR' in c), ''))
+        
+        # Pengecekan kolom Telur A dan Telur B di Excel
+        qty_telur_a = get_valid_float(next((c for c in df.columns if 'TELUR A' in c or 'TELUR' in c), ''))
+        qty_telur_b = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
 
-        # --- PENGECEKAN KOLOM KET (KRESEK) ---
         val_ket = get_valid_float(next((c for c in df.columns if 'KET' in c), ''))
         biaya_kresek = 7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
 
         tot_glondong = qty_tonase * harga_glondong
         tot_jeroan = qty_jeroan * harga_jeroan
         tot_usus = qty_usus * harga_usus
-        tot_telur = qty_telur * harga_telur
+        tot_telur_a = qty_telur_a * harga_telur_a
+        tot_telur_b = qty_telur_b * harga_telur_b
         tot_peti = qty_peti * harga_peti
         tot_box = qty_box * harga_box
 
-        total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur + tot_peti + tot_box + biaya_kresek
+        total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur_a + tot_telur_b + tot_peti + tot_box + biaya_kresek
         
         st.markdown("<hr style='border: 1px solid #ddd;'>", unsafe_allow_html=True)
         st.markdown("<h3 style='color: #E53935; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
@@ -190,7 +190,8 @@ if uploaded_file is not None:
             {"Nama Barang": "GLONDONG", "KG": qty_tonase, "Harga": harga_glondong, "Jumlah": tot_glondong},
             {"Nama Barang": "JEROAN", "KG": qty_jeroan, "Harga": harga_jeroan, "Jumlah": tot_jeroan},
             {"Nama Barang": "USUS B", "KG": qty_usus, "Harga": harga_usus, "Jumlah": tot_usus},
-            {"Nama Barang": "TELUR", "KG": qty_telur, "Harga": harga_telur, "Jumlah": tot_telur},
+            {"Nama Barang": "TELUR A", "KG": qty_telur_a, "Harga": harga_telur_a, "Jumlah": tot_telur_a},
+            {"Nama Barang": "TELUR B", "KG": qty_telur_b, "Harga": harga_telur_b, "Jumlah": tot_telur_b},
             {"Nama Barang": "PETI", "KG": qty_peti, "Harga": harga_peti, "Jumlah": tot_peti},
             {"Nama Barang": "BOX", "KG": qty_box, "Harga": harga_box, "Jumlah": tot_box},
             {"Nama Barang": "BIAYA KRESEK", "KG": 1 if biaya_kresek > 0 else 0, "Harga": 7000, "Jumlah": biaya_kresek},
@@ -208,7 +209,6 @@ if uploaded_file is not None:
             
             col_t1, col_t2 = st.columns([2, 1])
             with col_t1:
-                # Tombol Print Langsung
                 st.markdown("""
                     <button onclick="window.print()" style="background-color: #E53935; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">
                         🖨️ Cetak / Print Nota
