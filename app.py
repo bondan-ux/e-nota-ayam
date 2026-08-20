@@ -20,22 +20,56 @@ def get_img_as_base64(file_path):
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
 
-# --- CSS STYLING (MERAH BOLD & PUTIH BERSIH) ---
+# --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
-        /* Warna Header Utama */
-        header[data-testid="stHeader"] {{
-            background: #C62828 !important; /* Merah Bold */
+        /* 3. Menghilangkan menu bawaan Streamlit di kanan atas */
+        [data-testid="stToolbar"] {{
+            display: none !important;
+        }}
+        #MainMenu {{
+            visibility: hidden;
         }}
         
-        /* Warna Sidebar */
+        /* Menghilangkan header bawaan Streamlit agar diganti custom navbar */
+        header[data-testid="stHeader"] {{
+            display: none !important;
+        }}
+        
+        /* 1. Custom Navbar Merah di atas dengan Logo & Teks */
+        .custom-navbar {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #C62828;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }}
+        .custom-navbar img {{
+            height: 45px;
+            margin-right: 15px;
+        }}
+        .custom-navbar span {{
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+        }}
+
+        /* Sidebar Styling */
         [data-testid="stSidebar"] {{
-            background-color: #FFEBEE !important; /* Merah Muda Sangat Tipis */
+            background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
+            margin-top: 60px; /* Menyesuaikan dengan tinggi navbar */
         }}
         
         /* Area Kerja Utama */
         .block-container {{
+            margin-top: 40px; /* Memberi jarak agar tidak tertutup custom navbar */
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
                               url("data:image/png;base64,{watermark_base64}");
@@ -45,7 +79,7 @@ st.markdown(f"""
             padding: 2rem 3rem;
         }}
         
-        /* Tombol Utama (Warna Merah Cabai Bold) */
+        /* Tombol Utama */
         .stButton>button {{
             background-color: #C62828 !important;
             color: white !important;
@@ -58,13 +92,21 @@ st.markdown(f"""
             border: none !important;
         }}
 
-        /* Sembunyikan elemen saat print */
         @media print {{
-            [data-testid="stSidebar"], header, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button {{
+            [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button {{
                 display: none !important;
+            }}
+            .block-container {{
+                margin-top: 0px !important;
             }}
         }}
     </style>
+    
+    <!-- Elemen HTML Custom Navbar -->
+    <div class="custom-navbar">
+        <img src="data:image/png;base64,{watermark_base64}">
+        <span>Ayam Segar Tumpang</span>
+    </div>
 """, unsafe_allow_html=True)
 
 # --- 1. SISTEM LOGIN (SESSION STATE) ---
@@ -73,12 +115,18 @@ if "logged_in" not in st.session_state:
     st.session_state.role = ""
 
 def login():
-    st.markdown("<h1 style='text-align: center; color: #C62828;'>🔒 MASUK SISTEM</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        st.markdown("<div style='background-color: #FFEBEE; padding: 20px; border-radius: 10px; border: 2px solid #C62828;'>", unsafe_allow_html=True)
+        # 2. Logo AST besar di atas kotak login (menggantikan teks "Masuk Sistem")
+        st.markdown(f"""
+            <div style='text-align: center; margin-bottom: 25px;'>
+                <img src="data:image/png;base64,{watermark_base64}" style="width: 220px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<div style='background-color: #FFEBEE; padding: 25px; border-radius: 12px; border: 2px solid #C62828; box-shadow: 0px 4px 10px rgba(0,0,0,0.05);'>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         
@@ -98,16 +146,15 @@ def login():
 # Tampilkan Login jika belum masuk
 if not st.session_state.logged_in:
     login()
-    st.stop() # Hentikan kode di sini, jangan load menu utama
+    st.stop() 
 
 # --- 2. MENU UTAMA (JIKA SUDAH LOGIN) ---
 
-# Header Custom
+# Header Utama di dalam Dashboard
 st.markdown(f"""
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 3px solid #C62828; padding-bottom: 10px;">
         <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="data:image/jpeg;base64,{logo_base64}" style="width: 55px; height: 55px; border-radius: 50%; border: 2px solid #C62828;">
-            <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">AYAM SEGAR TUMPANG</h1>
+            <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">SISTEM MANAJEMEN</h1>
         </div>
         <div style="text-align: right;">
             <span style="font-size: 16px; font-weight: bold;">👤 {st.session_state.role}</span>
@@ -174,11 +221,8 @@ if selected_menu == "📊 Dashboard":
     
 elif selected_menu == "🧾 Nota":
     st.header("🧾 Sistem Generator Nota")
-    
-    # 3 Tab Sub-Menu
     tab_bakul, tab_bedak, tab_mitra = st.tabs(["📑 BAKUL", "🏬 BEDAK", "🤝 MITRA"])
     
-    # === TAB BAKUL (YANG SUDAH FINISHING) ===
     with tab_bakul:
         col_up1, col_up2 = st.columns([2, 1])
         with col_up1:
@@ -291,12 +335,9 @@ elif selected_menu == "🧾 Nota":
                 else:
                     st.warning("Tidak ada item pembelian untuk bakul ini.")
 
-    # === TAB BEDAK ===
     with tab_bedak:
         st.subheader("🏬 Penjualan Bedak / Lapak")
         st.info("Fitur manajemen dan cetak nota untuk bedak sedang dalam tahap pengembangan.")
-
-    # === TAB MITRA ===
     with tab_mitra:
         st.subheader("🤝 Penjualan Mitra")
         st.info("Fitur rekapitulasi dan nota khusus untuk mitra akan dikembangkan di sini.")
@@ -304,15 +345,12 @@ elif selected_menu == "🧾 Nota":
 elif selected_menu == "🛍️ Penjualan":
     st.header("🛍️ Rekap Penjualan")
     st.info("Modul rekap penjualan harian dan bulanan.")
-
 elif selected_menu == "📦 Stock":
     st.header("📦 Manajemen Stok")
     st.info("Modul untuk memantau barang masuk dan keluar (Glondong, Telur, dll).")
-
 elif selected_menu == "💵 Finance":
     st.header("💵 Keuangan & Laporan")
     st.info("Modul pencatatan arus kas (Cash Flow) dan Piutang Bakul.")
-
 elif selected_menu == "⏱️ Absensi & Jadwal":
     st.header("⏱️ Absensi & Penjadwalan Pegawai")
     tab_jadwal, tab_absen, tab_rekap = st.tabs(["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
