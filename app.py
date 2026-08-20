@@ -67,7 +67,24 @@ st.markdown(f"""
             border-right: 4px solid #C62828 !important;
             margin-top: 70px;
         }}
+
+        /* Memperbesar Font Navigasi Utama */
+        [data-testid="stSidebar"] .stRadio label {{
+            font-size: 18px !important;
+            font-weight: bold !important;
+            color: #262626 !important;
+            padding: 6px 0px !important;
+        }}
         
+        /* Custom Styling Expander / Sub-Menu Slide */
+        [data-testid="stSidebar"] .streamlit-expanderHeader {{
+            font-size: 16px !important;
+            font-weight: bold !important;
+            color: #C62828 !important;
+            background-color: #FFCDD2 !important;
+            border-radius: 6px !important;
+        }}
+
         /* Area Kerja Utama */
         .block-container {{
             margin-top: 50px;
@@ -120,14 +137,12 @@ def login():
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # Logo AST di tengah diperbesar 2x lipat (440px)
         st.markdown(f"""
             <div style='text-align: center; margin-bottom: 20px;'>
                 <img src="data:image/png;base64,{watermark_base64}" style="width: 440px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
             </div>
         """, unsafe_allow_html=True)
         
-        # Teks Sambutan
         st.markdown("""
             <div style='text-align: center; margin-bottom: 20px;'>
                 <h3 style='color: #C62828; margin: 0; font-weight: bold;'>👋 Halo!</h3>
@@ -135,7 +150,6 @@ def login():
             </div>
         """, unsafe_allow_html=True)
         
-        # Form Input Username & Password
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         
@@ -158,7 +172,7 @@ if not st.session_state.logged_in:
     login()
     st.stop() 
 
-# --- 2. MENU UTAMA (JIKA SUDAH LOGIN) ---
+# --- 2. MENU UTAMA & SIDEBAR ---
 
 # Header Utama di dalam Dashboard
 st.markdown(f"""
@@ -172,22 +186,25 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Tombol Logout di Sidebar
-st.sidebar.markdown(f"**👤 Login sebagai: {st.session_state.role}**")
-if st.sidebar.button("🚪 Keluar / Logout"):
-    st.session_state.logged_in = False
-    st.session_state.role = ""
-    st.rerun()
+# 2. NAVIGASI UTAMA DI SIDEBAR (FONT LEBIH BESAR)
+st.sidebar.markdown("<h2 style='color: #C62828; margin-bottom: 10px;'>📌 NAVIGASI UTAMA</h2>", unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
-
-# Navigasi Menu
 menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
-selected_menu = st.sidebar.radio("📌 NAVIGASI UTAMA", menu_options)
+selected_menu = st.sidebar.radio("", menu_options)
+
+# SUB-MENU SLIDE DOWN BERDASARKAN MENU YANG DIPILIH
+sub_menu = None
+if selected_menu == "🧾 Nota":
+    with st.sidebar.expander("📂 Sub-Menu Nota", expanded=True):
+        sub_menu = st.radio("Pilih Halaman Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
+
+elif selected_menu == "⏱️ Absensi & Jadwal":
+    with st.sidebar.expander("📂 Sub-Menu Absensi", expanded=True):
+        sub_menu = st.radio("Pilih Halaman Absen:", ["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
 
 st.sidebar.markdown("---")
 
-# --- MASTER HARGA (Hanya muncul jika di menu Nota) ---
+# 3. MASTER HARGA HANYA MUNCUL DI DALAM MENU NOTA
 if selected_menu == "🧾 Nota":
     FILE_HARGA = "master_harga.json"
     default_harga = {"glondong": 28500, "jeroan": 12000, "usus": 16500, "telur_a": 269000, "telur_b": 250000, "peti": 2000, "box": 28500}
@@ -222,18 +239,26 @@ if selected_menu == "🧾 Nota":
         with open(FILE_HARGA, "w") as f:
             json.dump(current_harga, f)
 
+    st.sidebar.markdown("---")
 
-# --- 3. LOGIKA HALAMAN BERDASARKAN MENU ---
+# 1. PINDAH INFORMASI USER & LOGOUT KE BAGIAN PALING BAWAH (KOTAK NOMOR 4)
+st.sidebar.markdown(f"**👤 User:** {st.session_state.role}")
+if st.sidebar.button("🚪 Keluar / Logout", use_container_width=True):
+    st.session_state.logged_in = False
+    st.session_state.role = ""
+    st.rerun()
+
+
+# --- 3. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
 
 if selected_menu == "📊 Dashboard":
     st.header("📊 Dashboard Utama")
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
     
 elif selected_menu == "🧾 Nota":
-    st.header("🧾 Sistem Generator Nota")
-    tab_bakul, tab_bedak, tab_mitra = st.tabs(["📑 BAKUL", "🏬 BEDAK", "🤝 MITRA"])
-    
-    with tab_bakul:
+    if sub_menu == "📑 Bakul" or sub_menu is None:
+        st.header("🧾 Generator Nota - Bakul")
+        
         col_up1, col_up2 = st.columns([2, 1])
         with col_up1:
             uploaded_file = st.file_uploader("Upload File Rekap Excel (.xlsx)", type=["xlsx"])
@@ -345,11 +370,11 @@ elif selected_menu == "🧾 Nota":
                 else:
                     st.warning("Tidak ada item pembelian untuk bakul ini.")
 
-    with tab_bedak:
-        st.subheader("🏬 Penjualan Bedak / Lapak")
+    elif sub_menu == "🏬 Bedak":
+        st.header("🏬 Penjualan Bedak / Lapak")
         st.info("Fitur manajemen dan cetak nota untuk bedak sedang dalam tahap pengembangan.")
-    with tab_mitra:
-        st.subheader("🤝 Penjualan Mitra")
+    elif sub_menu == "🤝 Mitra":
+        st.header("🤝 Penjualan Mitra")
         st.info("Fitur rekapitulasi dan nota khusus untuk mitra akan dikembangkan di sini.")
 
 elif selected_menu == "🛍️ Penjualan":
@@ -362,11 +387,12 @@ elif selected_menu == "💵 Finance":
     st.header("💵 Keuangan & Laporan")
     st.info("Modul pencatatan arus kas (Cash Flow) dan Piutang Bakul.")
 elif selected_menu == "⏱️ Absensi & Jadwal":
-    st.header("⏱️ Absensi & Penjadwalan Pegawai")
-    tab_jadwal, tab_absen, tab_rekap = st.tabs(["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
-    with tab_jadwal:
+    if sub_menu == "📅 Atur Jadwal" or sub_menu is None:
+        st.header("📅 Pengaturan Jadwal Kerja")
         st.info("Pengaturan Master Shift dan Jatah Libur akan dibuat di sini.")
-    with tab_absen:
+    elif sub_menu == "📌 Plotting & Input Absen":
+        st.header("📌 Plotting & Input Absensi")
         st.info("Pencatatan jam masuk & jam keluar pegawai (Tepat Waktu/Terlambat) akan ada di sini.")
-    with tab_rekap:
+    elif sub_menu == "📊 Rekap Bulanan":
+        st.header("📊 Rekapitulasi Absensi Bulanan")
         st.info("Tabel hasil rekap absen bulanan.")
