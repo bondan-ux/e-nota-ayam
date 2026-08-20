@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import base64
+import json
+import os
 
 st.set_page_config(page_title="E-Nota Bakul Ayam Segar", layout="wide")
 
@@ -55,14 +57,54 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+# --- LOGIKA PENYIMPANAN HARGA MASTER ---
+FILE_HARGA = "master_harga.json"
+
+# Nilai bawaan (default) pertama kali kalau belum ada data tersimpan
+default_harga = {
+    "glondong": 28500,
+    "jeroan": 12000,
+    "usus": 16500,
+    "telur": 269000,
+    "peti": 2000,
+    "box": 28500
+}
+
+# Cek apakah file simpanan harga udah ada di folder yang sama
+if os.path.exists(FILE_HARGA):
+    try:
+        with open(FILE_HARGA, "r") as f:
+            saved_harga = json.load(f)
+    except:
+        saved_harga = default_harga
+else:
+    saved_harga = default_harga
+
 # 1. Sidebar - Master Harga
 st.sidebar.markdown("<h2>⚙️ Master Harga Harian</h2>", unsafe_allow_html=True)
-harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=28500, step=500)
-harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=12000, step=500)
-harga_usus = st.sidebar.number_input("Harga Usus", value=16500, step=500)
-harga_telur = st.sidebar.number_input("Harga Telur A", value=269000, step=1000)
-harga_peti = st.sidebar.number_input("Harga Peti", value=2000, step=100)
-harga_box = st.sidebar.number_input("Harga Box", value=28500, step=500)
+# Widget input akan mengambil 'value' dari data yang tersimpan
+harga_glondong = st.sidebar.number_input("Harga Glondong / Kg", value=saved_harga.get("glondong", 28500), step=500)
+harga_jeroan = st.sidebar.number_input("Harga Jeroan", value=saved_harga.get("jeroan", 12000), step=500)
+harga_usus = st.sidebar.number_input("Harga Usus", value=saved_harga.get("usus", 16500), step=500)
+harga_telur = st.sidebar.number_input("Harga Telur A", value=saved_harga.get("telur", 269000), step=1000)
+harga_peti = st.sidebar.number_input("Harga Peti", value=saved_harga.get("peti", 2000), step=100)
+harga_box = st.sidebar.number_input("Harga Box", value=saved_harga.get("box", 28500), step=500)
+
+# Kumpulkan nilai saat ini dari sidebar
+current_harga = {
+    "glondong": harga_glondong,
+    "jeroan": harga_jeroan,
+    "usus": harga_usus,
+    "telur": harga_telur,
+    "peti": harga_peti,
+    "box": harga_box
+}
+
+# Simpan otomatis ke file JSON HANYA kalau ada angka yang diubah
+if current_harga != saved_harga:
+    with open(FILE_HARGA, "w") as f:
+        json.dump(current_harga, f)
+# ---------------------------------------
 
 # 2. Upload
 col_up1, col_up2 = st.columns([2, 1])
