@@ -42,7 +42,7 @@ st.markdown(f"""
             top: 0;
             left: 0;
             width: 100%;
-            height: 70px; /* Dipertinggi sedikit agar logo besar muat */
+            height: 70px;
             background-color: #C62828;
             z-index: 999999;
             display: flex;
@@ -51,9 +51,8 @@ st.markdown(f"""
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
-        /* 1. Logo Navbar Diperbesar */
         .custom-navbar img {{
-            height: 55px; /* Ukuran diperbesar */
+            height: 55px;
             margin-right: 15px;
         }}
         .custom-navbar span {{
@@ -117,18 +116,18 @@ if "logged_in" not in st.session_state:
     st.session_state.role = ""
 
 def login():
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # Logo AST besar di atas form login
+        # Logo AST di tengah diperbesar 2x lipat (440px)
         st.markdown(f"""
             <div style='text-align: center; margin-bottom: 20px;'>
-                <img src="data:image/png;base64,{watermark_base64}" style="width: 220px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
+                <img src="data:image/png;base64,{watermark_base64}" style="width: 440px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
             </div>
         """, unsafe_allow_html=True)
         
-        # 2. Teks Sambutan Tanpa Kotak Merah Muda Terpisah
+        # Teks Sambutan
         st.markdown("""
             <div style='text-align: center; margin-bottom: 20px;'>
                 <h3 style='color: #C62828; margin: 0; font-weight: bold;'>👋 Halo!</h3>
