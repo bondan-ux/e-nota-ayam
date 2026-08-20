@@ -118,6 +118,10 @@ if uploaded_file is not None:
         qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
         qty_telur = get_valid_float(next((c for c in df.columns if 'TELUR' in c), ''))
 
+        # --- PENGECEKAN KOLOM KET (KRESEK) ---
+        val_ket = get_valid_float(next((c for c in df.columns if 'KET' in c), ''))
+        biaya_kresek = 7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
+
         tot_glondong = qty_tonase * harga_glondong
         tot_jeroan = qty_jeroan * harga_jeroan
         tot_usus = qty_usus * harga_usus
@@ -125,7 +129,7 @@ if uploaded_file is not None:
         tot_peti = qty_peti * harga_peti
         tot_box = qty_box * harga_box
 
-        total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur + tot_peti + tot_box
+        total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur + tot_peti + tot_box + biaya_kresek
         
         st.markdown("<hr style='border: 1px solid #ddd;'>", unsafe_allow_html=True)
         st.markdown("<h3 style='color: #E53935; margin-bottom: 0px;'>🐔 AYAM SEGAR TUMPANG</h3>", unsafe_allow_html=True)
@@ -147,6 +151,7 @@ if uploaded_file is not None:
             {"Nama Barang": "TELUR", "KG": qty_telur, "Harga": harga_telur, "Jumlah": tot_telur},
             {"Nama Barang": "PETI", "KG": qty_peti, "Harga": harga_peti, "Jumlah": tot_peti},
             {"Nama Barang": "BOX", "KG": qty_box, "Harga": harga_box, "Jumlah": tot_box},
+            {"Nama Barang": "BIAYA KRESEK", "KG": 1 if biaya_kresek > 0 else 0, "Harga": 7000, "Jumlah": biaya_kresek},
         ]
         
         filtered_items = [i for i in items if i['KG'] > 0]
