@@ -36,7 +36,7 @@ else:
 # --- CSS STYLING RESPONSIVE (DESKTOP & MOBILE) ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan elemen bawaan Streamlit Cloud KECUALI Header (agar tombol sidebar tetap ada) */
+        /* Sembunyikan elemen bawaan Streamlit Cloud */
         [data-testid="stToolbar"], #MainMenu {{
             display: none !important;
         }}
@@ -46,17 +46,42 @@ st.markdown(f"""
             display: none !important;
         }}
 
-        /* Header transparan melayang di atas navbar merah */
+        /* Header bawaan Streamlit dibuat transparan tapi tetap ada agar render tombol */
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
             z-index: 999999 !important;
+            display: block !important;
+            height: 0px !important;
         }}
 
-        /* Ubah warna icon tombol toggle sidebar jadi putih agar terlihat di background merah */
-        [data-testid="collapsedControl"] svg, [data-testid="stSidebarCollapsedControl"] svg, button[kind="header"] svg {{
-            color: white !important;
-            fill: white !important;
+        /* ========================================================== */
+        /* PAKSA TOMBOL SIDEBAR MUNCUL (BRUTE FORCE CSS)              */
+        /* ========================================================== */
+        [data-testid="collapsedControl"], 
+        [data-testid="stSidebarCollapsedControl"],
+        div[data-testid="stHeader"] button {{
+            display: flex !important;
+            visibility: visible !important;
+            position: fixed !important;
+            top: 14px !important;
+            left: 15px !important;
+            z-index: 9999999 !important; /* Berada di atas segala elemen */
+            background-color: rgba(255, 255, 255, 0.2) !important; /* Kotak transparan */
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            border-radius: 6px !important;
+            padding: 4px !important;
+            cursor: pointer !important;
         }}
+
+        [data-testid="collapsedControl"] svg, 
+        [data-testid="stSidebarCollapsedControl"] svg, 
+        div[data-testid="stHeader"] button svg {{
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
+            width: 24px !important;
+            height: 24px !important;
+        }}
+        /* ========================================================== */
 
         /* Navbar Merah Utama */
         .custom-navbar {{
@@ -69,8 +94,7 @@ st.markdown(f"""
             z-index: 999998;
             display: flex;
             align-items: center;
-            /* Padding kiri dilebarkan (65px) agar logo tidak menabrak tombol toggle sidebar bawaan Streamlit */
-            padding: 0 20px 0 65px; 
+            padding: 0 20px 0 70px; /* Jarak kiri agar teks tidak nabrak tombol sidebar */
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
@@ -134,7 +158,7 @@ st.markdown(f"""
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            z-index: 9999999 !important; /* Selalu di atas */
+            z-index: 9999999 !important; /* Sidebar selalu on top */
         }}
         
         [data-testid="stSidebar"] .stRadio label {{
@@ -175,7 +199,7 @@ st.markdown(f"""
         @media (max-width: 768px) {{
             .custom-navbar {{
                 height: 55px;
-                padding: 0 10px 0 50px; /* Disesuaikan untuk HP */
+                padding: 0 10px 0 60px; /* Space untuk tombol sidebar di HP */
             }}
             .custom-navbar img {{
                 height: 34px;
@@ -189,6 +213,14 @@ st.markdown(f"""
                 font-size: 11px;
             }}
             
+            /* Penyesuaian Tombol Sidebar di Layar HP */
+            [data-testid="collapsedControl"], 
+            [data-testid="stSidebarCollapsedControl"],
+            div[data-testid="stHeader"] button {{
+                top: 10px !important;
+                left: 10px !important;
+            }}
+
             /* Penyesuaian Tombol Logout di Layar HP */
             div.element-container:has(#logout-target) + div.element-container {{
                 top: 10px;
