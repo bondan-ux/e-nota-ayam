@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import base64
-import json
-import os
 
-# 1. KONFIGURASI HALAMAN (Wajib di awal)
+# 1. KONFIGURASI HALAMAN
 st.set_page_config(
     page_title="Sistem Manajemen Ayam Segar", 
     layout="wide", 
@@ -23,14 +21,20 @@ def get_img_as_base64(file_path):
 
 watermark_base64 = get_img_as_base64("ASTremove.png")
 
-# --- CSS STYLING ---
+# --- CSS STYLING FIX ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan elemen bawaan Streamlit Cloud yang tidak perlu */
-        #MainMenu, footer, [data-testid="stToolbar"] {{
-            display: none !important;
+        /* Sembunyikan footer dan elemen menu titik tiga bawaan, TAPI sembunyikan toolbar secara halus */
+        footer, #MainMenu {{
+            visibility: hidden;
         }}
         
+        /* Pertahankan tombol toggle sidebar agar tetap bisa diklik */
+        [data-testid="stHeader"] {{
+            background-color: transparent !important;
+            z-index: 100 !important;
+        }}
+
         /* Styling Sidebar */
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important;
@@ -44,7 +48,7 @@ st.markdown(f"""
             color: #262626 !important;
         }}
 
-        /* Watermark di Area Utama */
+        /* Watermark Background */
         .block-container {{
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
@@ -52,19 +56,7 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 400px;
-            padding-top: 2rem !important;
-        }}
-
-        /* Header Bar Atas */
-        .top-header {{
-            background-color: #C62828;
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
+            padding-top: 1rem !important;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -108,7 +100,7 @@ if not st.session_state.logged_in:
 
 # --- 3. SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #C62828; margin-top: -20px;'>🐔 AST SYSTEM</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #C62828;'>🐔 AST SYSTEM</h2>", unsafe_allow_html=True)
     st.write(f"Logged in as: **{st.session_state.role}**")
     st.markdown("---")
     
@@ -133,8 +125,6 @@ with st.sidebar:
 
 
 # --- 4. AREA KONTEN UTAMA ---
-
-# Top Header Bar
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
     st.markdown(f"<h2 style='color: #C62828; margin:0;'>Ayam Segar Tumpang - {selected_menu}</h2>", unsafe_allow_html=True)
@@ -143,22 +133,16 @@ with col_h2:
 
 st.markdown("<hr style='border: 1px solid #C62828; margin-top: 5px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
-# Logika Tampilan Halaman
 if selected_menu == "📊 Dashboard":
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
-
 elif selected_menu == "🧾 Nota":
     st.subheader(f"Menu Nota: {sub_menu if sub_menu else 'Bakul'}")
     st.file_uploader("Upload Rekap Transaksi (.xlsx)", type=["xlsx"])
-
 elif selected_menu == "🛍️ Penjualan":
     st.info("Halaman Penjualan Harian & Bulanan.")
-
 elif selected_menu == "📦 Stock":
     st.info("Halaman Inventori Stok Barang.")
-
 elif selected_menu == "💵 Finance":
     st.info("Halaman Pencatatan Kas & Piutang.")
-
 elif selected_menu == "⏱️ Absensi & Jadwal":
     st.subheader(f"Menu Absensi: {sub_menu if sub_menu else 'Atur Jadwal'}")
