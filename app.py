@@ -36,8 +36,8 @@ else:
 # --- CSS STYLING RESPONSIVE (DESKTOP & MOBILE) ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan elemen bawaan Streamlit Cloud (Kecuali Tombol Sidebar) */
-        [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
+        /* Sembunyikan elemen bawaan Streamlit Cloud KECUALI Header (agar tombol sidebar tetap ada) */
+        [data-testid="stToolbar"], #MainMenu {{
             display: none !important;
         }}
         div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"],
@@ -46,21 +46,16 @@ st.markdown(f"""
             display: none !important;
         }}
 
-        /* Tampilkan Tombol Toggle Sidebar (Garis Tiga / Hamburger) & Posisikan di atas Navbar */
-        [data-testid="stSidebarCollapsedControl"], button[aria-label="Expand sidebar"], button[aria-label="Collapse sidebar"] {{
-            display: flex !important;
-            position: fixed !important;
-            top: 12px !important;
-            left: 10px !important;
-            z-index: 1000000 !important;
-            color: white !important;
-            background-color: rgba(0, 0, 0, 0.2) !important;
-            border-radius: 6px !important;
+        /* Header transparan melayang di atas navbar merah */
+        header[data-testid="stHeader"] {{
+            background-color: transparent !important;
+            z-index: 999999 !important;
         }}
-        
-        [data-testid="stSidebarCollapsedControl"] svg, button[aria-label="Expand sidebar"] svg, button[aria-label="Collapse sidebar"] svg {{
-            fill: white !important;
+
+        /* Ubah warna icon tombol toggle sidebar jadi putih agar terlihat di background merah */
+        [data-testid="collapsedControl"] svg, [data-testid="stSidebarCollapsedControl"] svg, button[kind="header"] svg {{
             color: white !important;
+            fill: white !important;
         }}
 
         /* Navbar Merah Utama */
@@ -74,7 +69,8 @@ st.markdown(f"""
             z-index: 999998;
             display: flex;
             align-items: center;
-            padding: 0 20px 0 55px; /* Margin kiri disesuaikan untuk tombol sidebar */
+            /* Padding kiri dilebarkan (65px) agar logo tidak menabrak tombol toggle sidebar bawaan Streamlit */
+            padding: 0 20px 0 65px; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
@@ -138,7 +134,7 @@ st.markdown(f"""
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            z-index: 9999999 !important; /* Sidebar berada paling atas saat dibuka di HP */
+            z-index: 9999999 !important; /* Selalu di atas */
         }}
         
         [data-testid="stSidebar"] .stRadio label {{
@@ -179,7 +175,7 @@ st.markdown(f"""
         @media (max-width: 768px) {{
             .custom-navbar {{
                 height: 55px;
-                padding: 0 10px 0 45px;
+                padding: 0 10px 0 50px; /* Disesuaikan untuk HP */
             }}
             .custom-navbar img {{
                 height: 34px;
