@@ -5,11 +5,11 @@ import base64
 import json
 import os
 
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN (Wajib di awal)
 st.set_page_config(
     page_title="Sistem Manajemen Ayam Segar", 
     layout="wide", 
-    initial_sidebar_state="expanded" # Memaksa sidebar langsung terbuka saat di-load
+    initial_sidebar_state="expanded"
 )
 
 # --- FUNGSI GAMBAR ---
@@ -21,132 +21,50 @@ def get_img_as_base64(file_path):
     except Exception:
         return ""
 
-logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
-logout_base64 = get_img_as_base64("logout.png")
 
-if logout_base64:
-    wrapper_width = "42px"
-    wrapper_width_mobile = "36px"
-    bg_css = f"background-image: url('data:image/png;base64,{logout_base64}'); background-color: transparent !important;"
-    p_css = "display: none !important;"
-else:
-    wrapper_width = "auto"
-    wrapper_width_mobile = "auto"
-    bg_css = "background-color: #FFFFFF !important; padding: 0 12px !important;"
-    p_css = "color: #C62828 !important; font-weight: bold;"
-
-# --- CSS FIXING SIDEBAR & NAVBAR ---
+# --- CSS STYLING ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan Header Bawaan Streamlit & Footer */
-        header[data-testid="stHeader"] {{
-            background: transparent !important;
-            z-index: 100 !important;
-        }}
-        [data-testid="stToolbar"], #MainMenu, footer {{
+        /* Sembunyikan elemen bawaan Streamlit Cloud yang tidak perlu */
+        #MainMenu, footer, [data-testid="stToolbar"] {{
             display: none !important;
         }}
-
-        /* ========================================================== */
-        /* PERBAIKAN SIDEBAR Supaya MUNCUL & BISA DIKLIK              */
-        /* ========================================================== */
+        
+        /* Styling Sidebar */
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important;
             border-right: 3px solid #C62828 !important;
-            z-index: 999999 !important; /* Memastikan sidebar di atas segalanya */
-            top: 0px !important;
         }}
         
-        /* Tombol Buka/Tutup Sidebar Bawaan */
-        [data-testid="stSidebarCollapseButton"], 
-        [data-testid="stSidebarExpandButton"],
-        button[aria-label="Toggle sidebar"] {{
-            color: white !important;
-            z-index: 1000000 !important;
+        /* Warna Teks Radio Sidebar */
+        [data-testid="stSidebar"] .stRadio label {{
+            font-size: 16px !important;
+            font-weight: bold !important;
+            color: #262626 !important;
         }}
 
-        /* Custom Navbar Merah */
-        .custom-navbar {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background-color: #C62828;
-            z-index: 999900;
-            display: flex;
-            align-items: center;
-            padding: 0 20px 0 80px; /* Space kiri untuk icon sidebar */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }}
-        
-        .navbar-brand {{
-            display: flex;
-            align-items: center;
-        }}
-
-        .custom-navbar img {{
-            height: 40px;
-            margin-right: 12px;
-        }}
-        .custom-navbar span.brand-text {{
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-        }}
-
-        .user-status-text {{
-            position: absolute;
-            right: 80px;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-        }}
-
-        /* Position Tombol Logout */
-        div.element-container:has(#logout-target) + div.element-container {{
-            position: fixed;
-            top: 9px;
-            right: 18px;
-            z-index: 999995;
-            width: {wrapper_width};
-        }}
-        
-        div.element-container:has(#logout-target) + div.element-container button {{
-            {bg_css}
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            border: none !important;
-            border-radius: 8px !important;
-            height: 42px !important;
-            min-height: 42px !important;
-            width: 100% !important;
-            cursor: pointer;
-        }}
-        
-        div.element-container:has(#logout-target) + div.element-container button p {{
-            {p_css}
-        }}
-
-        /* Layout Konten Utama */
+        /* Watermark di Area Utama */
         .block-container {{
-            margin-top: 50px;
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
                               url("data:image/png;base64,{watermark_base64}");
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 400px;
-            padding: 2rem !important;
+            padding-top: 2rem !important;
         }}
 
-        /* Styling Navigasi Radio di Sidebar */
-        [data-testid="stSidebar"] .stRadio label {{
-            font-size: 16px !important;
-            font-weight: bold !important;
-            color: #262626 !important;
+        /* Header Bar Atas */
+        .top-header {{
+            background-color: #C62828;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -157,15 +75,17 @@ if "logged_in" not in st.session_state:
     st.session_state.role = ""
 
 def login():
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown(f"""
-            <div style='text-align: center; margin-bottom: 15px;'>
-                <img src="data:image/png;base64,{watermark_base64}" style="width: 250px;">
-            </div>
-        """, unsafe_allow_html=True)
+        if watermark_base64:
+            st.markdown(f"""
+                <div style='text-align: center; margin-bottom: 15px;'>
+                    <img src="data:image/png;base64,{watermark_base64}" style="width: 220px;">
+                </div>
+            """, unsafe_allow_html=True)
         
+        st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         
@@ -183,65 +103,62 @@ def login():
 
 if not st.session_state.logged_in:
     login()
-    st.stop() 
+    st.stop()
 
 
-# --- 3. TOPBAR NAVBAR & SIDEBAR MENU ---
+# --- 3. SIDEBAR NAVIGATION ---
+with st.sidebar:
+    st.markdown("<h2 style='color: #C62828; margin-top: -20px;'>🐔 AST SYSTEM</h2>", unsafe_allow_html=True)
+    st.write(f"Logged in as: **{st.session_state.role}**")
+    st.markdown("---")
+    
+    st.markdown("### 📌 NAVIGASI UTAMA")
+    menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
+    selected_menu = st.radio("Pilih Halaman:", menu_options)
 
-# Header Navbar
-st.markdown(f"""
-    <div class="custom-navbar">
-        <div class="navbar-brand">
-            <img src="data:image/png;base64,{watermark_base64}">
-            <span class="brand-text">Ayam Segar Tumpang</span>
-        </div>
-        <div class="user-status-text">
-            👤 {st.session_state.role}
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+    sub_menu = None
+    if selected_menu == "🧾 Nota":
+        with st.expander("📂 Sub-Menu Nota", expanded=True):
+            sub_menu = st.radio("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
 
-# Logout Target Marker
-st.markdown('<div id="logout-target"></div>', unsafe_allow_html=True)
-if st.button("Logout", key="top_logout"):
-    st.session_state.logged_in = False
-    st.session_state.role = ""
-    st.rerun()
+    elif selected_menu == "⏱️ Absensi & Jadwal":
+        with st.expander("📂 Sub-Menu Absensi", expanded=True):
+            sub_menu = st.radio("Tipe Absen:", ["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
 
-# --- MODUL NAVIGASI SIDEBAR ---
-st.sidebar.markdown("<h2 style='color: #C62828;'>📌 NAVIGASI</h2>", unsafe_allow_html=True)
-
-menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
-selected_menu = st.sidebar.radio("Pilih Menu:", menu_options)
-
-sub_menu = None
-if selected_menu == "🧾 Nota":
-    with st.sidebar.expander("📂 Sub-Menu Nota", expanded=True):
-        sub_menu = st.radio("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
-
-elif selected_menu == "⏱️ Absensi & Jadwal":
-    with st.sidebar.expander("📂 Sub-Menu Absensi", expanded=True):
-        sub_menu = st.radio("Tipe Absen:", ["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
+    st.markdown("---")
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.role = ""
+        st.rerun()
 
 
-# --- 4. HALAMAN UTAMA ---
+# --- 4. AREA KONTEN UTAMA ---
 
-st.markdown(f"""
-    <div style="margin-bottom: 20px; border-bottom: 3px solid #C62828; padding-bottom: 5px;">
-        <h1 style="margin: 0; color: #C62828; font-size: 26px; font-weight: bold;">SISTEM MANAJEMEN</h1>
-    </div>
-""", unsafe_allow_html=True)
+# Top Header Bar
+col_h1, col_h2 = st.columns([3, 1])
+with col_h1:
+    st.markdown(f"<h2 style='color: #C62828; margin:0;'>Ayam Segar Tumpang - {selected_menu}</h2>", unsafe_allow_html=True)
+with col_h2:
+    st.markdown(f"<div style='text-align: right; font-weight: bold; padding-top: 10px;'>👤 {st.session_state.role}</div>", unsafe_allow_html=True)
 
+st.markdown("<hr style='border: 1px solid #C62828; margin-top: 5px; margin-bottom: 20px;'>", unsafe_allow_html=True)
+
+# Logika Tampilan Halaman
 if selected_menu == "📊 Dashboard":
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
+
 elif selected_menu == "🧾 Nota":
-    st.subheader(f"Halaman Nota - {sub_menu if sub_menu else 'Bakul'}")
-    st.write("Silakan upload data transaksi Excel milikmu.")
+    st.subheader(f"Menu Nota: {sub_menu if sub_menu else 'Bakul'}")
+    st.file_uploader("Upload Rekap Transaksi (.xlsx)", type=["xlsx"])
+
 elif selected_menu == "🛍️ Penjualan":
     st.info("Halaman Penjualan Harian & Bulanan.")
+
 elif selected_menu == "📦 Stock":
     st.info("Halaman Inventori Stok Barang.")
+
 elif selected_menu == "💵 Finance":
     st.info("Halaman Pencatatan Kas & Piutang.")
+
 elif selected_menu == "⏱️ Absensi & Jadwal":
-    st.subheader(f"Halaman Absensi - {sub_menu if sub_menu else 'Atur Jadwal'}")
+    st.subheader(f"Menu Absensi: {sub_menu if sub_menu else 'Atur Jadwal'}")
