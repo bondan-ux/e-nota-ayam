@@ -29,7 +29,8 @@ st.markdown(f"""
         }}
         
         div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"],
-        [data-testid="manage-app-button"], iframe[title="streamlitApp"] ~ div {{
+        [data-testid="manage-app-button"], iframe[title="streamlitApp"] ~ div,
+        div[class*="manageApp"] {{
             display: none !important;
         }}
 
@@ -91,7 +92,7 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 450px;
-            padding: 2rem 3rem 6rem 3rem !important; /* Bottom padding diperbesar agar footer/total tidak kepotong */
+            padding: 2rem 3rem 8rem 3rem !important; /* Jarak bawah diperbesar agar tidak kepotong */
         }}
         
         /* Tombol Utama */
@@ -277,20 +278,22 @@ elif selected_menu == "🧾 Nota":
             df = df_raw.iloc[header_idx+1:].copy()
             df.columns = [str(c).strip().upper() for c in df_raw.iloc[header_idx].values]
             
-            # Deteksi kolom Nama dan Nomor (jika ada)
+            # Deteksi kolom Nama dan Nomor
             name_col = next((c for c in df.columns if 'NAMA' in c), df.columns[1])
             no_col = next((c for c in df.columns if c in ['NO', 'NO.', 'NOMOR']), None)
             
             df = df[df[name_col].notna()].copy()
             
-            # Buat list bakul berpenomoran
+            # Buat list bakul berpenomoran dengan pemetaan berbasis indeks baris
             bakul_options = []
             bakul_map = {}
             
-            for idx, (_, row) in enumerate(df.iterrows(), start=1):
-                nama_bakul = str(row[name_col]).strip()
+            for idx, (real_idx, row) in enumerate(df.iterrows(), start=1):
+                nama_bakul = str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
+                if not nama_bakul:
+                    continue
                 
-                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis 1,2,3...
+                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis 1, 2, 3...
                 if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
                     no_val = str(row[no_col]).strip()
                     if no_val.endswith('.0'):
@@ -299,19 +302,22 @@ elif selected_menu == "🧾 Nota":
                 else:
                     label = f"{idx}. {nama_bakul}"
                     
-                if label not in bakul_options:
-                    bakul_options.append(label)
-                    bakul_map[label] = nama_bakul
+                bakul_options.append(label)
+                # Simpan nama asli dan indeks baris asli untuk pencarian aman
+                bakul_map[label] = (nama_bakul, real_idx)
 
             selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
-            selected_bakul = bakul_map.get(selected_bakul_label, "")
+            selected_bakul_info = bakul_map.get(selected_bakul_label, None)
 
-            if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
-                st.session_state['last_bakul'] = selected_bakul
-                st.session_state['qty_box_val'] = 0.0
+            if selected_bakul_info:
+                selected_bakul, real_idx = selected_bakul_info
+                
+                if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul_label:
+                    st.session_state['last_bakul'] = selected_bakul_label
+                    st.session_state['qty_box_val'] = 0.0
 
-            if selected_bakul:
-                row_bakul = df[df[name_col] == selected_bakul].iloc[0]
+                # Ambil data baris langsung berdasarkan indeks lokasi asli (Aman dari IndexError)
+                row_bakul = df.loc[real_idx]
                 
                 def get_valid_float(col_name):
                     try:
@@ -381,7 +387,7 @@ elif selected_menu == "🧾 Nota":
                     
                     st.table(df_nota)
                     
-                    # Layout footer nota yang dinaikkan posisinya
+                    # Layout footer nota yang aman dari pemotongan
                     st.markdown("<br>", unsafe_allow_html=True)
                     col_t1, col_t2 = st.columns([1, 1])
                     with col_t1:
