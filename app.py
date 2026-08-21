@@ -89,7 +89,7 @@ st.markdown(f"""
             border-radius: 6px !important;
         }}
 
-        /* Area Kerja Utama & Jarak Bawah Tambahan */
+        /* Area Kerja Utama */
         .block-container {{
             margin-top: 50px;
             background-color: #FFFFFF;
@@ -101,17 +101,35 @@ st.markdown(f"""
             padding: 2rem 3rem 8rem 3rem !important;
         }}
         
-        /* Styling Tombol Logout di Topbar */
-        .logout-btn-container button {{
+        /* Styling Tombol Logout di Navbar Atas (Samping User) */
+        .top-user-area {{
+            position: fixed;
+            top: 16px;
+            right: 25px;
+            z-index: 9999999;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }}
+
+        .top-user-area span {{
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }}
+
+        .top-user-area button {{
             background-color: #FFFFFF !important;
             color: #C62828 !important;
             font-weight: bold !important;
             border-radius: 6px !important;
             border: none !important;
-            padding: 4px 12px !important;
+            padding: 5px 15px !important;
             font-size: 14px !important;
+            cursor: pointer;
         }}
-        .logout-btn-container button:hover {{
+
+        .top-user-area button:hover {{
             background-color: #FFCDD2 !important;
             color: #B71C1C !important;
         }}
@@ -130,7 +148,7 @@ st.markdown(f"""
         }}
 
         @media print {{
-            [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button {{
+            [data-testid="stSidebar"], .custom-navbar, .top-user-area, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button {{
                 display: none !important;
             }}
             .block-container {{
@@ -186,29 +204,23 @@ if not st.session_state.logged_in:
     login()
     st.stop() 
 
-# --- TOPBAR NAVBAR + USER INFO & LOGOUT (KOTAK 1) ---
+# --- TOPBAR NAVBAR KIRI ---
 st.markdown(f"""
     <div class="custom-navbar">
         <div class="navbar-brand">
             <img src="data:image/png;base64,{watermark_base64}">
             <span class="brand-text">Ayam Segar Tumpang</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <span style="color: white; font-weight: bold; font-size: 16px;">👤 User: {st.session_state.role}</span>
-        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Tempatkan tombol logout di pojok kanan atas lewat layout float Streamlit
-with st.container():
-    col_nav1, col_nav2 = st.columns([8.5, 1.5])
-    with col_nav2:
-        st.markdown('<div class="logout-btn-container" style="position: fixed; top: 18px; right: 20px; z-index: 9999999;">', unsafe_allow_html=True)
-        if st.button("🚪 Logout", key="top_logout"):
-            st.session_state.logged_in = False
-            st.session_state.role = ""
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+# --- TOPBAR NAVBAR KANAN (USER & TOMBOL LOGOUT SEJAJAR) ---
+st.markdown(f'<div class="top-user-area"><span>👤 User: {st.session_state.role}</span>', unsafe_allow_html=True)
+if st.button("🚪 Logout", key="top_logout"):
+    st.session_state.logged_in = False
+    st.session_state.role = ""
+    st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 2. MENU UTAMA & SIDEBAR ---
 
@@ -293,7 +305,6 @@ elif selected_menu == "🧾 Nota":
             
             df_raw = pd.read_excel(uploaded_file, sheet_name=selected_sheet, header=None)
             
-            # Cari baris header yang berisi kata NAMA
             header_idx = 0
             for idx, row in df_raw.iterrows():
                 if row.astype(str).str.upper().str.contains('NAMA').any():
@@ -303,13 +314,11 @@ elif selected_menu == "🧾 Nota":
             df = df_raw.iloc[header_idx+1:].copy()
             df.columns = [str(c).strip().upper() for c in df_raw.iloc[header_idx].values]
             
-            # Deteksi kolom Nama dan Nomor
             name_col = next((c for c in df.columns if 'NAMA' in c), df.columns[1])
             no_col = next((c for c in df.columns if c in ['NO', 'NO.', 'NOMOR']), None)
             
             df = df[df[name_col].notna()].copy()
             
-            # Buat list bakul berpenomoran dengan pemetaan berbasis indeks baris
             bakul_options = []
             bakul_map = {}
             
@@ -318,7 +327,6 @@ elif selected_menu == "🧾 Nota":
                 if not nama_bakul:
                     continue
                 
-                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis
                 if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
                     no_val = str(row[no_col]).strip()
                     if no_val.endswith('.0'):
@@ -340,7 +348,6 @@ elif selected_menu == "🧾 Nota":
                     st.session_state['last_bakul'] = selected_bakul_label
                     st.session_state['qty_box_val'] = 0.0
 
-                # Ambil data baris berdasarkan indeks lokasi asli (Aman dari IndexError)
                 row_bakul = df.loc[real_idx]
                 
                 def get_valid_float(col_name):
