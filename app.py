@@ -23,12 +23,13 @@ watermark_base64 = get_img_as_base64("ASTremove.png")
 # --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan Toolbar, MainMenu, dan Tombol "Manage App" bawaan Streamlit */
+        /* Sembunyikan Toolbar, MainMenu, dan Tombol "Manage App" bawaan Streamlit Cloud */
         [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
             display: none !important;
         }}
         
-        div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"] {{
+        div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"],
+        [data-testid="manage-app-button"], iframe[title="streamlitApp"] ~ div {{
             display: none !important;
         }}
 
@@ -90,7 +91,7 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 450px;
-            padding: 2rem 3rem 6rem 3rem !important; /* Bottom padding diperbesar biar tidak kepotong */
+            padding: 2rem 3rem 6rem 3rem !important; /* Bottom padding diperbesar agar footer/total tidak kepotong */
         }}
         
         /* Tombol Utama */
@@ -265,18 +266,46 @@ elif selected_menu == "🧾 Nota":
             selected_sheet = st.selectbox("Pilih Group / Sheet", sheets)
             
             df_raw = pd.read_excel(uploaded_file, sheet_name=selected_sheet, header=None)
+            
+            # Cari baris header yang berisi kata NAMA
             header_idx = 0
             for idx, row in df_raw.iterrows():
                 if row.astype(str).str.upper().str.contains('NAMA').any():
                     header_idx = idx
                     break
+                    
             df = df_raw.iloc[header_idx+1:].copy()
             df.columns = [str(c).strip().upper() for c in df_raw.iloc[header_idx].values]
+            
+            # Deteksi kolom Nama dan Nomor (jika ada)
             name_col = next((c for c in df.columns if 'NAMA' in c), df.columns[1])
-            df = df[df[name_col].notna()]
+            no_col = next((c for c in df.columns if c in ['NO', 'NO.', 'NOMOR']), None)
             
-            selected_bakul = st.selectbox("Pilih Nama Bakul", df[name_col].unique())
+            df = df[df[name_col].notna()].copy()
             
+            # Buat list bakul berpenomoran
+            bakul_options = []
+            bakul_map = {}
+            
+            for idx, (_, row) in enumerate(df.iterrows(), start=1):
+                nama_bakul = str(row[name_col]).strip()
+                
+                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis 1,2,3...
+                if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
+                    no_val = str(row[no_col]).strip()
+                    if no_val.endswith('.0'):
+                        no_val = no_val[:-2]
+                    label = f"{no_val}. {nama_bakul}"
+                else:
+                    label = f"{idx}. {nama_bakul}"
+                    
+                if label not in bakul_options:
+                    bakul_options.append(label)
+                    bakul_map[label] = nama_bakul
+
+            selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
+            selected_bakul = bakul_map.get(selected_bakul_label, "")
+
             if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul:
                 st.session_state['last_bakul'] = selected_bakul
                 st.session_state['qty_box_val'] = 0.0
