@@ -23,19 +23,15 @@ watermark_base64 = get_img_as_base64("ASTremove.png")
 # --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
-        /* Menghilangkan menu bawaan Streamlit di kanan atas */
-        [data-testid="stToolbar"] {{
-            display: none !important;
-        }}
-        #MainMenu {{
-            visibility: hidden;
-        }}
-        
-        /* Menghilangkan header bawaan Streamlit agar diganti custom navbar */
-        header[data-testid="stHeader"] {{
+        /* Sembunyikan Toolbar, MainMenu, dan Tombol "Manage App" bawaan Streamlit */
+        [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
             display: none !important;
         }}
         
+        div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"] {{
+            display: none !important;
+        }}
+
         /* Custom Navbar Merah di atas dengan Logo & Teks */
         .custom-navbar {{
             position: fixed;
@@ -85,7 +81,7 @@ st.markdown(f"""
             border-radius: 6px !important;
         }}
 
-        /* Area Kerja Utama */
+        /* Area Kerja Utama & Jarak Bawah Tambahan */
         .block-container {{
             margin-top: 50px;
             background-color: #FFFFFF;
@@ -94,7 +90,7 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 450px;
-            padding: 2rem 3rem;
+            padding: 2rem 3rem 6rem 3rem !important; /* Bottom padding diperbesar biar tidak kepotong */
         }}
         
         /* Tombol Utama */
@@ -116,6 +112,7 @@ st.markdown(f"""
             }}
             .block-container {{
                 margin-top: 0px !important;
+                padding-bottom: 0px !important;
             }}
         }}
     </style>
@@ -355,7 +352,9 @@ elif selected_menu == "🧾 Nota":
                     
                     st.table(df_nota)
                     
-                    col_t1, col_t2 = st.columns([2, 1])
+                    # Layout footer nota yang dinaikkan posisinya
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    col_t1, col_t2 = st.columns([1, 1])
                     with col_t1:
                         st.markdown("""
                             <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
@@ -363,7 +362,9 @@ elif selected_menu == "🧾 Nota":
                             </button>
                         """, unsafe_allow_html=True)
                     with col_t2:
-                        st.markdown(f"<h3 style='text-align: right; margin-top: 0px; color: #C62828;'>TOTAL: Rp {total_bayar:,.0f}</h3>".replace(",", "."), unsafe_allow_html=True)
+                        st.markdown(f"<h2 style='text-align: right; margin: 0px; color: #C62828; font-weight: bold;'>TOTAL: Rp {total_bayar:,.0f}</h2>".replace(",", "."), unsafe_allow_html=True)
+                    
+                    st.markdown("<br><br>", unsafe_allow_html=True)
                 else:
                     st.warning("Tidak ada item pembelian untuk bakul ini.")
 
