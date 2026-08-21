@@ -176,7 +176,7 @@ if not st.session_state.logged_in:
 
 # Header Utama di dalam Dashboard
 st.markdown(f"""
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 3px solid #C62828; padding-bottom: 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 3px solid #C62828; padding-bottom: 10px;">
         <div style="display: flex; align-items: center; gap: 15px;">
             <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">SISTEM MANAJEMEN</h1>
         </div>
@@ -186,7 +186,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# 2. NAVIGASI UTAMA DI SIDEBAR (FONT LEBIH BESAR)
+# NAVIGASI UTAMA DI SIDEBAR
 st.sidebar.markdown("<h2 style='color: #C62828; margin-bottom: 10px;'>📌 NAVIGASI UTAMA</h2>", unsafe_allow_html=True)
 
 menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
@@ -204,7 +204,7 @@ elif selected_menu == "⏱️ Absensi & Jadwal":
 
 st.sidebar.markdown("---")
 
-# 3. MASTER HARGA HANYA MUNCUL DI DALAM MENU NOTA
+# MASTER HARGA HANYA MUNCUL DI DALAM MENU NOTA
 if selected_menu == "🧾 Nota":
     FILE_HARGA = "master_harga.json"
     default_harga = {"glondong": 28500, "jeroan": 12000, "usus": 16500, "telur_a": 269000, "telur_b": 250000, "peti": 2000, "box": 28500}
@@ -241,7 +241,7 @@ if selected_menu == "🧾 Nota":
 
     st.sidebar.markdown("---")
 
-# 1. PINDAH INFORMASI USER & LOGOUT KE BAGIAN PALING BAWAH (KOTAK NOMOR 4)
+# INFORMASI USER & LOGOUT
 st.sidebar.markdown(f"**👤 User:** {st.session_state.role}")
 if st.sidebar.button("🚪 Keluar / Logout", use_container_width=True):
     st.session_state.logged_in = False
@@ -252,13 +252,10 @@ if st.sidebar.button("🚪 Keluar / Logout", use_container_width=True):
 # --- 3. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
 
 if selected_menu == "📊 Dashboard":
-    st.header("📊 Dashboard Utama")
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
     
 elif selected_menu == "🧾 Nota":
     if sub_menu == "📑 Bakul" or sub_menu is None:
-        st.header("🧾 Generator Nota - Bakul")
-        
         col_up1, col_up2 = st.columns([2, 1])
         with col_up1:
             uploaded_file = st.file_uploader("Upload File Rekap Excel (.xlsx)", type=["xlsx"])
@@ -371,28 +368,20 @@ elif selected_menu == "🧾 Nota":
                     st.warning("Tidak ada item pembelian untuk bakul ini.")
 
     elif sub_menu == "🏬 Bedak":
-        st.header("🏬 Penjualan Bedak / Lapak")
         st.info("Fitur manajemen dan cetak nota untuk bedak sedang dalam tahap pengembangan.")
     elif sub_menu == "🤝 Mitra":
-        st.header("🤝 Penjualan Mitra")
         st.info("Fitur rekapitulasi dan nota khusus untuk mitra akan dikembangkan di sini.")
 
 elif selected_menu == "🛍️ Penjualan":
-    st.header("🛍️ Rekap Penjualan")
     st.info("Modul rekap penjualan harian dan bulanan.")
 elif selected_menu == "📦 Stock":
-    st.header("📦 Manajemen Stok")
     st.info("Modul untuk memantau barang masuk dan keluar (Glondong, Telur, dll).")
 elif selected_menu == "💵 Finance":
-    st.header("💵 Keuangan & Laporan")
     st.info("Modul pencatatan arus kas (Cash Flow) dan Piutang Bakul.")
 elif selected_menu == "⏱️ Absensi & Jadwal":
     if sub_menu == "📅 Atur Jadwal" or sub_menu is None:
-        st.header("📅 Pengaturan Jadwal Kerja")
         st.info("Pengaturan Master Shift dan Jatah Libur akan dibuat di sini.")
     elif sub_menu == "📌 Plotting & Input Absen":
-        st.header("📌 Plotting & Input Absensi")
         st.info("Pencatatan jam masuk & jam keluar pegawai (Tepat Waktu/Terlambat) akan ada di sini.")
     elif sub_menu == "📊 Rekap Bulanan":
-        st.header("📊 Rekapitulasi Absensi Bulanan")
         st.info("Tabel hasil rekap absen bulanan.")
