@@ -19,15 +19,27 @@ def get_img_as_base64(file_path):
 
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
+logout_base64 = get_img_as_base64("logout.jpg")
+
+# Konfigurasi CSS berdasarkan ketersediaan gambar logout.jpg
+if logout_base64:
+    wrapper_width = "45px"
+    user_right_pos = "85px" # Jarak untuk tulisan Admin agar berada di sebelah kiri gambar
+    bg_css = f"background-image: url('data:image/jpeg;base64,{logout_base64}'); background-color: transparent !important;"
+    p_css = "display: none !important;" # Sembunyikan tulisan "Logout" jika pakai gambar
+else:
+    wrapper_width = "auto"
+    user_right_pos = "130px"
+    bg_css = "background-color: #FFFFFF !important; padding: 0 15px !important;"
+    p_css = "color: #C62828 !important; font-weight: bold;"
 
 # --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan Toolbar, MainMenu, dan Tombol "Manage App" bawaan Streamlit Cloud */
+        /* Sembunyikan elemen bawaan Streamlit Cloud */
         [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
             display: none !important;
         }}
-        
         div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"],
         [data-testid="manage-app-button"], iframe[title="streamlitApp"] ~ div,
         div[class*="manageApp"] {{
@@ -42,10 +54,9 @@ st.markdown(f"""
             width: 100%;
             height: 70px;
             background-color: #C62828;
-            z-index: 999999;
+            z-index: 999998;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             padding: 0 25px 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
@@ -65,22 +76,18 @@ st.markdown(f"""
             font-weight: bold;
         }}
 
-        /* Sidebar Styling */
+        /* Sidebar & Area Utama */
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
             margin-top: 70px;
         }}
-
-        /* Memperbesar Font Navigasi Utama */
         [data-testid="stSidebar"] .stRadio label {{
             font-size: 18px !important;
             font-weight: bold !important;
             color: #262626 !important;
             padding: 6px 0px !important;
         }}
-        
-        /* Custom Styling Expander / Sub-Menu Slide */
         [data-testid="stSidebar"] .streamlit-expanderHeader {{
             font-size: 16px !important;
             font-weight: bold !important;
@@ -88,8 +95,6 @@ st.markdown(f"""
             background-color: #FFCDD2 !important;
             border-radius: 6px !important;
         }}
-
-        /* Area Kerja Utama */
         .block-container {{
             margin-top: 50px;
             background-color: #FFFFFF;
@@ -100,41 +105,42 @@ st.markdown(f"""
             background-size: 450px;
             padding: 2rem 3rem 8rem 3rem !important;
         }}
-        
-        /* Styling Tombol Logout di Navbar Atas (Samping User) */
-        .top-user-area {{
+
+        /* --- TRIK CSS UNTUK TOMBOL LOGOUT --- */
+        /* Mengincar container tombol yang berada tepat setelah marker rahasia */
+        div.element-container:has(#logout-target) + div.element-container {{
             position: fixed;
-            top: 16px;
-            right: 25px;
-            z-index: 9999999;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            top: 12px;
+            right: 20px;
+            z-index: 999999;
+            width: {wrapper_width};
         }}
-
-        .top-user-area span {{
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-        }}
-
-        .top-user-area button {{
-            background-color: #FFFFFF !important;
-            color: #C62828 !important;
-            font-weight: bold !important;
-            border-radius: 6px !important;
+        
+        /* Merubah styling tombol menjadi gambar (jika logout.jpg ada) */
+        div.element-container:has(#logout-target) + div.element-container button {{
+            {bg_css}
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
             border: none !important;
-            padding: 5px 15px !important;
-            font-size: 14px !important;
+            border-radius: 8px !important;
+            height: 45px !important;
+            min-height: 45px !important;
+            width: 100% !important;
+            box-shadow: none !important;
             cursor: pointer;
         }}
-
-        .top-user-area button:hover {{
-            background-color: #FFCDD2 !important;
-            color: #B71C1C !important;
+        
+        div.element-container:has(#logout-target) + div.element-container button:hover {{
+            opacity: 0.8;
+            border: none !important;
+        }}
+        
+        div.element-container:has(#logout-target) + div.element-container button p {{
+            {p_css}
         }}
 
-        /* Tombol Utama Lainnya */
+        /* Tombol Utama Lainnya (Standar) */
         .stButton>button {{
             background-color: #C62828 !important;
             color: white !important;
@@ -148,7 +154,7 @@ st.markdown(f"""
         }}
 
         @media print {{
-            [data-testid="stSidebar"], .custom-navbar, .top-user-area, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button {{
+            [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button, div.element-container:has(#logout-target) + div.element-container {{
                 display: none !important;
             }}
             .block-container {{
@@ -204,25 +210,29 @@ if not st.session_state.logged_in:
     login()
     st.stop() 
 
-# --- TOPBAR NAVBAR KIRI ---
+
+# --- 2. TOPBAR NAVBAR & TOMBOL LOGOUT GAMBAR ---
 st.markdown(f"""
     <div class="custom-navbar">
         <div class="navbar-brand">
             <img src="data:image/png;base64,{watermark_base64}">
             <span class="brand-text">Ayam Segar Tumpang</span>
         </div>
+        <div style="position: absolute; right: {user_right_pos}; color: white; font-weight: bold; font-size: 16px;">
+            👤 User: {st.session_state.role}
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# --- TOPBAR NAVBAR KANAN (USER & TOMBOL LOGOUT SEJAJAR) ---
-st.markdown(f'<div class="top-user-area"><span>👤 User: {st.session_state.role}</span>', unsafe_allow_html=True)
-if st.button("🚪 Logout", key="top_logout"):
+# Marker Rahasia untuk memposisikan Tombol Streamlit Logout via CSS ke Navbar
+st.markdown('<div id="logout-target"></div>', unsafe_allow_html=True)
+if st.button("Logout", key="top_logout"):
     st.session_state.logged_in = False
     st.session_state.role = ""
     st.rerun()
-st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 2. MENU UTAMA & SIDEBAR ---
+
+# --- 3. MENU UTAMA & SIDEBAR ---
 
 # Header Utama di dalam Dashboard
 st.markdown("""
@@ -285,7 +295,7 @@ if selected_menu == "🧾 Nota":
             json.dump(current_harga, f)
 
 
-# --- 3. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
+# --- 4. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
 
 if selected_menu == "📊 Dashboard":
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
