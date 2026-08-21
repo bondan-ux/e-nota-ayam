@@ -34,7 +34,7 @@ st.markdown(f"""
             display: none !important;
         }}
 
-        /* Custom Navbar Merah di atas dengan Logo & Teks */
+        /* Custom Navbar Merah di atas */
         .custom-navbar {{
             position: fixed;
             top: 0;
@@ -45,15 +45,21 @@ st.markdown(f"""
             z-index: 999999;
             display: flex;
             align-items: center;
-            padding-left: 20px;
+            justify-content: space-between;
+            padding: 0 25px 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
+        .navbar-brand {{
+            display: flex;
+            align-items: center;
+        }}
+
         .custom-navbar img {{
             height: 55px;
             margin-right: 15px;
         }}
-        .custom-navbar span {{
+        .custom-navbar span.brand-text {{
             color: white;
             font-size: 24px;
             font-weight: bold;
@@ -92,10 +98,25 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 450px;
-            padding: 2rem 3rem 8rem 3rem !important; /* Jarak bawah diperbesar agar tidak kepotong */
+            padding: 2rem 3rem 8rem 3rem !important;
         }}
         
-        /* Tombol Utama */
+        /* Styling Tombol Logout di Topbar */
+        .logout-btn-container button {{
+            background-color: #FFFFFF !important;
+            color: #C62828 !important;
+            font-weight: bold !important;
+            border-radius: 6px !important;
+            border: none !important;
+            padding: 4px 12px !important;
+            font-size: 14px !important;
+        }}
+        .logout-btn-container button:hover {{
+            background-color: #FFCDD2 !important;
+            color: #B71C1C !important;
+        }}
+
+        /* Tombol Utama Lainnya */
         .stButton>button {{
             background-color: #C62828 !important;
             color: white !important;
@@ -118,12 +139,6 @@ st.markdown(f"""
             }}
         }}
     </style>
-    
-    <!-- Elemen HTML Custom Navbar -->
-    <div class="custom-navbar">
-        <img src="data:image/png;base64,{watermark_base64}">
-        <span>Ayam Segar Tumpang</span>
-    </div>
 """, unsafe_allow_html=True)
 
 # --- 1. SISTEM LOGIN (SESSION STATE) ---
@@ -171,17 +186,36 @@ if not st.session_state.logged_in:
     login()
     st.stop() 
 
+# --- TOPBAR NAVBAR + USER INFO & LOGOUT (KOTAK 1) ---
+st.markdown(f"""
+    <div class="custom-navbar">
+        <div class="navbar-brand">
+            <img src="data:image/png;base64,{watermark_base64}">
+            <span class="brand-text">Ayam Segar Tumpang</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="color: white; font-weight: bold; font-size: 16px;">👤 User: {st.session_state.role}</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Tempatkan tombol logout di pojok kanan atas lewat layout float Streamlit
+with st.container():
+    col_nav1, col_nav2 = st.columns([8.5, 1.5])
+    with col_nav2:
+        st.markdown('<div class="logout-btn-container" style="position: fixed; top: 18px; right: 20px; z-index: 9999999;">', unsafe_allow_html=True)
+        if st.button("🚪 Logout", key="top_logout"):
+            st.session_state.logged_in = False
+            st.session_state.role = ""
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
 # --- 2. MENU UTAMA & SIDEBAR ---
 
 # Header Utama di dalam Dashboard
-st.markdown(f"""
+st.markdown("""
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 3px solid #C62828; padding-bottom: 10px;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">SISTEM MANAJEMEN</h1>
-        </div>
-        <div style="text-align: right;">
-            <span style="font-size: 16px; font-weight: bold;">👤 {st.session_state.role}</span>
-        </div>
+        <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">SISTEM MANAJEMEN</h1>
     </div>
 """, unsafe_allow_html=True)
 
@@ -238,15 +272,6 @@ if selected_menu == "🧾 Nota":
         with open(FILE_HARGA, "w") as f:
             json.dump(current_harga, f)
 
-    st.sidebar.markdown("---")
-
-# INFORMASI USER & LOGOUT
-st.sidebar.markdown(f"**👤 User:** {st.session_state.role}")
-if st.sidebar.button("🚪 Keluar / Logout", use_container_width=True):
-    st.session_state.logged_in = False
-    st.session_state.role = ""
-    st.rerun()
-
 
 # --- 3. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
 
@@ -293,7 +318,7 @@ elif selected_menu == "🧾 Nota":
                 if not nama_bakul:
                     continue
                 
-                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis 1, 2, 3...
+                # Menggunakan nomor dari kolom NO Excel jika ada, jika tidak pakai penomoran otomatis
                 if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
                     no_val = str(row[no_col]).strip()
                     if no_val.endswith('.0'):
@@ -303,7 +328,6 @@ elif selected_menu == "🧾 Nota":
                     label = f"{idx}. {nama_bakul}"
                     
                 bakul_options.append(label)
-                # Simpan nama asli dan indeks baris asli untuk pencarian aman
                 bakul_map[label] = (nama_bakul, real_idx)
 
             selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
@@ -316,7 +340,7 @@ elif selected_menu == "🧾 Nota":
                     st.session_state['last_bakul'] = selected_bakul_label
                     st.session_state['qty_box_val'] = 0.0
 
-                # Ambil data baris langsung berdasarkan indeks lokasi asli (Aman dari IndexError)
+                # Ambil data baris berdasarkan indeks lokasi asli (Aman dari IndexError)
                 row_bakul = df.loc[real_idx]
                 
                 def get_valid_float(col_name):
@@ -387,7 +411,6 @@ elif selected_menu == "🧾 Nota":
                     
                     st.table(df_nota)
                     
-                    # Layout footer nota yang aman dari pemotongan
                     st.markdown("<br>", unsafe_allow_html=True)
                     col_t1, col_t2 = st.columns([1, 1])
                     with col_t1:
