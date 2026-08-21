@@ -23,21 +23,21 @@ logout_base64 = get_img_as_base64("logout.png")
 
 # Konfigurasi CSS berdasarkan ketersediaan gambar logout.png
 if logout_base64:
-    wrapper_width = "42px"
-    wrapper_width_mobile = "36px"
-    bg_css = f"background-image: url('data:image/png;base64,{logout_base64}'); background-color: transparent !important;"
-    p_css = "display: none !important;"
+    wrapper_width = "45px"
+    user_right_pos = "85px" # Jarak untuk tulisan Admin agar berada di sebelah kiri gambar
+    bg_css = f"background-image: url('data:image/jpeg;base64,{logout_base64}'); background-color: transparent !important;"
+    p_css = "display: none !important;" # Sembunyikan tulisan "Logout" jika pakai gambar
 else:
     wrapper_width = "auto"
-    wrapper_width_mobile = "auto"
-    bg_css = "background-color: #FFFFFF !important; padding: 0 12px !important;"
+    user_right_pos = "130px"
+    bg_css = "background-color: #FFFFFF !important; padding: 0 15px !important;"
     p_css = "color: #C62828 !important; font-weight: bold;"
 
-# --- CSS STYLING RESPONSIVE (DESKTOP & MOBILE) ---
+# --- CSS STYLING & CUSTOM NAVBAR ---
 st.markdown(f"""
     <style>
         /* Sembunyikan elemen bawaan Streamlit Cloud */
-        [data-testid="stToolbar"], #MainMenu {{
+        [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
             display: none !important;
         }}
         div[class*="viewerBadge"], .stAppViewerFooter, [data-testid="stStatusWidget"],
@@ -46,44 +46,7 @@ st.markdown(f"""
             display: none !important;
         }}
 
-        /* Header bawaan Streamlit dibuat transparan tapi tetap ada agar render tombol */
-        header[data-testid="stHeader"] {{
-            background-color: transparent !important;
-            z-index: 999999 !important;
-            display: block !important;
-            height: 0px !important;
-        }}
-
-        /* ========================================================== */
-        /* PAKSA TOMBOL SIDEBAR MUNCUL (BRUTE FORCE CSS)              */
-        /* ========================================================== */
-        [data-testid="collapsedControl"], 
-        [data-testid="stSidebarCollapsedControl"],
-        div[data-testid="stHeader"] button {{
-            display: flex !important;
-            visibility: visible !important;
-            position: fixed !important;
-            top: 14px !important;
-            left: 15px !important;
-            z-index: 9999999 !important; /* Berada di atas segala elemen */
-            background-color: rgba(255, 255, 255, 0.2) !important; /* Kotak transparan */
-            border: 1px solid rgba(255, 255, 255, 0.5) !important;
-            border-radius: 6px !important;
-            padding: 4px !important;
-            cursor: pointer !important;
-        }}
-
-        [data-testid="collapsedControl"] svg, 
-        [data-testid="stSidebarCollapsedControl"] svg, 
-        div[data-testid="stHeader"] button svg {{
-            color: #FFFFFF !important;
-            fill: #FFFFFF !important;
-            width: 24px !important;
-            height: 24px !important;
-        }}
-        /* ========================================================== */
-
-        /* Navbar Merah Utama */
+        /* Custom Navbar Merah di atas */
         .custom-navbar {{
             position: fixed;
             top: 0;
@@ -94,7 +57,7 @@ st.markdown(f"""
             z-index: 999998;
             display: flex;
             align-items: center;
-            padding: 0 20px 0 70px; /* Jarak kiri agar teks tidak nabrak tombol sidebar */
+            padding: 0 25px 0 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
@@ -104,70 +67,29 @@ st.markdown(f"""
         }}
 
         .custom-navbar img {{
-            height: 50px;
-            margin-right: 12px;
+            height: 55px;
+            margin-right: 15px;
         }}
         .custom-navbar span.brand-text {{
             color: white;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
-            white-space: nowrap;
         }}
 
-        .user-status-text {{
-            position: absolute;
-            right: 80px;
-            color: white;
-            font-weight: bold;
-            font-size: 15px;
-            white-space: nowrap;
-        }}
-
-        /* Target Tombol Logout (Desktop) */
-        div.element-container:has(#logout-target) + div.element-container {{
-            position: fixed;
-            top: 14px;
-            right: 18px;
-            z-index: 999999;
-            width: {wrapper_width};
-        }}
-        
-        div.element-container:has(#logout-target) + div.element-container button {{
-            {bg_css}
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            border: none !important;
-            border-radius: 8px !important;
-            height: 42px !important;
-            min-height: 42px !important;
-            width: 100% !important;
-            box-shadow: none !important;
-            cursor: pointer;
-        }}
-        
-        div.element-container:has(#logout-target) + div.element-container button:hover {{
-            opacity: 0.85;
-        }}
-        
-        div.element-container:has(#logout-target) + div.element-container button p {{
-            {p_css}
-        }}
-
-        /* Sidebar & Layout Utama */
+        /* Sidebar & Area Utama */
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            z-index: 9999999 !important; /* Sidebar selalu on top */
+            margin-top: 70px;
         }}
-        
         [data-testid="stSidebar"] .stRadio label {{
-            font-size: 17px !important;
+            font-size: 18px !important;
             font-weight: bold !important;
             color: #262626 !important;
+            padding: 6px 0px !important;
         }}
         [data-testid="stSidebar"] .streamlit-expanderHeader {{
-            font-size: 15px !important;
+            font-size: 16px !important;
             font-weight: bold !important;
             color: #C62828 !important;
             background-color: #FFCDD2 !important;
@@ -181,10 +103,44 @@ st.markdown(f"""
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 450px;
-            padding: 2rem 2rem 6rem 2rem !important;
+            padding: 2rem 3rem 8rem 3rem !important;
         }}
 
-        /* Custom Button General */
+        /* --- TRIK CSS UNTUK TOMBOL LOGOUT --- */
+        /* Mengincar container tombol yang berada tepat setelah marker rahasia */
+        div.element-container:has(#logout-target) + div.element-container {{
+            position: fixed;
+            top: 12px;
+            right: 20px;
+            z-index: 999999;
+            width: {wrapper_width};
+        }}
+        
+        /* Merubah styling tombol menjadi gambar (jika logout.jpg ada) */
+        div.element-container:has(#logout-target) + div.element-container button {{
+            {bg_css}
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: none !important;
+            border-radius: 8px !important;
+            height: 45px !important;
+            min-height: 45px !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            cursor: pointer;
+        }}
+        
+        div.element-container:has(#logout-target) + div.element-container button:hover {{
+            opacity: 0.8;
+            border: none !important;
+        }}
+        
+        div.element-container:has(#logout-target) + div.element-container button p {{
+            {p_css}
+        }}
+
+        /* Tombol Utama Lainnya (Standar) */
         .stButton>button {{
             background-color: #C62828 !important;
             color: white !important;
@@ -192,66 +148,24 @@ st.markdown(f"""
             border-radius: 8px !important;
             border: none !important;
         }}
+        .stButton>button:hover {{
+            background-color: #B71C1C !important;
+            border: none !important;
+        }}
 
-        /* ========================================================= */
-        /* MEDIA QUERIES (RESPONSIVE KHUSUS LAYAR HP / MOBILE <= 768px) */
-        /* ========================================================= */
-        @media (max-width: 768px) {{
-            .custom-navbar {{
-                height: 55px;
-                padding: 0 10px 0 60px; /* Space untuk tombol sidebar di HP */
+        @media print {{
+            [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button, div.element-container:has(#logout-target) + div.element-container {{
+                display: none !important;
             }}
-            .custom-navbar img {{
-                height: 34px;
-                margin-right: 6px;
-            }}
-            .custom-navbar span.brand-text {{
-                font-size: 14px;
-            }}
-            .user-status-text {{
-                right: 50px;
-                font-size: 11px;
-            }}
-            
-            /* Penyesuaian Tombol Sidebar di Layar HP */
-            [data-testid="collapsedControl"], 
-            [data-testid="stSidebarCollapsedControl"],
-            div[data-testid="stHeader"] button {{
-                top: 10px !important;
-                left: 10px !important;
-            }}
-
-            /* Penyesuaian Tombol Logout di Layar HP */
-            div.element-container:has(#logout-target) + div.element-container {{
-                top: 10px;
-                right: 8px;
-                width: {wrapper_width_mobile};
-            }}
-            div.element-container:has(#logout-target) + div.element-container button {{
-                height: 35px !important;
-                min-height: 35px !important;
-            }}
-
             .block-container {{
-                margin-top: 35px;
-                padding: 1rem 1rem 4rem 1rem !important;
-                background-size: 260px;
-            }}
-            
-            @media print {{
-                [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button, div.element-container:has(#logout-target) + div.element-container {{
-                    display: none !important;
-                }}
-                .block-container {{
-                    margin-top: 0px !important;
-                    padding-bottom: 0px !important;
-                }}
+                margin-top: 0px !important;
+                padding-bottom: 0px !important;
             }}
         }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 1. SISTEM LOGIN ---
+# --- 1. SISTEM LOGIN (SESSION STATE) ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.role = ""
@@ -259,18 +173,18 @@ if "logged_in" not in st.session_state:
 def login():
     st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         st.markdown(f"""
-            <div style='text-align: center; margin-bottom: 15px;'>
-                <img src="data:image/png;base64,{watermark_base64}" style="max-width: 100%; height: auto; width: 320px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
+            <div style='text-align: center; margin-bottom: 20px;'>
+                <img src="data:image/png;base64,{watermark_base64}" style="width: 440px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1));">
             </div>
         """, unsafe_allow_html=True)
         
         st.markdown("""
             <div style='text-align: center; margin-bottom: 20px;'>
                 <h3 style='color: #C62828; margin: 0; font-weight: bold;'>👋 Halo!</h3>
-                <p style='color: #555; font-size: 14px; margin-top: 5px;'>Silakan login untuk memulai aktivitas hari ini</p>
+                <p style='color: #555; font-size: 15px; margin-top: 5px;'>Silakan login untuk memulai aktivitas hari ini</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -291,26 +205,26 @@ def login():
             else:
                 st.error("Username atau Password salah!")
 
-# Tampilkan form login jika belum masuk
+# Tampilkan Login jika belum masuk
 if not st.session_state.logged_in:
     login()
     st.stop() 
 
 
-# --- 2. TOPBAR NAVBAR & TOMBOL LOGOUT ---
+# --- 2. TOPBAR NAVBAR & TOMBOL LOGOUT GAMBAR ---
 st.markdown(f"""
     <div class="custom-navbar">
         <div class="navbar-brand">
             <img src="data:image/png;base64,{watermark_base64}">
             <span class="brand-text">Ayam Segar Tumpang</span>
         </div>
-        <div class="user-status-text">
-            👤 {st.session_state.role}
+        <div style="position: absolute; right: {user_right_pos}; color: white; font-weight: bold; font-size: 16px;">
+            👤 User: {st.session_state.role}
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Marker Rahasia untuk memposisikan Tombol Streamlit Logout ke Navbar via CSS
+# Marker Rahasia untuk memposisikan Tombol Streamlit Logout via CSS ke Navbar
 st.markdown('<div id="logout-target"></div>', unsafe_allow_html=True)
 if st.button("Logout", key="top_logout"):
     st.session_state.logged_in = False
@@ -320,19 +234,20 @@ if st.button("Logout", key="top_logout"):
 
 # --- 3. MENU UTAMA & SIDEBAR ---
 
+# Header Utama di dalam Dashboard
 st.markdown("""
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 3px solid #C62828; padding-bottom: 10px;">
-        <h1 style="margin: 0; color: #C62828; font-size: 28px; font-weight: bold;">SISTEM MANAJEMEN</h1>
+        <h1 style="margin: 0; color: #C62828; font-size: 32px; font-weight: bold;">SISTEM MANAJEMEN</h1>
     </div>
 """, unsafe_allow_html=True)
 
-# NAVIGASI UTAMA SIDEBAR
+# NAVIGASI UTAMA DI SIDEBAR
 st.sidebar.markdown("<h2 style='color: #C62828; margin-bottom: 10px;'>📌 NAVIGASI UTAMA</h2>", unsafe_allow_html=True)
 
 menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
 selected_menu = st.sidebar.radio("", menu_options)
 
-# SUB-MENU SLIDE DOWN
+# SUB-MENU SLIDE DOWN BERDASARKAN MENU YANG DIPILIH
 sub_menu = None
 if selected_menu == "🧾 Nota":
     with st.sidebar.expander("📂 Sub-Menu Nota", expanded=True):
@@ -344,7 +259,7 @@ elif selected_menu == "⏱️ Absensi & Jadwal":
 
 st.sidebar.markdown("---")
 
-# MASTER HARGA (HANYA DI MENU NOTA)
+# MASTER HARGA HANYA MUNCUL DI DALAM MENU NOTA
 if selected_menu == "🧾 Nota":
     FILE_HARGA = "master_harga.json"
     default_harga = {"glondong": 28500, "jeroan": 12000, "usus": 16500, "telur_a": 269000, "telur_b": 250000, "peti": 2000, "box": 28500}
@@ -380,7 +295,7 @@ if selected_menu == "🧾 Nota":
             json.dump(current_harga, f)
 
 
-# --- 4. LOGIKA HALAMAN UTAMA ---
+# --- 4. LOGIKA HALAMAN BERDASARKAN MENU & SUB-MENU ---
 
 if selected_menu == "📊 Dashboard":
     st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
