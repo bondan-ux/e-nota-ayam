@@ -19,9 +19,9 @@ def get_img_as_base64(file_path):
 
 logo_base64 = get_img_as_base64("AST.jpeg")
 watermark_base64 = get_img_as_base64("ASTremove.png")
-logout_base64 = get_img_as_base64("logout.jpg")
+logout_base64 = get_img_as_base64("logout.png")
 
-# Konfigurasi CSS berdasarkan ketersediaan gambar logout.jpg
+# Konfigurasi CSS berdasarkan ketersediaan gambar logout.png
 if logout_base64:
     wrapper_width = "45px"
     user_right_pos = "85px" # Jarak untuk tulisan Admin agar berada di sebelah kiri gambar
