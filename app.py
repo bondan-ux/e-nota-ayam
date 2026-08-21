@@ -25,7 +25,7 @@ logout_base64 = get_img_as_base64("logout.png")
 if logout_base64:
     wrapper_width = "42px"
     wrapper_width_mobile = "36px"
-    bg_css = f"background-image: url('data:image/jpeg;base64,{logout_base64}'); background-color: transparent !important;"
+    bg_css = f"background-image: url('data:image/png;base64,{logout_base64}'); background-color: transparent !important;"
     p_css = "display: none !important;"
 else:
     wrapper_width = "auto"
@@ -36,7 +36,7 @@ else:
 # --- CSS STYLING RESPONSIVE (DESKTOP & MOBILE) ---
 st.markdown(f"""
     <style>
-        /* Sembunyikan header bawaan Streamlit Cloud */
+        /* Sembunyikan elemen bawaan Streamlit Cloud (Kecuali Tombol Sidebar) */
         [data-testid="stToolbar"], #MainMenu, header[data-testid="stHeader"] {{
             display: none !important;
         }}
@@ -44,6 +44,23 @@ st.markdown(f"""
         [data-testid="manage-app-button"], iframe[title="streamlitApp"] ~ div,
         div[class*="manageApp"] {{
             display: none !important;
+        }}
+
+        /* Tampilkan Tombol Toggle Sidebar (Garis Tiga / Hamburger) & Posisikan di atas Navbar */
+        [data-testid="stSidebarCollapsedControl"], button[aria-label="Expand sidebar"], button[aria-label="Collapse sidebar"] {{
+            display: flex !important;
+            position: fixed !important;
+            top: 12px !important;
+            left: 10px !important;
+            z-index: 1000000 !important;
+            color: white !important;
+            background-color: rgba(0, 0, 0, 0.2) !important;
+            border-radius: 6px !important;
+        }}
+        
+        [data-testid="stSidebarCollapsedControl"] svg, button[aria-label="Expand sidebar"] svg, button[aria-label="Collapse sidebar"] svg {{
+            fill: white !important;
+            color: white !important;
         }}
 
         /* Navbar Merah Utama */
@@ -57,7 +74,7 @@ st.markdown(f"""
             z-index: 999998;
             display: flex;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 20px 0 55px; /* Margin kiri disesuaikan untuk tombol sidebar */
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }}
         
@@ -121,8 +138,9 @@ st.markdown(f"""
         [data-testid="stSidebar"] {{
             background-color: #FFEBEE !important; 
             border-right: 4px solid #C62828 !important;
-            margin-top: 70px;
+            z-index: 9999999 !important; /* Sidebar berada paling atas saat dibuka di HP */
         }}
+        
         [data-testid="stSidebar"] .stRadio label {{
             font-size: 17px !important;
             font-weight: bold !important;
@@ -161,24 +179,24 @@ st.markdown(f"""
         @media (max-width: 768px) {{
             .custom-navbar {{
                 height: 55px;
-                padding: 0 10px;
+                padding: 0 10px 0 45px;
             }}
             .custom-navbar img {{
-                height: 36px;
-                margin-right: 8px;
+                height: 34px;
+                margin-right: 6px;
             }}
             .custom-navbar span.brand-text {{
-                font-size: 15px; /* Judul mengecil agar muat di HP */
+                font-size: 14px;
             }}
             .user-status-text {{
-                right: 55px;
-                font-size: 12px; /* Teks User: Admin mengecil */
+                right: 50px;
+                font-size: 11px;
             }}
             
             /* Penyesuaian Tombol Logout di Layar HP */
             div.element-container:has(#logout-target) + div.element-container {{
                 top: 10px;
-                right: 10px;
+                right: 8px;
                 width: {wrapper_width_mobile};
             }}
             div.element-container:has(#logout-target) + div.element-container button {{
@@ -186,16 +204,12 @@ st.markdown(f"""
                 min-height: 35px !important;
             }}
 
-            [data-testid="stSidebar"] {{
-                margin-top: 55px;
-            }}
             .block-container {{
-                margin-top: 40px;
+                margin-top: 35px;
                 padding: 1rem 1rem 4rem 1rem !important;
-                background-size: 280px; /* Watermark mengecil di HP */
+                background-size: 260px;
             }}
             
-            /* Sembunyikan elemen bawaan Streamlit saat cetak */
             @media print {{
                 [data-testid="stSidebar"], .custom-navbar, .stTabs, .stFileUploader, div[data-baseweb="select"], .stDateInput, hr, button, div.element-container:has(#logout-target) + div.element-container {{
                     display: none !important;
