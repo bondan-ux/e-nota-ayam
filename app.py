@@ -137,15 +137,34 @@ with st.sidebar:
     if selected_menu == "🧾 Nota":
         st.markdown("---")
         st.markdown("<h3 style='color: #C62828;'>⚙️ Master Harga</h3>", unsafe_allow_html=True)
-        h_glondong = st.number_input("Harga Glondong", value=int(saved_harga.get("glondong", 28500)), step=500, format="%d")
-        h_jeroan = st.number_input("Harga Jeroan", value=int(saved_harga.get("jeroan", 12000)), step=500, format="%d")
-        h_usus = st.number_input("Harga Usus", value=int(saved_harga.get("usus", 16500)), step=500, format="%d")
-        h_telur_a = st.number_input("Harga Telur A", value=int(saved_harga.get("telur_a", 269000)), step=1000, format="%d")
-        h_telur_b = st.number_input("Harga Telur B", value=int(saved_harga.get("telur_b", 250000)), step=1000, format="%d")
-        h_peti = st.number_input("Harga Peti", value=int(saved_harga.get("peti", 2000)), step=100, format="%d")
-        h_box = st.number_input("Harga Box", value=int(saved_harga.get("box", 28500)), step=500, format="%d")
+        
+        def input_harga(label, key_name, default_val, step_val):
+            val = st.number_input(
+                f"{label}", 
+                value=int(saved_harga.get(key_name, default_val)), 
+                step=step_val, 
+                format="%d"
+            )
+            st.caption(f"➔ **Rp {val:,.0f}**".replace(",", "."))
+            return val
 
-        current_harga = {"glondong": h_glondong, "jeroan": h_jeroan, "usus": h_usus, "telur_a": h_telur_a, "telur_b": h_telur_b, "peti": h_peti, "box": h_box}
+        h_glondong = input_harga("Harga Glondong", "glondong", 28500, 500)
+        h_jeroan = input_harga("Harga Jeroan", "jeroan", 12000, 500)
+        h_usus = input_harga("Harga Usus", "usus", 16500, 500)
+        h_telur_a = input_harga("Harga Telur A", "telur_a", 269000, 1000)
+        h_telur_b = input_harga("Harga Telur B", "telur_b", 250000, 1000)
+        h_peti = input_harga("Harga Peti", "peti", 2000, 100)
+        h_box = input_harga("Harga Box", "box", 28500, 500)
+
+        current_harga = {
+            "glondong": h_glondong, 
+            "jeroan": h_jeroan, 
+            "usus": h_usus, 
+            "telur_a": h_telur_a, 
+            "telur_b": h_telur_b, 
+            "peti": h_peti, 
+            "box": h_box
+        }
         if current_harga != saved_harga:
             with open(FILE_HARGA, "w") as f:
                 json.dump(current_harga, f)
