@@ -23,7 +23,7 @@ def get_img_as_base64(file_path):
 
 watermark_base64 = get_img_as_base64("ASTremove.PNG")
 
-# --- CSS STYLING ---
+# --- CSS STYLING UTAMA (HANYA UNTUK TAMPILAN WEB STREAMLIT) ---
 st.markdown(f"""
     <style>
         footer, #MainMenu {{
@@ -50,60 +50,6 @@ st.markdown(f"""
             background-position: center 60%;
             background-size: 400px;
             padding-top: 1rem !important;
-        }}
-
-        /* --- STYLES KHUSUS PRINT (SOLUSI WADAH HANYA PRINT) --- */
-        @media screen {{
-            #print-area {{
-                display: none !important; /* Sembunyikan container cetak di layar biasa */
-            }}
-        }}
-
-        @media print {{
-            @page {{
-                size: A5 landscape;
-                margin: 0mm !important;
-            }}
-            /* Sembunyikan SEMUA elemen bawaan Streamlit saat cetak */
-            body * {{
-                visibility: hidden !important;
-            }}
-            /* Tampilkan HANYA kontainer nota kita */
-            #print-area, #print-area * {{
-                visibility: visible !important;
-            }}
-            #print-area {{
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                padding: 10mm !important;
-                box-sizing: border-box !important;
-                display: block !important;
-            }}
-        }}
-
-        /* Style Tabel Nota Layar Utama */
-        .printable-nota {{
-            border: 1px solid #000;
-            padding: 15px;
-            border-radius: 6px;
-            background-color: #fff;
-        }}
-        .nota-table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }}
-        .nota-table th, .nota-table td {{
-            border: 1px solid #000;
-            padding: 6px 8px;
-            font-size: 14px;
-        }}
-        .nota-table th {{
-            background-color: #f2f2f2;
-            text-align: center;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -346,8 +292,6 @@ elif selected_menu == "🧾 Nota":
                 
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
-                st.markdown("<br>", unsafe_allow_html=True)
-                
                 if filtered_items:
                     rows_html = ""
                     for item in filtered_items:
@@ -360,48 +304,121 @@ elif selected_menu == "🧾 Nota":
                     total_bayar_str = f"{total_bayar:,.0f}".replace(",", ".")
                     img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
 
-                    # STRUKTUR HTML NOTA DASAR
-                    nota_content = (
-                        f'<div class="printable-nota">'
-                        f'<table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">'
-                        f'<tr>'
-                        f'<td style="width: 55%; vertical-align: top; border: none; padding: 0;">'
-                        f'<div style="display: flex; align-items: center; gap: 10px;">'
-                        f'{img_tag}'
-                        f'<div>'
-                        f'<h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>'
-                        f'<p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>'
-                        f'</div></div></td>'
-                        f'<td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">'
-                        f'<div><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}</div>'
-                        f'<div><b>Pembeli / Bakul:</b> {selected_bakul}</div>'
-                        f'<div><b>Group:</b> {selected_sheet}</div>'
-                        f'</td></tr></table>'
-                        f'<table class="nota-table">'
-                        f'<thead><tr><th style="width: 15%;">QTY / KG</th><th style="width: 45%;">BARANG</th><th style="width: 20%;">HARGA</th><th style="width: 20%;">JUMLAH</th></tr></thead>'
-                        f'<tbody>{rows_html}</tbody>'
-                        f'</table>'
-                        f'<table style="width: 100%; border-collapse: collapse; margin-top: 15px;">'
-                        f'<tr>'
-                        f'<td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">Penerima,<br><br><br>( ............................ )</td>'
-                        f'<td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">Hormat Kami,<br><br><br>( ............................ )</td>'
-                        f'<td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">'
-                        f'<div style="font-size: 14px; font-weight: bold; color: #000;">TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar_str}</span></div>'
-                        f'</td></tr></table></div>'
-                    )
+                    # DOKUMEN HTML MANDIRI KHUSUS PRINT & DISPLAY IFRAME
+                    full_html_nota = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <style>
+                            @page {{
+                                size: A5 landscape;
+                                margin: 5mm;
+                            }}
+                            body {{
+                                font-family: Arial, sans-serif;
+                                margin: 0;
+                                padding: 10px;
+                                background-color: #fff;
+                            }}
+                            .printable-nota {{
+                                border: 1px solid #000;
+                                padding: 12px;
+                                border-radius: 4px;
+                            }}
+                            .nota-table {{
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-top: 8px;
+                                margin-bottom: 8px;
+                            }}
+                            .nota-table th, .nota-table td {{
+                                border: 1px solid #000;
+                                padding: 5px 7px;
+                                font-size: 13px;
+                            }}
+                            .nota-table th {{
+                                background-color: #f2f2f2;
+                                text-align: center;
+                            }}
+                            .btn-print {{
+                                background-color: #C62828;
+                                color: white;
+                                padding: 10px 20px;
+                                border: none;
+                                border-radius: 6px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                font-size: 14px;
+                                margin-top: 15px;
+                            }}
+                            @media print {{
+                                .btn-print {{
+                                    display: none !important;
+                                }}
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="printable-nota">
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+                                <tr>
+                                    <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            {img_tag}
+                                            <div>
+                                                <h3 style="margin: 0; color: #C62828; font-size: 18px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
+                                                <p style="margin: 0; font-size: 11px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 12px;">
+                                        <div><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}</div>
+                                        <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
+                                        <div><b>Group:</b> {selected_sheet}</div>
+                                    </td>
+                                </tr>
+                            </table>
 
-                    # DUA KALI RENDER: TAMPILAN MONITOR & CONTAINER RAHAISA KHUSUS PRINT
-                    st.markdown(nota_content, unsafe_allow_html=True)
-                    st.markdown(f'<div id="print-area">{nota_content}</div>', unsafe_allow_html=True)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    col_t1, col_t2 = st.columns([1, 1])
-                    with col_t1:
-                        st.markdown("""
-                            <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
-                                🖨️ Cetak / Print Nota (Landscape 3-Ply)
-                            </button>
-                        """, unsafe_allow_html=True)
+                            <table class="nota-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">QTY / KG</th>
+                                        <th style="width: 45%;">BARANG</th>
+                                        <th style="width: 20%;">HARGA</th>
+                                        <th style="width: 20%;">JUMLAH</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rows_html}
+                                </tbody>
+                            </table>
+
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                <tr>
+                                    <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 12px;">
+                                        Penerima,<br><br><br>( ............................ )
+                                    </td>
+                                    <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 12px;">
+                                        Hormat Kami,<br><br><br>( ............................ )
+                                    </td>
+                                    <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
+                                        <div style="font-size: 13px; font-weight: bold; color: #000;">
+                                            TOTAL: <span style="font-size: 20px; color: #C62828;">Rp {total_bayar_str}</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <button class="btn-print" onclick="window.print()">🖨️ Cetak / Print Nota</button>
+                    </body>
+                    </html>
+                    """
+
+                    # RENDER VIA IFRAME
+                    st.components.v1.html(full_html_nota, height=430, scrolling=True)
+
                 else:
                     st.warning("Tidak ada item transaksi untuk bakul ini.")
 
