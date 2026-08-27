@@ -52,57 +52,43 @@ st.markdown(f"""
             padding-top: 1rem !important;
         }}
 
-        /* --- STYLES KHUSUS PRINT LANDSCAPE 1 HALAMAN TANPA HEADER/FOOTER BROWSER --- */
+        /* --- STYLES KHUSUS PRINT (SOLUSI WADAH HANYA PRINT) --- */
+        @media screen {{
+            #print-area {{
+                display: none !important; /* Sembunyikan container cetak di layar biasa */
+            }}
+        }}
+
         @media print {{
             @page {{
                 size: A5 landscape;
-                margin: 0mm !important; /* MENGHILANGKAN HEADER & FOOTER BROWSER (URL, TANGGAL, DLL) */
+                margin: 0mm !important;
             }}
-            html, body {{
+            /* Sembunyikan SEMUA elemen bawaan Streamlit saat cetak */
+            body * {{
+                visibility: hidden !important;
+            }}
+            /* Tampilkan HANYA kontainer nota kita */
+            #print-area, #print-area * {{
+                visibility: visible !important;
+            }}
+            #print-area {{
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
                 width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                font-family: Arial, sans-serif !important;
-                color: #000 !important;
-                background: #fff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }}
-            [data-testid="stSidebar"], 
-            [data-testid="stHeader"], 
-            .stFileUploader, 
-            .stSelectbox, 
-            .stDateInput, 
-            .stNumberInput, 
-            button,
-            .stMarkdown:has(h2),
-            hr {{
-                display: none !important;
-            }}
-            .block-container {{
                 padding: 10mm !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-                width: 100% !important;
-            }}
-            .printable-nota {{
-                border: 2px solid #000 !important;
-                padding: 12px !important;
-                background: #fff !important;
                 box-sizing: border-box !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
+                display: block !important;
             }}
         }}
 
         /* Style Tabel Nota Layar Utama */
         .printable-nota {{
-            border: 1px solid #ccc;
+            border: 1px solid #000;
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 6px;
             background-color: #fff;
-            margin-top: 10px;
         }}
         .nota-table {{
             width: 100%;
@@ -372,10 +358,10 @@ elif selected_menu == "🧾 Nota":
                         rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {harga_formatted}</td><td style='text-align: right;'>Rp {jumlah_formatted}</td></tr>"
 
                     total_bayar_str = f"{total_bayar:,.0f}".replace(",", ".")
-
                     img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
 
-                    nota_layout = (
+                    # STRUKTUR HTML NOTA DASAR
+                    nota_content = (
                         f'<div class="printable-nota">'
                         f'<table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">'
                         f'<tr>'
@@ -404,7 +390,9 @@ elif selected_menu == "🧾 Nota":
                         f'</td></tr></table></div>'
                     )
 
-                    st.markdown(nota_layout, unsafe_allow_html=True)
+                    # DUA KALI RENDER: TAMPILAN MONITOR & CONTAINER RAHAISA KHUSUS PRINT
+                    st.markdown(nota_content, unsafe_allow_html=True)
+                    st.markdown(f'<div id="print-area">{nota_content}</div>', unsafe_allow_html=True)
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     col_t1, col_t2 = st.columns([1, 1])
