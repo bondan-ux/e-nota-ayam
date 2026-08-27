@@ -51,13 +51,37 @@ st.markdown(f"""
             background-size: 400px;
             padding-top: 1rem !important;
         }}
+
+        /* --- STYLES KHUSUS UNTUK CETAK / PRINT --- */
         @media print {{
-            [data-testid="stSidebar"], [data-testid="stHeader"], .stFileUploader, .stSelectbox, .stDateInput, .stNumberInput, button {{
+            @page {{
+                size: A4 portrait; /* Paksa ke Portrait */
+                margin: 10mm;
+            }}
+            /* Sembunyikan elemen UI Streamlit & Header Web */
+            [data-testid="stSidebar"], 
+            [data-testid="stHeader"], 
+            .stFileUploader, 
+            .stSelectbox, 
+            .stDateInput, 
+            .stNumberInput, 
+            button,
+            [data-testid="stElementToolbar"],
+            div[class*="stColumn"]:has(h2), /* Sembunyikan Judul Atas */
+            hr {{
                 display: none !important;
             }}
-            .block-container {{
+            
+            /* Reset Margin Container Utama */
+            .main .block-container {{
                 padding: 0 !important;
                 margin: 0 !important;
+                max-width: 100% !important;
+            }}
+            
+            /* Sembunyikan garis merah atas jika terikut */
+            hr {{
+                border: none !important;
             }}
         }}
     </style>
