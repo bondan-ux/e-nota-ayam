@@ -80,13 +80,13 @@ st.markdown(f"""
                 max-width: 100% !important;
             }}
             .printable-nota {{
-                border: 2px solid #000;
-                padding: 12px;
+                border: 2px solid #000 !important;
+                padding: 12px !important;
                 background: #fff !important;
             }}
         }}
 
-        /* Style Tabel Nota */
+        /* Style Tabel Nota Layar */
         .printable-nota {{
             border: 1px solid #ccc;
             padding: 15px;
@@ -356,82 +356,44 @@ elif selected_menu == "🧾 Nota":
                     rows_html = ""
                     for item in filtered_items:
                         kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
-                        
                         harga_formatted = f"{item['Harga']:,.0f}".replace(",", ".")
                         jumlah_formatted = f"{item['Jumlah']:,.0f}".replace(",", ".")
                         
-                        harga_str = f"Rp {harga_formatted}"
-                        jumlah_str = f"Rp {jumlah_formatted}"
-                        
-                        rows_html += f"""
-                            <tr>
-                                <td style="text-align: center;">{kg_str}</td>
-                                <td>{item['Nama Barang']}</td>
-                                <td style="text-align: right;">{harga_str}</td>
-                                <td style="text-align: right;">{jumlah_str}</td>
-                            </tr>
-                        """
+                        rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {harga_formatted}</td><td style='text-align: right;'>Rp {jumlah_formatted}</td></tr>"
 
                     total_bayar_str = f"{total_bayar:,.0f}".replace(",", ".")
 
                     img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
 
-                    nota_layout = f"""
-                    <div class="printable-nota">
-                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
-                            <tr>
-                                <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        {img_tag}
-                                        <div>
-                                            <h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
-                                            <p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">
-                                    <div><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}</div>
-                                    <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
-                                    <div><b>Group:</b> {selected_sheet}</div>
-                                </td>
-                            </tr>
-                        </table>
-
-                        <table class="nota-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 15%;">QTY / KG</th>
-                                    <th style="width: 45%;">BARANG</th>
-                                    <th style="width: 20%;">HARGA</th>
-                                    <th style="width: 20%;">JUMLAH</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows_html}
-                            </tbody>
-                        </table>
-
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                            <tr>
-                                <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
-                                    Penerima,
-                                    <br><br><br>
-                                    ( ............................ )
-                                </td>
-                                <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
-                                    Hormat Kami,
-                                    <br><br><br>
-                                    ( ............................ )
-                                </td>
-                                <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
-                                    <div style="font-size: 14px; font-weight: bold; color: #000;">
-                                        TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar_str}</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    """
+                    # STRING HTML DIGABUNG TANPA SPASI DI AWAL BARIS SUPAYA TIDAK DISANGKA CODE BLOCK
+                    nota_layout = (
+                        f'<div class="printable-nota">'
+                        f'<table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">'
+                        f'<tr>'
+                        f'<td style="width: 55%; vertical-align: top; border: none; padding: 0;">'
+                        f'<div style="display: flex; align-items: center; gap: 10px;">'
+                        f'{img_tag}'
+                        f'<div>'
+                        f'<h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>'
+                        f'<p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>'
+                        f'</div></div></td>'
+                        f'<td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">'
+                        f'<div><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}</div>'
+                        f'<div><b>Pembeli / Bakul:</b> {selected_bakul}</div>'
+                        f'<div><b>Group:</b> {selected_sheet}</div>'
+                        f'</td></tr></table>'
+                        f'<table class="nota-table">'
+                        f'<thead><tr><th style="width: 15%;">QTY / KG</th><th style="width: 45%;">BARANG</th><th style="width: 20%;">HARGA</th><th style="width: 20%;">JUMLAH</th></tr></thead>'
+                        f'<tbody>{rows_html}</tbody>'
+                        f'</table>'
+                        f'<table style="width: 100%; border-collapse: collapse; margin-top: 15px;">'
+                        f'<tr>'
+                        f'<td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">Penerima,<br><br><br>( ............................ )</td>'
+                        f'<td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">Hormat Kami,<br><br><br>( ............................ )</td>'
+                        f'<td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">'
+                        f'<div style="font-size: 14px; font-weight: bold; color: #000;">TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar_str}</span></div>'
+                        f'</td></tr></table></div>'
+                    )
 
                     st.markdown(nota_layout, unsafe_allow_html=True)
                     
