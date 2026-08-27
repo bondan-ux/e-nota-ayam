@@ -55,7 +55,7 @@ st.markdown(f"""
         /* --- STYLES KHUSUS UNTUK CETAK / PRINT NOTA LANDSCAPE 3-PLY --- */
         @media print {{
             @page {{
-                size: A5 landscape; /* Mengikuti ukuran standar kertas continuous form / A5 Landscape */
+                size: A5 landscape;
                 margin: 5mm;
             }}
             body {{
@@ -63,7 +63,6 @@ st.markdown(f"""
                 color: #000 !important;
                 background: white !important;
             }}
-            /* Sembunyikan seluruh elemen antarmuka Web Streamlit */
             [data-testid="stSidebar"], 
             [data-testid="stHeader"], 
             .stFileUploader, 
@@ -80,8 +79,6 @@ st.markdown(f"""
                 margin: 0 !important;
                 max-width: 100% !important;
             }}
-            
-            /* Tampilan wadah nota siap cetak */
             .printable-nota {{
                 border: 2px solid #000;
                 padding: 12px;
@@ -90,6 +87,13 @@ st.markdown(f"""
         }}
 
         /* Style Tabel Nota */
+        .printable-nota {{
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+            margin-top: 10px;
+        }}
         .nota-table {{
             width: 100%;
             border-collapse: collapse;
@@ -348,91 +352,99 @@ elif selected_menu == "🧾 Nota":
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # --- STRUKTUR NOTA LANDSCAPE DENGAN BORDER & KARTU CETAK ---
-                rows_html = ""
-                for item in filtered_items:
-                    kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
-                    harga_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
-                    jumlah_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
-                    rows_html += f"""
-                        <tr>
-                            <td style="text-align: center;">{kg_str}</td>
-                            <td>{item['Nama Barang']}</td>
-                            <td style="text-align: right;">{harga_str}</td>
-                            <td style="text-align: right;">{jumlah_str}</td>
-                        </tr>
+                if filtered_items:
+                    rows_html = ""
+                    for item in filtered_items:
+                        kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+                        
+                        harga_formatted = f"{item['Harga']:,.0f}".replace(",", ".")
+                        jumlah_formatted = f"{item['Jumlah']:,.0f}".replace(",", ".")
+                        
+                        harga_str = f"Rp {harga_formatted}"
+                        jumlah_str = f"Rp {jumlah_formatted}"
+                        
+                        rows_html += f"""
+                            <tr>
+                                <td style="text-align: center;">{kg_str}</td>
+                                <td>{item['Nama Barang']}</td>
+                                <td style="text-align: right;">{harga_str}</td>
+                                <td style="text-align: right;">{jumlah_str}</td>
+                            </tr>
+                        """
+
+                    total_bayar_str = f"{total_bayar:,.0f}".replace(",", ".")
+
+                    img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
+
+                    nota_layout = f"""
+                    <div class="printable-nota">
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                            <tr>
+                                <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        {img_tag}
+                                        <div>
+                                            <h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
+                                            <p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">
+                                    <div><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}</div>
+                                    <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
+                                    <div><b>Group:</b> {selected_sheet}</div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table class="nota-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">QTY / KG</th>
+                                    <th style="width: 45%;">BARANG</th>
+                                    <th style="width: 20%;">HARGA</th>
+                                    <th style="width: 20%;">JUMLAH</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows_html}
+                            </tbody>
+                        </table>
+
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                            <tr>
+                                <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
+                                    Penerima,
+                                    <br><br><br>
+                                    ( ............................ )
+                                </td>
+                                <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
+                                    Hormat Kami,
+                                    <br><br><br>
+                                    ( ............................ )
+                                </td>
+                                <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
+                                    <div style="font-size: 14px; font-weight: bold; color: #000;">
+                                        TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar_str}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                     """
 
-                nota_layout = f"""
-                <div class="printable-nota">
-                    <!-- HEADER NOTA LANDSCAPE -->
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
-                        <tr>
-                            <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">
-                                    <div>
-                                        <h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
-                                        <p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">
-                                <div><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}</div>
-                                <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
-                                <div><b>Group:</b> {selected_sheet}</div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- TABEL UTAMA BARANG -->
-                    <table class="nota-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 15%;">QTY / KG</th>
-                                <th style="width: 45%;">BARANG</th>
-                                <th style="width: 20%;">HARGA</th>
-                                <th style="width: 20%;">JUMLAH</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows_html}
-                        </tbody>
-                    </table>
-
-                    <!-- FOOTER & TANDA TANGAN (ALA NOTA FAJTUR) -->
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                        <tr>
-                            <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
-                                Penerima,
-                                <br><br><br>
-                                ( ............................ )
-                            </td>
-                            <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
-                                Hormat Kami,
-                                <br><br><br>
-                                ( ............................ )
-                            </td>
-                            <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
-                                <div style="font-size: 14px; font-weight: bold; color: #000;">
-                                    TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar:,.0f}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                """.replace(",", ".")
-
-                st.markdown(nota_layout, unsafe_allow_html=True)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                col_t1, col_t2 = st.columns([1, 1])
-                with col_t1:
-                    st.markdown("""
-                        <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
-                            🖨️ Cetak / Print Nota (Landscape 3-Ply)
-                        </button>
-                    """, unsafe_allow_html=True)
+                    st.markdown(nota_layout, unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    col_t1, col_t2 = st.columns([1, 1])
+                    with col_t1:
+                        st.markdown("""
+                            <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
+                                🖨️ Cetak / Print Nota (Landscape 3-Ply)
+                            </button>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.warning("Tidak ada item transaksi untuk bakul ini.")
 
     elif sub_menu == "🏬 Bedak":
         st.info("Fitur nota bedak sedang dikembangkan.")
