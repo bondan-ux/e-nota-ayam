@@ -13,21 +13,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- FUNGSI GAMBAR ---
+# --- FUNGSI GAMBAR SAFE LOAD ---
 def get_img_as_base64(file_path):
-    try:
-        with open(file_path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except Exception:
-        return ""
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "rb") as f:
+                data = f.read()
+            return base64.b64encode(data).decode()
+        except Exception:
+            return ""
+    return ""
 
-watermark_base64 = get_img_as_base64("ASTremove.PNG")
+# Cek beberapa variasi nama file logo
+logo_filename = None
+for fname in ["ASTremove.PNG", "ASTremove.png", "logo.png", "logo.PNG"]:
+    if os.path.exists(fname):
+        logo_filename = fname
+        break
+
+watermark_base64 = get_img_as_base64(logo_filename) if logo_filename else ""
 
 # --- CLASS GENERATOR PDF NOTA ---
 class NotaPDF(FPDF):
     def __init__(self, logo_path=None):
-        # Format A5 Landscape: 210mm x 148mm
         super().__init__(orientation='L', unit='mm', format='A5')
         self.logo_path = logo_path
 
@@ -66,7 +74,7 @@ class NotaPDF(FPDF):
 
         self.ln(6)
 
-        # Tabel Header (Total lebar: 184mm -> Pas margin kiri/kanan 13mm)
+        # Tabel Header
         self.set_x(13)
         self.set_font("Helvetica", "B", 8.5)
         self.set_fill_color(240, 240, 240)
@@ -112,7 +120,11 @@ class NotaPDF(FPDF):
         tot_str = f"Rp {total_bayar:,.0f}  ".replace(",", ".")
         self.cell(52, 8, tot_str, 0, 1, 'R')
 
-        return self.output()
+        # Output bytes secara eksplisit
+        pdf_output = self.output()
+        if isinstance(pdf_output, str):
+            return pdf_output.encode('latin1')
+        return bytes(pdf_output)
 
 # --- CSS STYLING UTAMA ---
 st.markdown(f"""
@@ -123,8 +135,7 @@ st.markdown(f"""
         [data-testid="stSidebar"] .stRadio label {{ font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }}
         .block-container {{
             background-color: #FFFFFF;
-            background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
-                              url("data:image/png;base64,{watermark_base64}");
+            {"background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('data:image/png;base64," + watermark_base64 + "');" if watermark_base64 else ""}
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 400px;
@@ -185,9 +196,10 @@ else: saved_harga = default_harga
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
+    logo_html = f"<img src='data:image/png;base64,{watermark_base64}' style='width: 65px; height: 65px; object-fit: contain;'>" if watermark_base64 else ""
     st.markdown(f"""
         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 10px;'>
-            <img src='data:image/png;base64,{watermark_base64}' style='width: 65px; height: 65px; object-fit: contain;'>
+            {logo_html}
             <h2 style='color: #C62828; margin: 0; font-size: 26px; font-weight: bold;'>AST SYSTEM</h2>
         </div>
     """, unsafe_allow_html=True)
@@ -381,9 +393,9 @@ if selected_menu == "🧾 Nota":
                         </div>
                     """.replace(",", "."), unsafe_allow_html=True)
 
-                    # GENERATE PDF & TOMBOL DOWNLOAD / PRINT PDF
-                    pdf_generator = NotaPDF(logo_path="ASTremove.PNG")
-                    pdf_bytes = pdf_generator.generate(
+                    # GENERATE PDF & TOMBOL DOWNLOAD
+                    pdf_generator = NotaPDF(logo_path=logo_filename)
+                    pdf_data = pdf_generator.generate(
                         tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                         bakul=selected_bakul,
                         group=selected_sheet,
@@ -395,7 +407,7 @@ if selected_menu == "🧾 Nota":
                     
                     st.download_button(
                         label="📄 Download / Print PDF Nota",
-                        data=bytes(pdf_bytes),
+                        data=pdf_data,
                         file_name=file_name,
                         mime="application/pdf",
                         use_container_width=True
