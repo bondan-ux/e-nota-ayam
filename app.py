@@ -24,14 +24,8 @@ def get_img_as_base64(file_path):
             return ""
     return ""
 
-# Cek beberapa variasi nama file logo
-logo_filename = None
-for fname in ["ASTremove.PNG", "ASTremove.png", "logo.png", "logo.PNG"]:
-    if os.path.exists(fname):
-        logo_filename = fname
-        break
-
-watermark_base64 = get_img_as_base64(logo_filename) if logo_filename else ""
+logo_filename = "ASTremove.PNG"
+watermark_base64 = get_img_as_base64(logo_filename)
 
 # --- CLASS GENERATOR PDF NOTA ---
 class NotaPDF(FPDF):
@@ -120,7 +114,6 @@ class NotaPDF(FPDF):
         tot_str = f"Rp {total_bayar:,.0f}  ".replace(",", ".")
         self.cell(52, 8, tot_str, 0, 1, 'R')
 
-        # Output bytes secara eksplisit
         pdf_output = self.output()
         if isinstance(pdf_output, str):
             return pdf_output.encode('latin1')
@@ -361,7 +354,9 @@ if selected_menu == "🧾 Nota":
                         kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
                         rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
 
-                    img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 45px;">' if watermark_base64 else ''
+                    # BACA BASE64 LOGO SECARA LANGSUNG DENGAN PATH DARI FOLDER
+                    logo_b64 = get_img_as_base64("ASTremove.PNG")
+                    img_tag = f'<img src="data:image/png;base64,{logo_b64}" style="width: 50px; height: 50px; object-fit: contain;">' if logo_b64 else ''
                     
                     st.markdown(f"""
                         <div class="nota-preview">
