@@ -117,8 +117,8 @@ else:
 # --- 4. SIDEBAR NAVIGATION & SET HARGA ---
 with st.sidebar:
     st.markdown(f"""
-        <div style='display: flex; align-items: center; gap: 8px;'>
-            <img src='data:image/png;base64,{watermark_base64}' style='width: 35px; height: 35px; object-fit: contain;'>
+        <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>
+            <img src='data:image/png;base64,{watermark_base64}' style='width: 48px; height: 48px; object-fit: contain;'>
             <h2 style='color: #C62828; margin: 0; font-size: 24px;'>AST SYSTEM</h2>
         </div>
     """, unsafe_allow_html=True)
@@ -290,9 +290,9 @@ elif selected_menu == "🧾 Nota":
                 
                 st.markdown("<hr style='border: 2px dashed #C62828;'>", unsafe_allow_html=True)
                 st.markdown(f"""
-                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>
-                        <img src='data:image/png;base64,{watermark_base64}' style='width: 32px; height: 32px; object-fit: contain;'>
-                        <h3 style='color: #C62828; margin: 0;'>AYAM SEGAR TUMPANG</h3>
+                    <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 5px;'>
+                        <img src='data:image/png;base64,{watermark_base64}' style='width: 45px; height: 45px; object-fit: contain;'>
+                        <h3 style='color: #C62828; margin: 0; font-size: 26px;'>AYAM SEGAR TUMPANG</h3>
                     </div>
                 """, unsafe_allow_html=True)
                 st.markdown("<p style='color: #333; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
