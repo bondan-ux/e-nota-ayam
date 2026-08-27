@@ -52,13 +52,18 @@ st.markdown(f"""
             padding-top: 1rem !important;
         }}
 
-        /* --- STYLES KHUSUS UNTUK CETAK / PRINT --- */
+        /* --- STYLES KHUSUS UNTUK CETAK / PRINT NOTA LANDSCAPE 3-PLY --- */
         @media print {{
             @page {{
-                size: A4 portrait; /* Paksa ke Portrait */
-                margin: 10mm;
+                size: A5 landscape; /* Mengikuti ukuran standar kertas continuous form / A5 Landscape */
+                margin: 5mm;
             }}
-            /* Sembunyikan elemen UI Streamlit & Header Web */
+            body {{
+                font-family: Arial, sans-serif !important;
+                color: #000 !important;
+                background: white !important;
+            }}
+            /* Sembunyikan seluruh elemen antarmuka Web Streamlit */
             [data-testid="stSidebar"], 
             [data-testid="stHeader"], 
             .stFileUploader, 
@@ -66,23 +71,39 @@ st.markdown(f"""
             .stDateInput, 
             .stNumberInput, 
             button,
-            [data-testid="stElementToolbar"],
-            div[class*="stColumn"]:has(h2), /* Sembunyikan Judul Atas */
+            .stMarkdown:has(h2),
             hr {{
                 display: none !important;
             }}
-            
-            /* Reset Margin Container Utama */
-            .main .block-container {{
+            .block-container {{
                 padding: 0 !important;
                 margin: 0 !important;
                 max-width: 100% !important;
             }}
             
-            /* Sembunyikan garis merah atas jika terikut */
-            hr {{
-                border: none !important;
+            /* Tampilan wadah nota siap cetak */
+            .printable-nota {{
+                border: 2px solid #000;
+                padding: 12px;
+                background: #fff !important;
             }}
+        }}
+
+        /* Style Tabel Nota */
+        .nota-table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }}
+        .nota-table th, .nota-table td {{
+            border: 1px solid #000;
+            padding: 6px 8px;
+            font-size: 14px;
+        }}
+        .nota-table th {{
+            background-color: #f2f2f2;
+            text-align: center;
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -312,24 +333,6 @@ elif selected_menu == "🧾 Nota":
 
                 total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur_a + tot_telur_b + tot_peti + tot_box + biaya_kresek
                 
-                st.markdown("<hr style='border: 2px dashed #C62828;'>", unsafe_allow_html=True)
-                st.markdown(f"""
-                    <div style='display: flex; align-items: center; gap: 14px; margin-bottom: 5px;'>
-                        <img src='data:image/png;base64,{watermark_base64}' style='width: 60px; height: 60px; object-fit: contain;'>
-                        <h3 style='color: #C62828; margin: 0; font-size: 28px;'>AYAM SEGAR TUMPANG</h3>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.markdown("<p style='color: #333; margin-bottom: 20px;'>Ds. Kambingan - Tumpang - Kab. Malang</p>", unsafe_allow_html=True)
-                
-                col_n1, col_n2 = st.columns(2)
-                with col_n1:
-                    st.write(f"**Nama Bakul:** {selected_bakul}")
-                    st.write(f"**Group:** {selected_sheet}")
-                with col_n2:
-                    st.write(f"**Tanggal:** {tanggal_transaksi.strftime('%d-%m-%Y')}")
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-
                 items = [
                     {"Nama Barang": "GLONDONG", "KG": qty_tonase, "Harga": h_glondong, "Jumlah": tot_glondong},
                     {"Nama Barang": "JEROAN", "KG": qty_jeroan, "Harga": h_jeroan, "Jumlah": tot_jeroan},
@@ -343,26 +346,93 @@ elif selected_menu == "🧾 Nota":
                 
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
-                if filtered_items:
-                    df_nota = pd.DataFrame(filtered_items)
-                    df_nota['KG'] = df_nota['KG'].apply(lambda x: f"{int(x)}" if isinstance(x, float) and x.is_integer() else f"{x:.2f}" if isinstance(x, float) else str(x))
-                    df_nota['Harga'] = df_nota['Harga'].map("Rp {:,.0f}".format).str.replace(",", ".")
-                    df_nota['Jumlah'] = df_nota['Jumlah'].map("Rp {:,.0f}".format).str.replace(",", ".")
-                    
-                    st.table(df_nota)
-                    
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    col_t1, col_t2 = st.columns([1, 1])
-                    with col_t1:
-                        st.markdown("""
-                            <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
-                                🖨️ Cetak / Print Nota
-                            </button>
-                        """, unsafe_allow_html=True)
-                    with col_t2:
-                        st.markdown(f"<h2 style='text-align: right; margin: 0px; color: #C62828; font-weight: bold;'>TOTAL: Rp {total_bayar:,.0f}</h2>".replace(",", "."), unsafe_allow_html=True)
-                else:
-                    st.warning("Tidak ada item transaksi untuk bakul ini.")
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # --- STRUKTUR NOTA LANDSCAPE DENGAN BORDER & KARTU CETAK ---
+                rows_html = ""
+                for item in filtered_items:
+                    kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+                    harga_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
+                    jumlah_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+                    rows_html += f"""
+                        <tr>
+                            <td style="text-align: center;">{kg_str}</td>
+                            <td>{item['Nama Barang']}</td>
+                            <td style="text-align: right;">{harga_str}</td>
+                            <td style="text-align: right;">{jumlah_str}</td>
+                        </tr>
+                    """
+
+                nota_layout = f"""
+                <div class="printable-nota">
+                    <!-- HEADER NOTA LANDSCAPE -->
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                        <tr>
+                            <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">
+                                    <div>
+                                        <h3 style="margin: 0; color: #C62828; font-size: 20px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
+                                        <p style="margin: 0; font-size: 12px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 13px;">
+                                <div><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}</div>
+                                <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
+                                <div><b>Group:</b> {selected_sheet}</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- TABEL UTAMA BARANG -->
+                    <table class="nota-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">QTY / KG</th>
+                                <th style="width: 45%;">BARANG</th>
+                                <th style="width: 20%;">HARGA</th>
+                                <th style="width: 20%;">JUMLAH</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows_html}
+                        </tbody>
+                    </table>
+
+                    <!-- FOOTER & TANDA TANGAN (ALA NOTA FAJTUR) -->
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                        <tr>
+                            <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
+                                Penerima,
+                                <br><br><br>
+                                ( ............................ )
+                            </td>
+                            <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 13px;">
+                                Hormat Kami,
+                                <br><br><br>
+                                ( ............................ )
+                            </td>
+                            <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
+                                <div style="font-size: 14px; font-weight: bold; color: #000;">
+                                    TOTAL: <span style="font-size: 22px; color: #C62828;">Rp {total_bayar:,.0f}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                """.replace(",", ".")
+
+                st.markdown(nota_layout, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                col_t1, col_t2 = st.columns([1, 1])
+                with col_t1:
+                    st.markdown("""
+                        <button onclick="window.print()" style="background-color: #C62828; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
+                            🖨️ Cetak / Print Nota (Landscape 3-Ply)
+                        </button>
+                    """, unsafe_allow_html=True)
 
     elif sub_menu == "🏬 Bedak":
         st.info("Fitur nota bedak sedang dikembangkan.")
