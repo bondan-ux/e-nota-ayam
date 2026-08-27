@@ -52,16 +52,22 @@ st.markdown(f"""
             padding-top: 1rem !important;
         }}
 
-        /* --- STYLES KHUSUS UNTUK CETAK / PRINT NOTA LANDSCAPE 3-PLY --- */
+        /* --- STYLES KHUSUS PRINT LANDSCAPE 1 HALAMAN TANPA HEADER/FOOTER BROWSER --- */
         @media print {{
             @page {{
                 size: A5 landscape;
-                margin: 5mm;
+                margin: 0mm !important; /* MENGHILANGKAN HEADER & FOOTER BROWSER (URL, TANGGAL, DLL) */
             }}
-            body {{
+            html, body {{
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 font-family: Arial, sans-serif !important;
                 color: #000 !important;
-                background: white !important;
+                background: #fff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }}
             [data-testid="stSidebar"], 
             [data-testid="stHeader"], 
@@ -75,18 +81,22 @@ st.markdown(f"""
                 display: none !important;
             }}
             .block-container {{
-                padding: 0 !important;
+                padding: 10mm !important;
                 margin: 0 !important;
                 max-width: 100% !important;
+                width: 100% !important;
             }}
             .printable-nota {{
                 border: 2px solid #000 !important;
                 padding: 12px !important;
                 background: #fff !important;
+                box-sizing: border-box !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }}
         }}
 
-        /* Style Tabel Nota Layar */
+        /* Style Tabel Nota Layar Utama */
         .printable-nota {{
             border: 1px solid #ccc;
             padding: 15px;
@@ -365,7 +375,6 @@ elif selected_menu == "🧾 Nota":
 
                     img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
 
-                    # STRING HTML DIGABUNG TANPA SPASI DI AWAL BARIS SUPAYA TIDAK DISANGKA CODE BLOCK
                     nota_layout = (
                         f'<div class="printable-nota">'
                         f'<table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">'
