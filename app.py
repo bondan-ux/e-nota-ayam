@@ -4,6 +4,7 @@ from datetime import datetime
 import base64
 import json
 import os
+from fpdf import FPDF
 
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(
@@ -23,25 +24,99 @@ def get_img_as_base64(file_path):
 
 watermark_base64 = get_img_as_base64("ASTremove.PNG")
 
-# --- CSS STYLING UTAMA (HANYA UNTUK TAMPILAN WEB STREAMLIT) ---
+# --- CLASS GENERATOR PDF NOTA ---
+class NotaPDF(FPDF):
+    def __init__(self, logo_path=None):
+        # Format A5 Landscape: 210mm x 148mm
+        super().__init__(orientation='L', unit='mm', format='A5')
+        self.logo_path = logo_path
+
+    def generate(self, tgl, bakul, group, items, total_bayar):
+        self.add_page()
+        self.set_margins(10, 10, 10)
+        
+        # Border Luar Nota
+        self.rect(8, 8, 194, 132)
+
+        # Header Logo & Judul
+        if self.logo_path and os.path.exists(self.logo_path):
+            self.image(self.logo_path, x=12, y=11, w=15)
+            self.set_xy(29, 11)
+        else:
+            self.set_xy(12, 11)
+
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(198, 40, 40)
+        self.cell(100, 6, "AYAM SEGAR TUMPANG", ln=1)
+        self.set_x(29 if (self.logo_path and os.path.exists(self.logo_path)) else 12)
+        self.set_font("Helvetica", "", 9)
+        self.set_text_color(80, 80, 80)
+        self.cell(100, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
+
+        # Header Info Kanan
+        self.set_xy(120, 11)
+        self.set_font("Helvetica", "", 9)
+        self.set_text_color(0, 0, 0)
+        self.cell(76, 4, f"Tanggal: {tgl}", ln=1, align='R')
+        self.set_x(120)
+        self.cell(76, 4, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
+        self.set_x(120)
+        self.cell(76, 4, f"Group: {group}", ln=1, align='R')
+
+        self.ln(6)
+
+        # Tabel Barisan Header
+        self.set_font("Helvetica", "B", 9)
+        self.set_fill_color(240, 240, 240)
+        self.cell(25, 7, "QTY / KG", 1, 0, 'C', fill=True)
+        self.cell(85, 7, "BARANG", 1, 0, 'L', fill=True)
+        self.cell(40, 7, "HARGA", 1, 0, 'R', fill=True)
+        self.cell(44, 7, "JUMLAH", 1, 1, 'R', fill=True)
+
+        # Isi Tabel
+        self.set_font("Helvetica", "", 9)
+        for item in items:
+            kg_val = item['KG']
+            kg_str = f"{int(kg_val)}" if isinstance(kg_val, float) and kg_val.is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
+            h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
+            j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+
+            self.cell(25, 6, kg_str, 1, 0, 'C')
+            self.cell(85, 6, item['Nama Barang'], 1, 0, 'L')
+            self.cell(40, 6, h_str, 1, 0, 'R')
+            self.cell(44, 6, j_str, 1, 1, 'R')
+
+        # Footer Tanda Tangan & Total
+        self.ln(4)
+        y_footer = self.get_y()
+        
+        self.set_xy(12, y_footer)
+        self.cell(50, 4, "Penerima,", 0, 0, 'C')
+        self.cell(50, 4, "Hormat Kami,", 0, 0, 'C')
+
+        self.set_xy(110, y_footer + 4)
+        self.set_font("Helvetica", "B", 10)
+        self.cell(35, 8, "TOTAL :", 0, 0, 'R')
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(198, 40, 40)
+        tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
+        self.cell(49, 8, tot_str, 0, 1, 'R')
+
+        self.set_font("Helvetica", "", 9)
+        self.set_text_color(0, 0, 0)
+        self.set_xy(12, y_footer + 15)
+        self.cell(50, 4, "( ............................ )", 0, 0, 'C')
+        self.cell(50, 4, "( ............................ )", 0, 0, 'C')
+
+        return self.output()
+
+# --- CSS STYLING UTAMA ---
 st.markdown(f"""
     <style>
-        footer, #MainMenu {{
-            visibility: hidden;
-        }}
-        [data-testid="stHeader"] {{
-            background-color: transparent !important;
-            z-index: 100 !important;
-        }}
-        [data-testid="stSidebar"] {{
-            background-color: #FFEBEE !important;
-            border-right: 3px solid #C62828 !important;
-        }}
-        [data-testid="stSidebar"] .stRadio label {{
-            font-size: 15px !important;
-            font-weight: bold !important;
-            color: #262626 !important;
-        }}
+        footer, #MainMenu {{ visibility: hidden; }}
+        [data-testid="stHeader"] {{ background-color: transparent !important; z-index: 100 !important; }}
+        [data-testid="stSidebar"] {{ background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }}
+        [data-testid="stSidebar"] .stRadio label {{ font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }}
         .block-container {{
             background-color: #FFFFFF;
             background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), 
@@ -51,10 +126,20 @@ st.markdown(f"""
             background-size: 400px;
             padding-top: 1rem !important;
         }}
+        .nota-preview {{
+            border: 1px solid #333;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }}
+        .nota-preview table {{ width: 100%; border-collapse: collapse; }}
+        .nota-preview th, .nota-preview td {{ border: 1px solid #000; padding: 6px; font-size: 13px; }}
+        .nota-preview th {{ background-color: #f2f2f2; text-align: center; }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. SISTEM LOGIN ---
+# --- 2. LOGIN ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.role = ""
@@ -64,16 +149,10 @@ def login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if watermark_base64:
-            st.markdown(f"""
-                <div style='text-align: center; margin-bottom: 15px;'>
-                    <img src="data:image/png;base64,{watermark_base64}" style="width: 220px;">
-                </div>
-            """, unsafe_allow_html=True)
-        
+            st.markdown(f"<div style='text-align: center; margin-bottom: 15px;'><img src='data:image/png;base64,{watermark_base64}' style='width: 220px;'></div>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        
         if st.button("Masuk / Login", use_container_width=True):
             if username == "admin" and password == "admin123":
                 st.session_state.logged_in = True
@@ -90,22 +169,17 @@ if not st.session_state.logged_in:
     login()
     st.stop()
 
-
 # --- 3. MASTER HARGA JSON ---
 FILE_HARGA = "master_harga.json"
 default_harga = {"glondong": 28500, "jeroan": 12000, "usus": 16500, "telur_a": 269000, "telur_b": 250000, "peti": 2000, "box": 28500}
 
 if os.path.exists(FILE_HARGA):
     try:
-        with open(FILE_HARGA, "r") as f:
-            saved_harga = json.load(f)
-    except:
-        saved_harga = default_harga
-else:
-    saved_harga = default_harga
+        with open(FILE_HARGA, "r") as f: saved_harga = json.load(f)
+    except: saved_harga = default_harga
+else: saved_harga = default_harga
 
-
-# --- 4. SIDEBAR NAVIGATION & SET HARGA ---
+# --- 4. SIDEBAR ---
 with st.sidebar:
     st.markdown(f"""
         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 10px;'>
@@ -125,22 +199,12 @@ with st.sidebar:
         with st.expander("📂 Sub-Menu Nota", expanded=True):
             sub_menu = st.radio("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
 
-    elif selected_menu == "⏱️ Absensi & Jadwal":
-        with st.expander("📂 Sub-Menu Absensi", expanded=True):
-            sub_menu = st.radio("Tipe Absen:", ["📅 Atur Jadwal", "📌 Plotting & Input Absen", "📊 Rekap Bulanan"])
-
-    # MASTER HARGA DITAMPILKAN DI SIDEBAR (KHUSUS HALAMAN NOTA)
     if selected_menu == "🧾 Nota":
         st.markdown("---")
         st.markdown("<h3 style='color: #C62828;'>⚙️ Master Harga</h3>", unsafe_allow_html=True)
         
         def input_harga(label, key_name, default_val, step_val):
-            val = st.number_input(
-                f"{label}", 
-                value=int(saved_harga.get(key_name, default_val)), 
-                step=step_val, 
-                format="%d"
-            )
+            val = st.number_input(f"{label}", value=int(saved_harga.get(key_name, default_val)), step=step_val, format="%d")
             st.caption(f"➔ **Rp {val:,.0f}**".replace(",", "."))
             return val
 
@@ -152,25 +216,15 @@ with st.sidebar:
         h_peti = input_harga("Harga Peti", "peti", 2000, 100)
         h_box = input_harga("Harga Box", "box", 28500, 500)
 
-        current_harga = {
-            "glondong": h_glondong, 
-            "jeroan": h_jeroan, 
-            "usus": h_usus, 
-            "telur_a": h_telur_a, 
-            "telur_b": h_telur_b, 
-            "peti": h_peti, 
-            "box": h_box
-        }
+        current_harga = {"glondong": h_glondong, "jeroan": h_jeroan, "usus": h_usus, "telur_a": h_telur_a, "telur_b": h_telur_b, "peti": h_peti, "box": h_box}
         if current_harga != saved_harga:
-            with open(FILE_HARGA, "w") as f:
-                json.dump(current_harga, f)
+            with open(FILE_HARGA, "w") as f: json.dump(current_harga, f)
 
     st.markdown("---")
     if st.button("🚪 Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.role = ""
         st.rerun()
-
 
 # --- 5. AREA KONTEN UTAMA ---
 col_h1, col_h2 = st.columns([3, 1])
@@ -181,11 +235,7 @@ with col_h2:
 
 st.markdown("<hr style='border: 1px solid #C62828; margin-top: 5px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
-# LOGIKA PEMBACAAN EXCEL & PENAMPILAN DATA NOTA
-if selected_menu == "📊 Dashboard":
-    st.info("Visualisasi data omset, stok, dan performa harian akan ditampilkan di sini.")
-
-elif selected_menu == "🧾 Nota":
+if selected_menu == "🧾 Nota":
     if sub_menu == "📑 Bakul" or sub_menu is None:
         col_up1, col_up2 = st.columns([2, 1])
         with col_up1:
@@ -219,13 +269,11 @@ elif selected_menu == "🧾 Nota":
             
             for idx, (real_idx, row) in enumerate(df.iterrows(), start=1):
                 nama_bakul = str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
-                if not nama_bakul:
-                    continue
+                if not nama_bakul: continue
                 
                 if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
                     no_val = str(row[no_col]).strip()
-                    if no_val.endswith('.0'):
-                        no_val = no_val[:-2]
+                    if no_val.endswith('.0'): no_val = no_val[:-2]
                     label = f"{no_val}. {nama_bakul}"
                 else:
                     label = f"{idx}. {nama_bakul}"
@@ -247,13 +295,11 @@ elif selected_menu == "🧾 Nota":
                 
                 def get_valid_float(col_name):
                     try:
-                        if not col_name or col_name not in df.columns:
-                            return 0.0
+                        if not col_name or col_name not in df.columns: return 0.0
                         val = row_bakul[col_name]
                         num = pd.to_numeric(val, errors='coerce')
                         return 0.0 if pd.isna(num) else float(num)
-                    except:
-                        return 0.0
+                    except: return 0.0
 
                 col_in1, col_in2 = st.columns(2)
                 with col_in1:
@@ -293,145 +339,60 @@ elif selected_menu == "🧾 Nota":
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
                 if filtered_items:
+                    # PREVIEW KERTAS NOTA DI WEB
                     rows_html = ""
                     for item in filtered_items:
                         kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
-                        harga_formatted = f"{item['Harga']:,.0f}".replace(",", ".")
-                        jumlah_formatted = f"{item['Jumlah']:,.0f}".replace(",", ".")
-                        
-                        rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {harga_formatted}</td><td style='text-align: right;'>Rp {jumlah_formatted}</td></tr>"
+                        rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
 
-                    total_bayar_str = f"{total_bayar:,.0f}".replace(",", ".")
-                    img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
-
-                    # DOKUMEN HTML MANDIRI KHUSUS PRINT & DISPLAY IFRAME
-                    full_html_nota = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <style>
-                            @page {{
-                                size: A5 landscape;
-                                margin: 5mm;
-                            }}
-                            body {{
-                                font-family: Arial, sans-serif;
-                                margin: 0;
-                                padding: 10px;
-                                background-color: #fff;
-                            }}
-                            .printable-nota {{
-                                border: 1px solid #000;
-                                padding: 12px;
-                                border-radius: 4px;
-                            }}
-                            .nota-table {{
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin-top: 8px;
-                                margin-bottom: 8px;
-                            }}
-                            .nota-table th, .nota-table td {{
-                                border: 1px solid #000;
-                                padding: 5px 7px;
-                                font-size: 13px;
-                            }}
-                            .nota-table th {{
-                                background-color: #f2f2f2;
-                                text-align: center;
-                            }}
-                            .btn-print {{
-                                background-color: #C62828;
-                                color: white;
-                                padding: 10px 20px;
-                                border: none;
-                                border-radius: 6px;
-                                font-weight: bold;
-                                cursor: pointer;
-                                font-size: 14px;
-                                margin-top: 15px;
-                            }}
-                            @media print {{
-                                .btn-print {{
-                                    display: none !important;
-                                }}
-                            }}
-                        </style>
-                    </head>
-                    <body>
-                        <div class="printable-nota">
-                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+                    img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 45px;">' if watermark_base64 else ''
+                    
+                    st.markdown(f"""
+                        <div class="nota-preview">
+                            <table style="border:none; margin-bottom:10px;">
                                 <tr>
-                                    <td style="width: 55%; vertical-align: top; border: none; padding: 0;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                    <td style="border:none;">
+                                        <div style="display:flex; align-items:center; gap:10px;">
                                             {img_tag}
                                             <div>
-                                                <h3 style="margin: 0; color: #C62828; font-size: 18px; font-weight: bold;">AYAM SEGAR TUMPANG</h3>
-                                                <p style="margin: 0; font-size: 11px; color: #444;">Ds. Kambingan - Tumpang - Kab. Malang</p>
+                                                <h4 style="margin:0; color:#C62828;">AYAM SEGAR TUMPANG</h4>
+                                                <small>Ds. Kambingan - Tumpang - Kab. Malang</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="width: 45%; vertical-align: top; text-align: right; border: none; padding: 0; font-size: 12px;">
-                                        <div><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}</div>
-                                        <div><b>Pembeli / Bakul:</b> {selected_bakul}</div>
-                                        <div><b>Group:</b> {selected_sheet}</div>
+                                    <td style="border:none; text-align:right;">
+                                        <small><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}<br>
+                                        <b>Bakul:</b> {selected_bakul}<br>
+                                        <b>Group:</b> {selected_sheet}</small>
                                     </td>
                                 </tr>
                             </table>
-
-                            <table class="nota-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 15%;">QTY / KG</th>
-                                        <th style="width: 45%;">BARANG</th>
-                                        <th style="width: 20%;">HARGA</th>
-                                        <th style="width: 20%;">JUMLAH</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rows_html}
-                                </tbody>
+                            <table>
+                                <thead><tr><th>QTY / KG</th><th>BARANG</th><th>HARGA</th><th>JUMLAH</th></tr></thead>
+                                <tbody>{rows_html}</tbody>
                             </table>
-
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                <tr>
-                                    <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 12px;">
-                                        Penerima,<br><br><br>( ............................ )
-                                    </td>
-                                    <td style="width: 30%; text-align: center; border: none; vertical-align: top; font-size: 12px;">
-                                        Hormat Kami,<br><br><br>( ............................ )
-                                    </td>
-                                    <td style="width: 40%; text-align: right; border: none; vertical-align: bottom;">
-                                        <div style="font-size: 13px; font-weight: bold; color: #000;">
-                                            TOTAL: <span style="font-size: 20px; color: #C62828;">Rp {total_bayar_str}</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div style="text-align:right; margin-top:10px; font-weight:bold;">
+                                TOTAL: <span style="color:#C62828; font-size:18px;">Rp {total_bayar:,.0f}</span>
+                            </div>
                         </div>
+                    """.replace(",", "."), unsafe_allow_html=True)
 
-                        <button class="btn-print" onclick="window.print()">🖨️ Cetak / Print Nota</button>
-                    </body>
-                    </html>
-                    """
+                    # GENERATE PDF & TOMBOL DOWNLOAD / PRINT PDF
+                    pdf_generator = NotaPDF(logo_path="ASTremove.PNG")
+                    pdf_bytes = pdf_generator.generate(
+                        tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                        bakul=selected_bakul,
+                        group=selected_sheet,
+                        items=filtered_items,
+                        total_bayar=total_bayar
+                    )
 
-                    # RENDER VIA IFRAME
-                    st.components.v1.html(full_html_nota, height=430, scrolling=True)
-
-                else:
-                    st.warning("Tidak ada item transaksi untuk bakul ini.")
-
-    elif sub_menu == "🏬 Bedak":
-        st.info("Fitur nota bedak sedang dikembangkan.")
-    elif sub_menu == "🤝 Mitra":
-        st.info("Fitur nota mitra sedang dikembangkan.")
-
-elif selected_menu == "🛍️ Penjualan":
-    st.info("Halaman Penjualan Harian & Bulanan.")
-elif selected_menu == "📦 Stock":
-    st.info("Halaman Inventori Stok Barang.")
-elif selected_menu == "💵 Finance":
-    st.info("Halaman Pencatatan Kas & Piutang.")
-elif selected_menu == "⏱️ Absensi & Jadwal":
-    st.subheader(f"Menu Absensi: {sub_menu if sub_menu else 'Atur Jadwal'}")
+                    file_name = f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.pdf"
+                    
+                    st.download_button(
+                        label="📄 Download / Print PDF Nota",
+                        data=bytes(pdf_bytes),
+                        file_name=file_name,
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
