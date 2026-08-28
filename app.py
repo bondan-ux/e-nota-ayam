@@ -19,19 +19,22 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF (PRESISI ENVELOPE DL / CONTINUOUS FORM HALF) ---
+# --- CLASS GENERATOR PDF (FIX: TANPA OFFPAGE / KUNCI 1 HALAMAN) ---
 class NotaPDF(FPDF):
     def __init__(self, logo_path=None):
-        # Format custom presisi: Lebar 210mm, Tinggi 105mm (Langsung pas tanpa perlu Scale 80%)
+        # Format Custom Landscape (Lebar 210mm x Tinggi 105mm)
         super().__init__(orientation='L', unit='mm', format=(105, 210))
         self.logo_path = logo_path
 
     def generate(self, tgl, bakul, group, items, total_bayar):
+        # KUNCI UTAMA: Matikan auto page break supaya tidak bikin halaman 2!
+        self.set_auto_page_break(auto=False)
         self.add_page()
-        # Margin tipis & aman
+        
+        # Margin tipis
         self.set_margins(6, 5, 6)
         
-        # Border Luar Nota (Tinggi 95 mm)
+        # Border Utama Nota (Tinggi 95 mm)
         self.rect(6, 5, 198, 95)
 
         # Header Logo & Judul
@@ -85,21 +88,20 @@ class NotaPDF(FPDF):
             self.cell(42, 5.5, h_str, 1, 0, 'R')
             self.cell(42, 5.5, j_str, 1, 1, 'R')
 
-        # Footer Area Pas Di Dalam Kotak
-        self.set_y(73)
-        y_footer = self.get_y()
+        # Footer (Posisi dikunci di Y=68 supaya aman di dalam border)
+        y_footer = 68
 
         # Tanda Tangan
         self.set_xy(14, y_footer)
         self.cell(42, 3.5, "Penerima,", 0, 0, 'C')
         self.cell(42, 3.5, "Hormat Kami,", 0, 0, 'C')
 
-        self.set_xy(14, y_footer + 13)
+        self.set_xy(14, y_footer + 14)
         self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
         self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
 
         # Total Kanan
-        self.set_xy(100, y_footer + 3)
+        self.set_xy(100, y_footer + 6)
         self.set_font("Helvetica", "B", 9)
         self.cell(35, 6, "TOTAL :", 0, 0, 'R')
         
