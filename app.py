@@ -19,22 +19,17 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF (FIX: TANPA OFFPAGE / KUNCI 1 HALAMAN) ---
+# --- CLASS GENERATOR PDF NOTA (PRESISI 1 HALAMAN) ---
 class NotaPDF(FPDF):
     def __init__(self, logo_path=None):
-        # Format Custom Landscape (Lebar 210mm x Tinggi 105mm)
         super().__init__(orientation='L', unit='mm', format=(105, 210))
         self.logo_path = logo_path
 
     def generate(self, tgl, bakul, group, items, total_bayar):
-        # KUNCI UTAMA: Matikan auto page break supaya tidak bikin halaman 2!
         self.set_auto_page_break(auto=False)
         self.add_page()
         
-        # Margin tipis
         self.set_margins(6, 5, 6)
-        
-        # Border Utama Nota (Tinggi 95 mm)
         self.rect(6, 5, 198, 95)
 
         # Header Logo & Judul
@@ -88,7 +83,7 @@ class NotaPDF(FPDF):
             self.cell(42, 5.5, h_str, 1, 0, 'R')
             self.cell(42, 5.5, j_str, 1, 1, 'R')
 
-        # Footer (Posisi dikunci di Y=68 supaya aman di dalam border)
+        # Footer (Y=68)
         y_footer = 68
 
         # Tanda Tangan
@@ -125,13 +120,6 @@ st.markdown("""
         .block-container {
             background-color: #FFFFFF;
             padding-top: 1rem !important;
-        }
-        .nota-box {
-            border: 1px solid #333;
-            padding: 15px;
-            background-color: #fff;
-            border-radius: 6px;
-            margin-bottom: 15px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -281,9 +269,11 @@ if selected_menu == "🧾 Nota":
             if selected_bakul_info:
                 selected_bakul, real_idx = selected_bakul_info
                 
+                # Reset nilai manual saat ganti bakul
                 if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul_label:
                     st.session_state['last_bakul'] = selected_bakul_label
                     st.session_state['qty_box_val'] = 0.0
+                    st.session_state['qty_telur_b_val'] = 0.0
 
                 row_bakul = df.loc[real_idx]
                 
@@ -295,17 +285,24 @@ if selected_menu == "🧾 Nota":
                         return 0.0 if pd.isna(num) else float(num)
                     except: return 0.0
 
-                col_in1, col_in2 = st.columns(2)
+                # 3 Kolom Input Manual (Peti, Box, Telur B)
+                col_in1, col_in2, col_in3 = st.columns(3)
                 with col_in1:
                     qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
                 with col_in2:
                     qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=0.1)
+                with col_in3:
+                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', step=0.1)
 
                 qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
                 qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
                 qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
                 qty_telur_a = get_valid_float(next((c for c in df.columns if 'TELUR A' in c or 'TELUR' in c), ''))
-                qty_telur_b = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
+                
+                # Mengambil Telur B dari Excel, jika tidak ada baru gunakan input manual
+                qty_telur_b_excel = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
+                qty_telur_b = qty_telur_b_excel if qty_telur_b_excel > 0 else qty_telur_b_manual
+
                 val_ket = get_valid_float(next((c for c in df.columns if 'KET' in c), ''))
                 biaya_kresek = 7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
 
@@ -333,7 +330,7 @@ if selected_menu == "🧾 Nota":
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
                 if filtered_items:
-                    # PREVIEW KERTAS NOTA DI WEB MENGGUNAKAN STREAMLIT ST.IMAGE LOKAL
+                    # PREVIEW KERTAS NOTA DI WEB
                     with st.container(border=True):
                         col_l, col_m, col_r = st.columns([1.5, 4, 3])
                         with col_l:
