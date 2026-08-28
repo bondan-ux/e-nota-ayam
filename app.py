@@ -19,19 +19,21 @@ def get_img_as_base64(file_path):
         try:
             with open(file_path, "rb") as f:
                 data = f.read()
-            return base64.b64encode(data).decode()
+            # Pembersihan string Base64 dari line break/newline agar HTML tidak broken
+            encoded = base64.b64encode(data).decode('utf-8').replace('\n', '').strip()
+            return f"data:image/png;base64,{encoded}"
         except Exception:
             return ""
     return ""
 
-# Cari file logo di direktori aktif
+# Cek file logo ASTremove.PNG
 logo_filename = None
-for fname in ["ASTremove.PNG", "ASTremove.png", "logo.png", "logo.PNG", "AST.png", "AST.PNG"]:
+for fname in ["ASTremove.PNG", "ASTremove.png", "logo.png", "logo.PNG"]:
     if os.path.exists(fname):
         logo_filename = fname
         break
 
-watermark_base64 = get_img_as_base64(logo_filename) if logo_filename else ""
+watermark_src = get_img_as_base64(logo_filename) if logo_filename else ""
 
 # --- CLASS GENERATOR PDF NOTA ---
 class NotaPDF(FPDF):
@@ -134,7 +136,7 @@ st.markdown(f"""
         [data-testid="stSidebar"] .stRadio label {{ font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }}
         .block-container {{
             background-color: #FFFFFF;
-            {"background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('data:image/png;base64," + watermark_base64 + "');" if watermark_base64 else ""}
+            {"background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('" + watermark_src + "');" if watermark_src else ""}
             background-repeat: no-repeat;
             background-position: center 60%;
             background-size: 400px;
@@ -162,8 +164,8 @@ def login():
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if watermark_base64:
-            st.markdown(f"<div style='text-align: center; margin-bottom: 15px;'><img src='data:image/png;base64,{watermark_base64}' style='width: 220px;'></div>", unsafe_allow_html=True)
+        if watermark_src:
+            st.markdown(f"<div style='text-align: center; margin-bottom: 15px;'><img src='{watermark_src}' style='width: 220px;'></div>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -195,7 +197,7 @@ else: saved_harga = default_harga
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
-    logo_html = f"<img src='data:image/png;base64,{watermark_base64}' style='width: 65px; height: 65px; object-fit: contain;'>" if watermark_base64 else ""
+    logo_html = f"<img src='{watermark_src}' style='width: 65px; height: 65px; object-fit: contain;'>" if watermark_src else ""
     st.markdown(f"""
         <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 10px;'>
             {logo_html}
@@ -360,8 +362,7 @@ if selected_menu == "🧾 Nota":
                         kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
                         rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
 
-                    # CEK & RENDER LOGO HANYA JIKA FILE LOGO BENAR-BENAR ADA
-                    img_tag = f'<img src="data:image/png;base64,{watermark_base64}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_base64 else ''
+                    img_tag = f'<img src="{watermark_src}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_src else ''
                     
                     st.markdown(f"""
                         <div class="nota-preview">
