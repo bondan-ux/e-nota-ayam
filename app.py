@@ -290,9 +290,9 @@ if selected_menu == "🧾 Nota":
                 with col_in1:
                     qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
                 with col_in2:
-                    qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=0.1)
+                    qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=1)
                 with col_in3:
-                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', step=0.1)
+                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', step=1)
 
                 qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
                 qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
