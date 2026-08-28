@@ -19,92 +19,93 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF NOTA ---
+# --- CLASS GENERATOR PDF KHUSUS CONTINUOUS FORM (DOT MATRIX) ---
 class NotaPDF(FPDF):
     def __init__(self, logo_path=None):
-        super().__init__(orientation='L', unit='mm', format='A5')
+        # Ukuran Custom Continuous Form Bagi 2: Lebar 210 mm, Tinggi 139.7 mm
+        super().__init__(orientation='L', unit='mm', format=(139.7, 210))
         self.logo_path = logo_path
 
     def generate(self, tgl, bakul, group, items, total_bayar):
         self.add_page()
-        self.set_margins(12, 12, 12)
+        self.set_margins(8, 8, 8)
         
-        # Border Luar Nota (Proporsional A5)
-        self.rect(10, 10, 190, 128)
+        # Border Luar Nota
+        self.rect(8, 8, 194, 123.7)
 
         # Header Logo & Judul
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=14, y=12, w=22)
-            self.set_xy(38, 13)
+            self.image(self.logo_path, x=10, y=10, w=20)
+            self.set_xy(32, 11)
         else:
-            self.set_xy(14, 13)
+            self.set_xy(10, 11)
 
-        self.set_font("Helvetica", "B", 13)
+        self.set_font("Helvetica", "B", 12)
         self.set_text_color(198, 40, 40)
-        self.cell(90, 6, "AYAM SEGAR TUMPANG", ln=1)
+        self.cell(90, 5, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(38 if (self.logo_path and os.path.exists(self.logo_path)) else 14)
+        self.set_x(32 if (self.logo_path and os.path.exists(self.logo_path)) else 10)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(90, 90, 90)
         self.cell(90, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
         # Header Info Kanan
-        self.set_xy(110, 13)
+        self.set_xy(105, 10)
         self.set_font("Helvetica", "", 8.5)
         self.set_text_color(0, 0, 0)
-        self.cell(84, 4, f"Tanggal: {tgl}", ln=1, align='R')
-        self.set_x(110)
-        self.cell(84, 4, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
-        self.set_x(110)
-        self.cell(84, 4, f"Group: {group}", ln=1, align='R')
+        self.cell(93, 4, f"Tanggal: {tgl}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(93, 4, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(93, 4, f"Group: {group}", ln=1, align='R')
 
-        self.ln(6)
+        self.ln(5)
 
         # Tabel Header
-        self.set_x(13)
+        self.set_x(10)
         self.set_font("Helvetica", "B", 8.5)
         self.set_fill_color(240, 240, 240)
-        self.cell(24, 7, "QTY / KG", 1, 0, 'C', fill=True)
-        self.cell(80, 7, "BARANG", 1, 0, 'L', fill=True)
-        self.cell(40, 7, "HARGA  ", 1, 0, 'R', fill=True)
-        self.cell(40, 7, "JUMLAH  ", 1, 1, 'R', fill=True)
+        self.cell(24, 6, "QTY / KG", 1, 0, 'C', fill=True)
+        self.cell(86, 6, "BARANG", 1, 0, 'L', fill=True)
+        self.cell(40, 6, "HARGA  ", 1, 0, 'R', fill=True)
+        self.cell(40, 6, "JUMLAH  ", 1, 1, 'R', fill=True)
 
         # Isi Tabel
         self.set_font("Helvetica", "", 8.5)
         for item in items:
-            self.set_x(13)
+            self.set_x(10)
             kg_val = item['KG']
             kg_str = f"{int(kg_val)}" if isinstance(kg_val, float) and kg_val.is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
             h_str = f"Rp {item['Harga']:,.0f}  ".replace(",", ".")
             j_str = f"Rp {item['Jumlah']:,.0f}  ".replace(",", ".")
 
-            self.cell(24, 7, kg_str, 1, 0, 'C')
-            self.cell(80, 7, f" {item['Nama Barang']}", 1, 0, 'L')
-            self.cell(40, 7, h_str, 1, 0, 'R')
-            self.cell(40, 7, j_str, 1, 1, 'R')
+            self.cell(24, 6, kg_str, 1, 0, 'C')
+            self.cell(86, 6, f" {item['Nama Barang']}", 1, 0, 'L')
+            self.cell(40, 6, h_str, 1, 0, 'R')
+            self.cell(40, 6, j_str, 1, 1, 'R')
 
         # Footer Area
-        self.ln(8)
+        self.ln(6)
         y_footer = self.get_y()
 
         # Tanda Tangan
-        self.set_xy(18, y_footer)
+        self.set_xy(14, y_footer)
         self.cell(45, 4, "Penerima,", 0, 0, 'C')
         self.cell(45, 4, "Hormat Kami,", 0, 0, 'C')
 
-        self.set_xy(18, y_footer + 18)
+        self.set_xy(14, y_footer + 15)
         self.cell(45, 4, "( ............................ )", 0, 0, 'C')
         self.cell(45, 4, "( ............................ )", 0, 0, 'C')
 
         # Total Kanan
         self.set_xy(110, y_footer + 2)
         self.set_font("Helvetica", "B", 10)
-        self.cell(35, 8, "TOTAL :", 0, 0, 'R')
+        self.cell(35, 7, "TOTAL :", 0, 0, 'R')
         
-        self.set_font("Helvetica", "B", 13)
+        self.set_font("Helvetica", "B", 12)
         self.set_text_color(198, 40, 40)
         tot_str = f"Rp {total_bayar:,.0f}  ".replace(",", ".")
-        self.cell(52, 8, tot_str, 0, 1, 'R')
+        self.cell(55, 7, tot_str, 0, 1, 'R')
 
         pdf_output = self.output()
         if isinstance(pdf_output, str):
