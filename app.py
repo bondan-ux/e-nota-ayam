@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import base64
 import json
 import os
 from fpdf import FPDF
@@ -13,27 +12,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- FUNGSI GAMBAR SAFE LOAD BASE64 ---
-def get_img_as_base64(file_path):
-    if file_path and os.path.exists(file_path):
-        try:
-            with open(file_path, "rb") as f:
-                data = f.read()
-            # Pembersihan string Base64 dari line break/newline agar HTML tidak broken
-            encoded = base64.b64encode(data).decode('utf-8').replace('\n', '').strip()
-            return f"data:image/png;base64,{encoded}"
-        except Exception:
-            return ""
-    return ""
-
-# Cek file logo ASTremove.PNG
+# Cek nama file logo yang ada di repository
 logo_filename = None
-for fname in ["ASTremove.PNG", "ASTremove.png", "logo.png", "logo.PNG"]:
+for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
     if os.path.exists(fname):
         logo_filename = fname
         break
-
-watermark_src = get_img_as_base64(logo_filename) if logo_filename else ""
 
 # --- CLASS GENERATOR PDF NOTA ---
 class NotaPDF(FPDF):
@@ -128,30 +112,23 @@ class NotaPDF(FPDF):
         return bytes(pdf_output)
 
 # --- CSS STYLING UTAMA ---
-st.markdown(f"""
+st.markdown("""
     <style>
-        footer, #MainMenu {{ visibility: hidden; }}
-        [data-testid="stHeader"] {{ background-color: transparent !important; z-index: 100 !important; }}
-        [data-testid="stSidebar"] {{ background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }}
-        [data-testid="stSidebar"] .stRadio label {{ font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }}
-        .block-container {{
+        footer, #MainMenu { visibility: hidden; }
+        [data-testid="stHeader"] { background-color: transparent !important; z-index: 100 !important; }
+        [data-testid="stSidebar"] { background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }
+        [data-testid="stSidebar"] .stRadio label { font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }
+        .block-container {
             background-color: #FFFFFF;
-            {"background-image: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('" + watermark_src + "');" if watermark_src else ""}
-            background-repeat: no-repeat;
-            background-position: center 60%;
-            background-size: 400px;
             padding-top: 1rem !important;
-        }}
-        .nota-preview {{
+        }
+        .nota-box {
             border: 1px solid #333;
             padding: 15px;
             background-color: #fff;
             border-radius: 6px;
             margin-bottom: 15px;
-        }}
-        .nota-preview table {{ width: 100%; border-collapse: collapse; }}
-        .nota-preview th, .nota-preview td {{ border: 1px solid #000; padding: 6px; font-size: 13px; }}
-        .nota-preview th {{ background-color: #f2f2f2; text-align: center; }}
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -164,8 +141,8 @@ def login():
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if watermark_src:
-            st.markdown(f"<div style='text-align: center; margin-bottom: 15px;'><img src='{watermark_src}' style='width: 220px;'></div>", unsafe_allow_html=True)
+        if logo_filename:
+            st.image(logo_filename, width=180)
         st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -197,13 +174,9 @@ else: saved_harga = default_harga
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
-    logo_html = f"<img src='{watermark_src}' style='width: 65px; height: 65px; object-fit: contain;'>" if watermark_src else ""
-    st.markdown(f"""
-        <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 10px;'>
-            {logo_html}
-            <h2 style='color: #C62828; margin: 0; font-size: 26px; font-weight: bold;'>AST SYSTEM</h2>
-        </div>
-    """, unsafe_allow_html=True)
+    if logo_filename:
+        st.image(logo_filename, width=55)
+    st.markdown("<h2 style='color: #C62828; margin: 0; font-size: 26px; font-weight: bold;'>AST SYSTEM</h2>", unsafe_allow_html=True)
     st.write(f"Logged in as: **{st.session_state.role}**")
     st.markdown("---")
     
@@ -356,43 +329,31 @@ if selected_menu == "🧾 Nota":
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
                 if filtered_items:
-                    # PREVIEW KERTAS NOTA DI WEB
-                    rows_html = ""
-                    for item in filtered_items:
-                        kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
-                        rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
+                    # PREVIEW KERTAS NOTA DI WEB MENGGUNAKAN STREAMLIT ST.IMAGE LOKAL
+                    with st.container(border=True):
+                        col_l, col_m, col_r = st.columns([1, 4, 3])
+                        with col_l:
+                            if logo_filename:
+                                st.image(logo_filename, width=50)
+                        with col_m:
+                            st.markdown("<h4 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h4><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                        with col_r:
+                            st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
 
-                    img_tag = f'<img src="{watermark_src}" style="width: 50px; height: 50px; object-fit: contain;">' if watermark_src else ''
-                    
-                    st.markdown(f"""
-                        <div class="nota-preview">
-                            <table style="border:none; margin-bottom:10px;">
-                                <tr>
-                                    <td style="border:none;">
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            {img_tag}
-                                            <div>
-                                                <h4 style="margin:0; color:#C62828;">AYAM SEGAR TUMPANG</h4>
-                                                <small>Ds. Kambingan - Tumpang - Kab. Malang</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="border:none; text-align:right;">
-                                        <small><b>Tanggal:</b> {tanggal_transaksi.strftime("%d-%m-%Y")}<br>
-                                        <b>Bakul:</b> {selected_bakul}<br>
-                                        <b>Group:</b> {selected_sheet}</small>
-                                    </td>
-                                </tr>
-                            </table>
-                            <table>
-                                <thead><tr><th>QTY / KG</th><th>BARANG</th><th>HARGA</th><th>JUMLAH</th></tr></thead>
+                        rows_html = ""
+                        for item in filtered_items:
+                            kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+                            rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
+
+                        st.markdown(f"""
+                            <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                                <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
                                 <tbody>{rows_html}</tbody>
                             </table>
                             <div style="text-align:right; margin-top:10px; font-weight:bold;">
                                 TOTAL: <span style="color:#C62828; font-size:18px;">Rp {total_bayar:,.0f}</span>
                             </div>
-                        </div>
-                    """.replace(",", "."), unsafe_allow_html=True)
+                        """.replace(",", "."), unsafe_allow_html=True)
 
                     # GENERATE PDF & TOMBOL DOWNLOAD
                     pdf_generator = NotaPDF(logo_path=logo_filename)
