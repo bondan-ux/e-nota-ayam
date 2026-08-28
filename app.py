@@ -34,8 +34,8 @@ class NotaPDF(FPDF):
 
         # Header Logo & Judul
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=14, y=13, w=16)
-            self.set_xy(32, 13)
+            self.image(self.logo_path, x=14, y=12, w=22)
+            self.set_xy(38, 13)
         else:
             self.set_xy(14, 13)
 
@@ -43,7 +43,7 @@ class NotaPDF(FPDF):
         self.set_text_color(198, 40, 40)
         self.cell(90, 6, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(32 if (self.logo_path and os.path.exists(self.logo_path)) else 14)
+        self.set_x(38 if (self.logo_path and os.path.exists(self.logo_path)) else 14)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(90, 90, 90)
         self.cell(90, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
@@ -142,7 +142,7 @@ def login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if logo_filename:
-            st.image(logo_filename, width=180)
+            st.image(logo_filename, width=240)
         st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -175,7 +175,7 @@ else: saved_harga = default_harga
 # --- 4. SIDEBAR ---
 with st.sidebar:
     if logo_filename:
-        st.image(logo_filename, width=55)
+        st.image(logo_filename, width=90)
     st.markdown("<h2 style='color: #C62828; margin: 0; font-size: 26px; font-weight: bold;'>AST SYSTEM</h2>", unsafe_allow_html=True)
     st.write(f"Logged in as: **{st.session_state.role}**")
     st.markdown("---")
@@ -331,12 +331,12 @@ if selected_menu == "🧾 Nota":
                 if filtered_items:
                     # PREVIEW KERTAS NOTA DI WEB MENGGUNAKAN STREAMLIT ST.IMAGE LOKAL
                     with st.container(border=True):
-                        col_l, col_m, col_r = st.columns([1, 4, 3])
+                        col_l, col_m, col_r = st.columns([1.5, 4, 3])
                         with col_l:
                             if logo_filename:
-                                st.image(logo_filename, width=50)
+                                st.image(logo_filename, width=110)
                         with col_m:
-                            st.markdown("<h4 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h4><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                            st.markdown("<h3 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
                         with col_r:
                             st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
 
