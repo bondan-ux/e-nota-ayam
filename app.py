@@ -19,77 +19,55 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF NOTA (MARGIN DINAMIS) ---
+# --- CLASS GENERATOR PDF NOTA (STANDAR A4 UNTUK ADOBE ACROBAT) ---
 class NotaPDF(FPDF):
-    def __init__(self, orientation='P', logo_path=None, margin_left=6, margin_top=6, margin_right=6, margin_bottom=6):
-        # orientation: 'P' (Portrait) atau 'L' (Landscape)
-        if orientation == 'L':
-            # Format Landscape Setengah F4 / A5 (105mm x 210mm)
-            super().__init__(orientation='L', unit='mm', format=(105, 210))
-        else:
-            # Format Portrait A4 Standar (210mm x 297mm)
-            super().__init__(orientation='P', unit='mm', format='A4')
-            
-        self.pdf_orientation = orientation
+    def __init__(self, logo_path=None):
+        # Format Portrait Standar A4 (Bebas diatur di Adobe Acrobat)
+        super().__init__(orientation='P', unit='mm', format='A4')
         self.logo_path = logo_path
-        self.m_left = margin_left
-        self.m_top = margin_top
-        self.m_right = margin_right
-        self.m_bottom = margin_bottom
 
     def generate(self, tgl, bakul, group, items, total_bayar):
-        self.set_auto_page_break(auto=True, margin=self.m_bottom)
+        self.set_auto_page_break(auto=False)
         self.add_page()
         
-        # Set margin sesuai parameter yang diinput pengguna
-        self.set_margins(self.m_left, self.m_top, self.m_right)
+        # Margin standar FPDF
+        self.set_margins(6, 6, 6)
         
-        # Hitung lebar kotak bingkai sesuai margin
-        page_width = 210 if self.pdf_orientation == 'P' else 210
-        rect_width = page_width - (self.m_left + self.m_right)
-        
-        # Penyesuaian tata letak berdasarkan orientasi yang dipilih
-        if self.pdf_orientation == 'L':
-            self.rect(self.m_left, self.m_top, rect_width, 95)
-            y_start = self.m_top + 2
-            y_footer = self.m_top + 67
-        else:
-            self.rect(self.m_left, self.m_top, rect_width, 100)
-            y_start = self.m_top + 2
-            y_footer = self.m_top + 70
+        # Bingkai Nota Paruh Atas
+        self.rect(6, 6, 198, 100)
+        y_start = 8
+        y_footer = 76
 
         # Header Logo & Judul
-        x_logo = self.m_left + 3
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=x_logo, y=y_start, w=15)
-            self.set_xy(x_logo + 17, y_start)
+            self.image(self.logo_path, x=9, y=y_start, w=15)
+            self.set_xy(26, y_start)
         else:
-            self.set_xy(x_logo, y_start)
+            self.set_xy(9, y_start)
 
         self.set_font("Helvetica", "B", 10)
         self.set_text_color(198, 40, 40)
         self.cell(80, 4, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(x_logo + 17 if (self.logo_path and os.path.exists(self.logo_path)) else x_logo)
+        self.set_x(26 if (self.logo_path and os.path.exists(self.logo_path)) else 9)
         self.set_font("Helvetica", "", 7)
         self.set_text_color(90, 90, 90)
         self.cell(80, 3, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
         # Header Info Kanan
-        self.set_xy(self.m_left + 99, y_start)
+        self.set_xy(105, y_start)
         self.set_font("Helvetica", "", 7.5)
         self.set_text_color(0, 0, 0)
-        self.cell(rect_width - 103, 3.2, f"Tanggal: {tgl}", ln=1, align='R')
-        self.set_x(self.m_left + 99)
-        self.cell(rect_width - 103, 3.2, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
-        self.set_x(self.m_left + 99)
-        self.cell(rect_width - 103, 3.2, f"Group: {group}", ln=1, align='R')
+        self.cell(95, 3.2, f"Tanggal: {tgl}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(95, 3.2, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(95, 3.2, f"Group: {group}", ln=1, align='R')
 
         self.ln(3)
 
         # Tabel Header
-        x_table = self.m_left + 3
-        self.set_x(x_table)
+        self.set_x(9)
         self.set_font("Helvetica", "B", 7.5)
         self.set_fill_color(240, 240, 240)
         self.cell(20, 4.5, "QTY / KG", 1, 0, 'C', fill=True)
@@ -100,7 +78,7 @@ class NotaPDF(FPDF):
         # Isi Tabel
         self.set_font("Helvetica", "", 7.5)
         for item in items:
-            self.set_x(x_table)
+            self.set_x(9)
             kg_val = item['KG']
             kg_str = f"{int(kg_val)}" if isinstance(kg_val, (int, float)) and float(kg_val).is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
             h_str = f"Rp {item['Harga']:,.0f}  ".replace(",", ".")
@@ -112,17 +90,17 @@ class NotaPDF(FPDF):
             self.cell(41, 4.2, j_str, 1, 1, 'R')
 
         # Tanda Tangan
-        self.set_xy(self.m_left + 6, y_footer)
+        self.set_xy(12, y_footer)
         self.set_font("Helvetica", "", 7.5)
         self.cell(40, 3, "Penerima,", 0, 0, 'C')
         self.cell(40, 3, "Hormat Kami,", 0, 0, 'C')
 
-        self.set_xy(self.m_left + 6, y_footer + 13)
+        self.set_xy(12, y_footer + 13)
         self.cell(40, 3, "( ............................ )", 0, 0, 'C')
         self.cell(40, 3, "( ............................ )", 0, 0, 'C')
 
         # Total Kanan
-        self.set_xy(self.m_left + 94, y_footer + 4)
+        self.set_xy(100, y_footer + 4)
         self.set_font("Helvetica", "B", 8.5)
         self.cell(35, 5, "TOTAL :", 0, 0, 'R')
         
@@ -378,35 +356,8 @@ if selected_menu == "🧾 Nota":
                             </div>
                         """.replace(",", "."), unsafe_allow_html=True)
 
-                    # PENGATURAN CETAK PDF (ORIENTASI & MARGIN)
-                    st.markdown("##### 🖨️ Pengaturan Cetak PDF & Margin Document")
-                    selected_orient = st.radio(
-                        "Pilih Orientasi Cetak:",
-                        options=["Portrait (A4 Tegak)", "Landscape (Setengah F4 / A5 Memanjang)"],
-                        horizontal=True
-                    )
-                    
-                    orient_code = 'L' if "Landscape" in selected_orient else 'P'
-
-                    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-                    with col_m1:
-                        margin_left = st.number_input("Margin Kiri (mm)", value=6, step=1, min_value=0)
-                    with col_m2:
-                        margin_top = st.number_input("Margin Atas (mm)", value=6, step=1, min_value=0)
-                    with col_m3:
-                        margin_right = st.number_input("Margin Kanan (mm)", value=6, step=1, min_value=0)
-                    with col_m4:
-                        margin_bottom = st.number_input("Margin Bawah (mm)", value=6, step=1, min_value=0)
-
-                    # GENERATE PDF SESUAI ORIENTASI DAN MARGIN DINAMIS
-                    pdf_generator = NotaPDF(
-                        orientation=orient_code, 
-                        logo_path=logo_filename,
-                        margin_left=margin_left,
-                        margin_top=margin_top,
-                        margin_right=margin_right,
-                        margin_bottom=margin_bottom
-                    )
+                    # GENERATE PDF NOTA
+                    pdf_generator = NotaPDF(logo_path=logo_filename)
                     pdf_data = pdf_generator.generate(
                         tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                         bakul=selected_bakul,
@@ -417,8 +368,9 @@ if selected_menu == "🧾 Nota":
 
                     file_name = f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.pdf"
                     
+                    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
                     st.download_button(
-                        label=f"📄 Download PDF Nota ({'Landscape' if orient_code == 'L' else 'Portrait'})",
+                        label="📄 Download PDF Nota",
                         data=pdf_data,
                         file_name=file_name,
                         mime="application/pdf",
