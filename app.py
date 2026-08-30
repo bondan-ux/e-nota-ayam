@@ -19,91 +19,108 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF NOTA (PRESISI 1 HALAMAN) ---
+# --- CLASS GENERATOR PDF NOTA (ORIENTASI DINAMIS) ---
 class NotaPDF(FPDF):
-    def __init__(self, logo_path=None):
-        super().__init__(orientation='L', unit='mm', format=(105, 210))
+    def __init__(self, orientation='P', logo_path=None):
+        # orientation: 'P' (Portrait) atau 'L' (Landscape)
+        if orientation == 'L':
+            # Format Landscape Setengah F4 / A5 (105mm x 210mm)
+            super().__init__(orientation='L', unit='mm', format=(105, 210))
+        else:
+            # Format Portrait A4 Standar (210mm x 297mm)
+            super().__init__(orientation='P', unit='mm', format='A4')
+            
+        self.pdf_orientation = orientation
         self.logo_path = logo_path
 
     def generate(self, tgl, bakul, group, items, total_bayar):
         self.set_auto_page_break(auto=False)
         self.add_page()
         
-        self.set_margins(6, 5, 6)
-        self.rect(6, 5, 198, 95)
+        # Penyesuaian tata letak berdasarkan orientasi yang dipilih
+        if self.pdf_orientation == 'L':
+            # Landscape
+            self.set_margins(6, 5, 6)
+            self.rect(6, 5, 198, 95)
+            y_start = 7
+            y_footer = 72
+        else:
+            # Portrait (Paruh Atas A4)
+            self.set_margins(6, 6, 6)
+            self.rect(6, 6, 198, 100)
+            y_start = 8
+            y_footer = 76
 
         # Header Logo & Judul
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=9, y=7, w=18)
-            self.set_xy(29, 8)
+            self.image(self.logo_path, x=9, y=y_start, w=15)
+            self.set_xy(26, y_start)
         else:
-            self.set_xy(9, 8)
+            self.set_xy(9, y_start)
 
-        self.set_font("Helvetica", "B", 11)
+        self.set_font("Helvetica", "B", 10)
         self.set_text_color(198, 40, 40)
-        self.cell(85, 4.5, "AYAM SEGAR TUMPANG", ln=1)
+        self.cell(80, 4, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(29 if (self.logo_path and os.path.exists(self.logo_path)) else 9)
-        self.set_font("Helvetica", "", 7.5)
+        self.set_x(26 if (self.logo_path and os.path.exists(self.logo_path)) else 9)
+        self.set_font("Helvetica", "", 7)
         self.set_text_color(90, 90, 90)
-        self.cell(85, 3.5, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
+        self.cell(80, 3, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
         # Header Info Kanan
-        self.set_xy(100, 7)
-        self.set_font("Helvetica", "", 8)
+        self.set_xy(105, y_start)
+        self.set_font("Helvetica", "", 7.5)
         self.set_text_color(0, 0, 0)
-        self.cell(100, 3.8, f"Tanggal: {tgl}", ln=1, align='R')
-        self.set_x(100)
-        self.cell(100, 3.8, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
-        self.set_x(100)
-        self.cell(100, 3.8, f"Group: {group}", ln=1, align='R')
+        self.cell(95, 3.2, f"Tanggal: {tgl}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(95, 3.2, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
+        self.set_x(105)
+        self.cell(95, 3.2, f"Group: {group}", ln=1, align='R')
 
         self.ln(3)
 
         # Tabel Header
         self.set_x(9)
-        self.set_font("Helvetica", "B", 8)
+        self.set_font("Helvetica", "B", 7.5)
         self.set_fill_color(240, 240, 240)
-        self.cell(22, 5.5, "QTY / KG", 1, 0, 'C', fill=True)
-        self.cell(86, 5.5, "BARANG", 1, 0, 'L', fill=True)
-        self.cell(42, 5.5, "HARGA  ", 1, 0, 'R', fill=True)
-        self.cell(42, 5.5, "JUMLAH  ", 1, 1, 'R', fill=True)
+        self.cell(20, 4.5, "QTY / KG", 1, 0, 'C', fill=True)
+        self.cell(90, 4.5, "BARANG", 1, 0, 'L', fill=True)
+        self.cell(41, 4.5, "HARGA  ", 1, 0, 'R', fill=True)
+        self.cell(41, 4.5, "JUMLAH  ", 1, 1, 'R', fill=True)
 
         # Isi Tabel
-        self.set_font("Helvetica", "", 8)
+        self.set_font("Helvetica", "", 7.5)
         for item in items:
             self.set_x(9)
             kg_val = item['KG']
-            kg_str = f"{int(kg_val)}" if isinstance(kg_val, float) and kg_val.is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
+            kg_str = f"{int(kg_val)}" if isinstance(kg_val, (int, float)) and float(kg_val).is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
             h_str = f"Rp {item['Harga']:,.0f}  ".replace(",", ".")
             j_str = f"Rp {item['Jumlah']:,.0f}  ".replace(",", ".")
 
-            self.cell(22, 5.5, kg_str, 1, 0, 'C')
-            self.cell(86, 5.5, f" {item['Nama Barang']}", 1, 0, 'L')
-            self.cell(42, 5.5, h_str, 1, 0, 'R')
-            self.cell(42, 5.5, j_str, 1, 1, 'R')
-
-        # Footer (Y=68)
-        y_footer = 68
+            self.cell(20, 4.2, kg_str, 1, 0, 'C')
+            self.cell(90, 4.2, f" {item['Nama Barang']}", 1, 0, 'L')
+            self.cell(41, 4.2, h_str, 1, 0, 'R')
+            self.cell(41, 4.2, j_str, 1, 1, 'R')
 
         # Tanda Tangan
-        self.set_xy(14, y_footer)
-        self.cell(42, 3.5, "Penerima,", 0, 0, 'C')
-        self.cell(42, 3.5, "Hormat Kami,", 0, 0, 'C')
+        self.set_xy(12, y_footer)
+        self.set_font("Helvetica", "", 7.5)
+        self.cell(40, 3, "Penerima,", 0, 0, 'C')
+        self.cell(40, 3, "Hormat Kami,", 0, 0, 'C')
 
-        self.set_xy(14, y_footer + 14)
-        self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
-        self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
+        self.set_xy(12, y_footer + 13)
+        self.cell(40, 3, "( ............................ )", 0, 0, 'C')
+        self.cell(40, 3, "( ............................ )", 0, 0, 'C')
 
         # Total Kanan
-        self.set_xy(100, y_footer + 6)
-        self.set_font("Helvetica", "B", 9)
-        self.cell(35, 6, "TOTAL :", 0, 0, 'R')
+        self.set_xy(100, y_footer + 4)
+        self.set_font("Helvetica", "B", 8.5)
+        self.cell(35, 5, "TOTAL :", 0, 0, 'R')
         
-        self.set_font("Helvetica", "B", 11.5)
+        self.set_font("Helvetica", "B", 10)
         self.set_text_color(198, 40, 40)
         tot_str = f"Rp {total_bayar:,.0f}  ".replace(",", ".")
-        self.cell(57, 6, tot_str, 0, 1, 'R')
+        self.cell(57, 5, tot_str, 0, 1, 'R')
 
         pdf_output = self.output()
         if isinstance(pdf_output, str):
@@ -269,11 +286,10 @@ if selected_menu == "🧾 Nota":
             if selected_bakul_info:
                 selected_bakul, real_idx = selected_bakul_info
                 
-                # Reset nilai manual saat ganti bakul
                 if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul_label:
                     st.session_state['last_bakul'] = selected_bakul_label
-                    st.session_state['qty_box_val'] = 0.0
-                    st.session_state['qty_telur_b_val'] = 0.0
+                    st.session_state['qty_box_val'] = 0
+                    st.session_state['qty_telur_b_val'] = 0
 
                 row_bakul = df.loc[real_idx]
                 
@@ -285,21 +301,19 @@ if selected_menu == "🧾 Nota":
                         return 0.0 if pd.isna(num) else float(num)
                     except: return 0.0
 
-                # 3 Kolom Input Manual (Peti, Box, Telur B)
                 col_in1, col_in2, col_in3 = st.columns(3)
                 with col_in1:
-                    qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
+                    qty_peti = st.number_input("Jumlah Peti", value=0, step=1, format="%d")
                 with col_in2:
-                    qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=1)
+                    qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', value=0, step=1, format="%d")
                 with col_in3:
-                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', step=1)
+                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', value=0, step=1, format="%d")
 
                 qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
                 qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
                 qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
                 qty_telur_a = get_valid_float(next((c for c in df.columns if 'TELUR A' in c or 'TELUR' in c), ''))
                 
-                # Mengambil Telur B dari Excel, jika tidak ada baru gunakan input manual
                 qty_telur_b_excel = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
                 qty_telur_b = qty_telur_b_excel if qty_telur_b_excel > 0 else qty_telur_b_manual
 
@@ -330,34 +344,43 @@ if selected_menu == "🧾 Nota":
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
                 if filtered_items:
-                    # PREVIEW KERTAS NOTA DI WEB
                     with st.container(border=True):
                         col_l, col_m, col_r = st.columns([1.5, 4, 3])
                         with col_l:
                             if logo_filename:
-                                st.image(logo_filename, width=110)
+                                st.image(logo_filename, width=90)
                         with col_m:
-                            st.markdown("<h3 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                            st.markdown("<h4 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h4><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
                         with col_r:
                             st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
 
                         rows_html = ""
                         for item in filtered_items:
-                            kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+                            kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], (int, float)) and float(item['KG']).is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
                             rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
 
                         st.markdown(f"""
-                            <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-                                <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
+                            <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;">
+                                <thead><tr><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">JUMLAH</th></tr></thead>
                                 <tbody>{rows_html}</tbody>
                             </table>
-                            <div style="text-align:right; margin-top:10px; font-weight:bold;">
-                                TOTAL: <span style="color:#C62828; font-size:18px;">Rp {total_bayar:,.0f}</span>
+                            <div style="text-align:right; margin-top:8px; font-weight:bold;">
+                                TOTAL: <span style="color:#C62828; font-size:16px;">Rp {total_bayar:,.0f}</span>
                             </div>
                         """.replace(",", "."), unsafe_allow_html=True)
 
-                    # GENERATE PDF & TOMBOL DOWNLOAD
-                    pdf_generator = NotaPDF(logo_path=logo_filename)
+                    # PILIHAN ORIENTASI CETAK DINAMIS
+                    st.markdown("##### 🖨️ Pengaturan Cetak PDF")
+                    selected_orient = st.radio(
+                        "Pilih Orientasi Cetak:",
+                        options=["Portrait (A4 Tegak)", "Landscape (Setengah F4 / A5 Memanjang)"],
+                        horizontal=True
+                    )
+                    
+                    orient_code = 'L' if "Landscape" in selected_orient else 'P'
+
+                    # GENERATE PDF SESUAI PILIHAN ORIENTASI
+                    pdf_generator = NotaPDF(orientation=orient_code, logo_path=logo_filename)
                     pdf_data = pdf_generator.generate(
                         tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                         bakul=selected_bakul,
@@ -369,7 +392,7 @@ if selected_menu == "🧾 Nota":
                     file_name = f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.pdf"
                     
                     st.download_button(
-                        label="📄 Download / Print PDF Nota",
+                        label=f"📄 Download PDF Nota ({'Landscape' if orient_code == 'L' else 'Portrait'})",
                         data=pdf_data,
                         file_name=file_name,
                         mime="application/pdf",
