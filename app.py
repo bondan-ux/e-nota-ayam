@@ -36,21 +36,21 @@ class NotaPDF(FPDF):
         y_start = 8
         y_footer = 76
 
-        # Header Logo (Ukuran Diperbesar ke w=22) & Judul Sejajar
+        # Header Logo & Judul (Rapat di PDF)
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=8, y=y_start, w=22)
-            self.set_xy(34, y_start + 1)
+            self.image(self.logo_path, x=8, y=y_start, w=20)
+            self.set_xy(30, y_start + 1.5)
         else:
-            self.set_xy(8, y_start + 1)
+            self.set_xy(8, y_start + 1.5)
 
         self.set_font("Helvetica", "B", 11)
         self.set_text_color(198, 40, 40)
-        self.cell(80, 5, "AYAM SEGAR TUMPANG", ln=1)
+        self.cell(75, 5, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(34 if (self.logo_path and os.path.exists(self.logo_path)) else 8)
+        self.set_x(30 if (self.logo_path and os.path.exists(self.logo_path)) else 8)
         self.set_font("Helvetica", "", 7.5)
         self.set_text_color(90, 90, 90)
-        self.cell(80, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
+        self.cell(75, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
         # Header Info Kanan
         self.set_xy(105, y_start)
@@ -330,20 +330,32 @@ if selected_menu == "🧾 Nota":
                 
                 if filtered_items:
                     with st.container(border=True):
-                        # Layout Header Nota Presisi & Simetris
-                        col_l, col_m, col_r = st.columns([2.5, 5, 3])
-                        with col_l:
+                        # Layout Header Nota Rapat & Presisi
+                        col_left, col_right = st.columns([7, 3])
+                        with col_left:
                             if logo_filename:
-                                st.image(logo_filename, width=140)
-                        with col_m:
-                            st.markdown(
-                                "<div style='display: flex; flex-direction: column; justify-content: center; height: 100%;'>"
-                                "<h3 style='margin: 0; color: #C62828; font-weight: bold;'>AYAM SEGAR TUMPANG</h3>"
-                                "<span style='color: #555; font-size: 13px;'>Ds. Kambingan - Tumpang - Kab. Malang</span>"
-                                "</div>", 
-                                unsafe_allow_html=True
-                            )
-                        with col_r:
+                                import base64
+                                with open(logo_filename, "rb") as img_f:
+                                    img_b64 = base64.b64encode(img_f.read()).decode()
+                                
+                                st.markdown(f"""
+                                    <div style="display: flex; align-items: center; gap: 14px;">
+                                        <img src="data:image/png;base64,{img_b64}" style="width: 100px; height: auto;">
+                                        <div>
+                                            <h3 style="margin: 0; color: #C62828; font-weight: bold; font-size: 20px;">AYAM SEGAR TUMPANG</h3>
+                                            <span style="color: #555; font-size: 13px;">Ds. Kambingan - Tumpang - Kab. Malang</span>
+                                        </div>
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.markdown("""
+                                    <div>
+                                        <h3 style="margin: 0; color: #C62828; font-weight: bold; font-size: 20px;">AYAM SEGAR TUMPANG</h3>
+                                        <span style="color: #555; font-size: 13px;">Ds. Kambingan - Tumpang - Kab. Malang</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
+
+                        with col_right:
                             st.markdown(f"<div style='text-align:right; font-size: 13px;'><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</div>", unsafe_allow_html=True)
 
                         rows_html = ""
