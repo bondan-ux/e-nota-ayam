@@ -10,7 +10,6 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 
-# --- CONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="E-Nota Bakul Ayam Segar",
     page_icon="🐔",
@@ -20,14 +19,13 @@ st.set_page_config(
 # --- FUNGSI GENERATOR GAMBAR NOTA (.PNG) - DYNAMIC HEIGHT ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 750
-    # Hitung tinggi dinamis berdasarkan jumlah item
     table_header_h = 30
     row_h = 24
     footer_h = 90
     top_header_h = 85
     
     total_table_h = table_header_h + (len(items) * row_h)
-    height = top_header_h + total_table_h + footer_h + 30 # total tinggi dinamis
+    height = top_header_h + total_table_h + footer_h + 30
     
     img = Image.new('RGB', (width, height), color='white')
     draw = ImageDraw.Draw(img)
@@ -84,7 +82,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         draw.text((600, y_curr + 4), j_str, fill="black", font=font_regular)
         y_curr += row_h
 
-    # Footer Area (Langsung Rapat di Bawah Tabel)
+    # Footer Area
     y_footer = y_curr + 15
     draw.text((40, y_footer), "Penerima,", fill="black", font=font_small)
     draw.text((180, y_footer), "Hormat Kami,", fill="black", font=font_small)
@@ -104,7 +102,6 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
 # --- FUNGSI GENERATOR WORD (.DOCX) ---
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc = Document()
-
     sections = doc.sections
     for section in sections:
         section.top_margin = Inches(0.3)
@@ -127,7 +124,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     ''')
     tcPr.append(tcBorders)
 
-    # Header
     header_table = cell.add_table(rows=1, cols=2)
     header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
@@ -165,7 +161,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     p_space.paragraph_format.space_before = Pt(4)
     p_space.paragraph_format.space_after = Pt(4)
 
-    # Item Table
     item_table = cell.add_table(rows=1, cols=4)
     item_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     
@@ -208,7 +203,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             ''')
             tcPr.append(tcBorders)
 
-    # Footer Table
     footer_table = cell.add_table(rows=1, cols=2)
     footer_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     
@@ -244,70 +238,81 @@ st.caption("Aplikasi pembuat nota digital praktis dari file Excel penjualan hari
 col_input, col_preview = st.columns([1, 1])
 
 with col_input:
-    st.subheader("1. Upload File Excel")
-    uploaded_file = st.file_uploader("Pilih file Excel (.xlsx / .xls)", type=["xlsx", "xls"])
+    st.subheader("1. Upload File Excel Penjualan")
+    uploaded_file = st.file_uploader("Upload file Excel (.xlsx / .xls)", type=["xlsx", "xls"])
     
-    logo_path = "logo.png" # Lokasi default logo jika ada
+    logo_path = "logo.png"
     
     if uploaded_file:
         try:
             excel_data = pd.ExcelFile(uploaded_file)
             sheet_names = excel_data.sheet_names
             
-            st.subheader("2. Pilih Sheet & Bakul")
-            selected_sheet = st.selectbox("Pilih Sheet (Tanggal/Group):", sheet_names)
+            st.subheader("2. Pilih Tanggal & Bakul")
+            selected_sheet = st.selectbox("Pilih Sheet / Tanggal:", sheet_names)
             
-            # Read sheet data
             df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
             
-            # Kolom parsing (menyesuaikan struktur file Excel)
-            if 'Bakul' in df.columns:
-                list_bakul = df['Bakul'].dropna().unique().tolist()
-                selected_bakul = st.selectbox("Pilih Nama Bakul:", list_bakul)
+            # Normalisasi nama kolom agar flexible
+            df.columns = [str(c).strip() for c in df.columns]
+            
+            bakul_col = next((c for c in df.columns if 'bakul' in c.lower()), None)
+            
+            if bakul_col:
+                list_bakul = df[bakul_col].dropna().unique().tolist()
+                selected_bakul = st.selectbox("Pilih Bakul:", list_bakul)
                 
-                # Filter data berdasarkan bakul yang dipilih
-                df_bakul = df[df['Bakul'] == selected_bakul]
+                group_col = next((c for c in df.columns if 'group' in c.lower()), None)
+                selected_group = df[df[bakul_col] == selected_bakul][group_col].iloc[0] if group_col and not df[df[bakul_col] == selected_bakul][group_col].empty else "FARHAN"
+
+                df_bakul = df[df[bakul_col] == selected_bakul]
                 
-                # Format list item
                 items = []
                 total_bayar = 0
                 
                 for _, row in df_bakul.iterrows():
-                    nama_brg = row.get('Nama Barang', row.get('Barang', 'Ayam Segar'))
-                    kg = row.get('KG', row.get('Qty', 0))
-                    harga = row.get('Harga', 0)
-                    jumlah = row.get('Jumlah', kg * harga)
+                    brg_col = next((c for c in df.columns if 'barang' in c.lower()), None)
+                    kg_col = next((c for c in df.columns if 'kg' in c.lower() or 'qty' in c.lower()), None)
+                    harga_col = next((c for c in df.columns if 'harga' in c.lower()), None)
+                    jumlah_col = next((c for c in df.columns if 'jumlah' in c.lower() or 'total' in c.lower()), None)
                     
-                    items.append({
-                        'Nama Barang': str(nama_brg),
-                        'KG': float(kg),
-                        'Harga': float(harga),
-                        'Jumlah': float(jumlah)
-                    })
-                    total_bayar += float(jumlah)
+                    nama_brg = row[brg_col] if brg_col else "Barang"
+                    kg = row[kg_col] if kg_col else 0
+                    harga = row[harga_col] if harga_col else 0
+                    jumlah = row[jumlah_col] if jumlah_col else (float(kg) * float(harga))
+                    
+                    if pd.notna(nama_brg):
+                        items.append({
+                            'Nama Barang': str(nama_brg).upper(),
+                            'KG': float(kg) if pd.notna(kg) else 0,
+                            'Harga': float(harga) if pd.notna(harga) else 0,
+                            'Jumlah': float(jumlah) if pd.notna(jumlah) else 0
+                        })
+                        total_bayar += float(jumlah) if pd.notna(jumlah) else 0
                 
-                st.success(f"Berhasil memuat {len(items)} barang untuk {selected_bakul}")
-                
+                st.success(f"📌 {len(items)} barang terdeteksi untuk {selected_bakul}")
             else:
-                st.error("Kolom 'Bakul' tidak ditemukan dalam sheet ini.")
+                st.error("Kolom 'Bakul' tidak terdeteksi pada sheet ini.")
                 selected_bakul = None
                 items = []
                 total_bayar = 0
 
         except Exception as e:
-            st.error(f"Gagal membaca file Excel: {e}")
+            st.error(f"Gagal memproses file Excel: {e}")
             selected_bakul = None
             items = []
             total_bayar = 0
+    else:
+        selected_bakul = None
+        items = []
 
 with col_preview:
     st.subheader("3. Preview & Download Nota")
     if uploaded_file and selected_bakul and items:
-        # Generate gambar & docx
         img_bytes = generate_image_nota(
             tgl=selected_sheet, 
             bakul=selected_bakul, 
-            group="Ayam Segar", 
+            group=selected_group if 'selected_group' in locals() else "FARHAN", 
             items=items, 
             total_bayar=total_bayar, 
             logo_path=logo_path
@@ -316,7 +321,7 @@ with col_preview:
         doc_bytes = generate_word_nota(
             tgl=selected_sheet, 
             bakul=selected_bakul, 
-            group="Ayam Segar", 
+            group=selected_group if 'selected_group' in locals() else "FARHAN", 
             items=items, 
             total_bayar=total_bayar, 
             logo_path=logo_path
@@ -327,17 +332,17 @@ with col_preview:
         col_dl1, col_dl2 = st.columns(2)
         with col_dl1:
             st.download_button(
-                label="📥 Download Gambar (.PNG)",
+                label="📥 Download PNG",
                 data=img_bytes,
                 file_name=f"Nota_{selected_bakul}_{selected_sheet}.png",
                 mime="image/png"
             )
         with col_dl2:
             st.download_button(
-                label="📄 Download Word (.DOCX)",
+                label="📄 Download DOCX",
                 data=doc_bytes,
                 file_name=f"Nota_{selected_bakul}_{selected_sheet}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
     else:
-        st.info("Silakan upload file Excel dan pilih Bakul terlebih dahulu untuk melihat preview nota.")
+        st.info("Upload file Excel di kolom sebelah kiri untuk memuat preview dan tombol download nota.")
