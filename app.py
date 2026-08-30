@@ -3,8 +3,14 @@ import pandas as pd
 from datetime import datetime
 import json
 import os
-import base64
-import streamlit.components.v1 as components
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
+from PIL import Image, ImageDraw, ImageFont
 
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(
@@ -20,12 +26,221 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# Function Encode Gambar ke Base64 (supaya logo muncul di HTML Printable)
-def get_base64_logo(file_path):
-    if file_path and os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return ""
+# --- FUNGSI GENERATOR WORD (.DOCX) ---
+def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
+    doc = Document()
+
+    # Atur Margin Halaman Word
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(0.4)
+        section.bottom_margin = Inches(0.4)
+        section.left_margin = Inches(0.4)
+        section.right_margin = Inches(0.4)
+
+    # Tabel Utama Bingkai Nota
+    outer_table = doc.add_table(rows=1, cols=1)
+    outer_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    cell = outer_table.cell(0, 0)
+    
+    # Atur border bingkai luar
+    tcPr = cell._element.get_or_add_tcPr()
+    tcBorders = parse_xml(r'''
+        <w:tcBorders xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+            <w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/>
+            <w:left w:val="single" w:sz="12" w:space="0" w:color="000000"/>
+            <w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/>
+            <w:right w:val="single" w:sz="12" w:space="0" w:color="000000"/>
+        </w:tcBorders>
+    ''')
+    tcPr.append(tcBorders)
+
+    # Header Table (Logo + Info)
+    header_table = cell.add_table(rows=1, cols=2)
+    header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    header_table.autofit = False
+
+    # Kolom Kiri Header (Logo & Judul)
+    cell_left = header_table.cell(0, 0)
+    p_hdr = cell_left.paragraphs[0]
+    p_hdr.paragraph_format.space_before = Pt(0)
+    p_hdr.paragraph_format.space_after = Pt(0)
+    
+    if logo_path and os.path.exists(logo_path):
+        run_img = p_hdr.add_run()
+        run_img.add_picture(logo_path, width=Inches(0.9))
+        run_space = p_hdr.add_run("  ")
+
+    run_title = p_hdr.add_run("AYAM SEGAR TUMPANG\n")
+    run_title.bold = True
+    run_title.font.size = Pt(12)
+    run_title.font.color.rgb = RGBColor(198, 40, 40)
+
+    run_sub = p_hdr.add_run("Ds. Kambingan - Tumpang - Kab. Malang")
+    run_sub.font.size = Pt(8.5)
+    run_sub.font.color.rgb = RGBColor(100, 100, 100)
+
+    # Kolom Kanan Header (Tanggal & Bakul)
+    cell_right = header_table.cell(0, 1)
+    p_info = cell_right.paragraphs[0]
+    p_info.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_info.paragraph_format.space_before = Pt(0)
+    p_info.paragraph_format.space_after = Pt(0)
+
+    run_info = p_info.add_run(f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}")
+    run_info.font.size = Pt(9)
+
+    # Spacing
+    p_space = cell.add_paragraph()
+    p_space.paragraph_format.space_before = Pt(6)
+    p_space.paragraph_format.space_after = Pt(6)
+
+    # Tabel Barang
+    item_table = cell.add_table(rows=1, cols=4)
+    item_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    
+    hdr_cells = item_table.rows[0].cells
+    headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
+    aligns = [WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.RIGHT, WD_ALIGN_PARAGRAPH.RIGHT]
+    
+    for i, h in enumerate(headers):
+        hdr_cells[i].text = h
+        p = hdr_cells[i].paragraphs[0]
+        p.alignment = aligns[i]
+        p.runs[0].font.bold = True
+        p.runs[0].font.size = Pt(8.5)
+        # Background Abu Header Tabel
+        shading = parse_xml(r'<w:shd {} w:fill="F0F0F0"/>'.format(nsdecls('w')))
+        hdr_cells[i]._tc.get_or_add_tcPr().append(shading)
+
+    for item in items:
+        row_cells = item_table.add_row().cells
+        kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], (int, float)) and float(item['KG']).is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+        h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
+        j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+        
+        vals = [kg_str, item['Nama Barang'], h_str, j_str]
+        for i, val in enumerate(vals):
+            row_cells[i].text = val
+            p = row_cells[i].paragraphs[0]
+            p.alignment = aligns[i]
+            p.runs[0].font.size = Pt(8.5)
+
+    # Apply Border ke Seluruh Sel Tabel Barang
+    for row in item_table.rows:
+        for c in row.cells:
+            tcPr = c._element.get_or_add_tcPr()
+            tcBorders = parse_xml(r'''
+                <w:tcBorders xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                    <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+                    <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+                    <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+                    <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
+                </w:tcBorders>
+            ''')
+            tcPr.append(tcBorders)
+
+    # Footer Table (Tanda Tangan & Total)
+    footer_table = cell.add_table(rows=1, cols=2)
+    footer_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    
+    # Kiri Footer (Tanda Tangan)
+    c_ft_left = footer_table.cell(0, 0)
+    p_ft_l = c_ft_left.paragraphs[0]
+    p_ft_l.paragraph_format.space_before = Pt(10)
+    p_ft_l.add_run("Penerima,\t\tHormat Kami,\n\n\n( ............................ )\t( ............................ )").font.size = Pt(8.5)
+
+    # Kanan Footer (Total)
+    c_ft_right = footer_table.cell(0, 1)
+    p_ft_r = c_ft_right.paragraphs[0]
+    p_ft_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_ft_r.paragraph_format.space_before = Pt(25)
+    
+    run_tot_lbl = p_ft_r.add_run("TOTAL : ")
+    run_tot_lbl.bold = True
+    run_tot_lbl.font.size = Pt(9.5)
+    
+    run_tot_val = p_ft_r.add_run(f"Rp {total_bayar:,.0f}".replace(",", "."))
+    run_tot_val.bold = True
+    run_tot_val.font.size = Pt(11)
+    run_tot_val.font.color.rgb = RGBColor(198, 40, 40)
+
+    # Output Buffer
+    doc_io = io.BytesIO()
+    doc.save(doc_io)
+    doc_io.seek(0)
+    return doc_io.getvalue()
+
+# --- FUNGSI GENERATOR GAMBAR NOTA (.PNG) ---
+def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
+    width, height = 750, 450
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
+    
+    try:
+        font_title = ImageFont.truetype("arial.ttf", 20)
+        font_bold = ImageFont.truetype("arial.ttf", 13)
+        font_regular = ImageFont.truetype("arial.ttf", 12)
+        font_small = ImageFont.truetype("arial.ttf", 10)
+    except:
+        font_title = font_bold = font_regular = font_small = ImageFont.load_default()
+
+    # Border Luar
+    draw.rectangle([(10, 10), (width - 10, height - 10)], outline="black", width=2)
+    
+    # Logo
+    x_offset = 20
+    if logo_path and os.path.exists(logo_path):
+        try:
+            logo_img = Image.open(logo_path).convert("RGBA")
+            logo_img.thumbnail((70, 70))
+            img.paste(logo_img, (20, 20), logo_img)
+            x_offset = 100
+        except: pass
+
+    # Header Teks
+    draw.text((x_offset, 25), "AYAM SEGAR TUMPANG", fill="#C62828", font=font_title)
+    draw.text((x_offset, 52), "Ds. Kambingan - Tumpang - Kab. Malang", fill="#555555", font=font_small)
+
+    # Info Kanan
+    draw.text((width - 200, 25), f"Tanggal: {tgl}", fill="black", font=font_small)
+    draw.text((width - 200, 40), f"Bakul: {bakul}", fill="black", font=font_small)
+    draw.text((width - 200, 55), f"Group: {group}", fill="black", font=font_small)
+
+    # Tabel Items
+    y_table = 90
+    draw.rectangle([(20, y_table), (width - 20, y_table + 25)], fill="#F0F0F0", outline="black")
+    draw.text((30, y_table + 5), "QTY / KG", fill="black", font=font_bold)
+    draw.text((150, y_table + 5), "BARANG", fill="black", font=font_bold)
+    draw.text((450, y_table + 5), "HARGA", fill="black", font=font_bold)
+    draw.text((600, y_table + 5), "JUMLAH", fill="black", font=font_bold)
+
+    y_curr = y_table + 25
+    for item in items:
+        draw.rectangle([(20, y_curr), (width - 20, y_curr + 22)], outline="black")
+        kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], (int, float)) and float(item['KG']).is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+        h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
+        j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+
+        draw.text((30, y_curr + 3), kg_str, fill="black", font=font_regular)
+        draw.text((150, y_curr + 3), item['Nama Barang'], fill="black", font=font_regular)
+        draw.text((450, y_curr + 3), h_str, fill="black", font=font_regular)
+        draw.text((600, y_curr + 3), j_str, fill="black", font=font_regular)
+        y_curr += 22
+
+    # Footer Sign
+    draw.text((40, height - 80), "Penerima,", fill="black", font=font_small)
+    draw.text((180, height - 80), "Hormat Kami,", fill="black", font=font_small)
+    draw.text((40, height - 30), "( ............................ )", fill="black", font=font_small)
+    draw.text((180, height - 30), "( ............................ )", fill="black", font=font_small)
+
+    # Total
+    tot_str = f"TOTAL: Rp {total_bayar:,.0f}".replace(",", ".")
+    draw.text((width - 240, height - 40), tot_str, fill="#C62828", font=font_title)
+
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format='PNG')
+    return img_byte_arr.getvalue()
 
 # --- 2. CSS STYLING UTAMA ---
 st.markdown("""
@@ -244,30 +459,13 @@ if selected_menu == "🧾 Nota":
                 filtered_items = [i for i in items if i['KG'] > 0]
                 
                 if filtered_items:
-                    # PREVIEW NOTA DI SCREEN
+                    # PREVIEW NOTA
                     with st.container(border=True):
                         col_left, col_right = st.columns([7, 3])
-                        logo_b64 = get_base64_logo(logo_filename)
-                        
                         with col_left:
-                            if logo_b64:
-                                st.markdown(f"""
-                                    <div style="display: flex; align-items: center; gap: 14px;">
-                                        <img src="data:image/png;base64,{logo_b64}" style="width: 100px; height: auto;">
-                                        <div>
-                                            <h3 style="margin: 0; color: #C62828; font-weight: bold; font-size: 20px;">AYAM SEGAR TUMPANG</h3>
-                                            <span style="color: #555; font-size: 13px;">Ds. Kambingan - Tumpang - Kab. Malang</span>
-                                        </div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown("""
-                                    <div>
-                                        <h3 style="margin: 0; color: #C62828; font-weight: bold; font-size: 20px;">AYAM SEGAR TUMPANG</h3>
-                                        <span style="color: #555; font-size: 13px;">Ds. Kambingan - Tumpang - Kab. Malang</span>
-                                    </div>
-                                """, unsafe_allow_html=True)
-
+                            if logo_filename:
+                                st.image(logo_filename, width=80)
+                            st.markdown("<h3 style='margin: 0; color: #C62828;'>AYAM SEGAR TUMPANG</h3><span style='color: #555; font-size: 13px;'>Ds. Kambingan - Tumpang - Kab. Malang</span>", unsafe_allow_html=True)
                         with col_right:
                             st.markdown(f"<div style='text-align:right; font-size: 13px;'><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</div>", unsafe_allow_html=True)
 
@@ -286,148 +484,41 @@ if selected_menu == "🧾 Nota":
                             </div>
                         """.replace(",", "."), unsafe_allow_html=True)
 
-                    # --- TOMBOL CETAK NOTA (HTML PRINTABLE) ---
-                    # Kamu bebas custom margin (@page margin: 5mm/10mm) atau font size di CSS di bawah ini!
-                    html_table_rows = ""
-                    for item in filtered_items:
-                        kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], (int, float)) and float(item['KG']).is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
-                        html_table_rows += f"""
-                            <tr>
-                                <td style="text-align:center; border:1px solid #333; padding:4px;">{kg_str}</td>
-                                <td style="border:1px solid #333; padding:4px;">{item['Nama Barang']}</td>
-                                <td style="text-align:right; border:1px solid #333; padding:4px;">Rp {item['Harga']:,.0f}</td>
-                                <td style="text-align:right; border:1px solid #333; padding:4px;">Rp {item['Jumlah']:,.0f}</td>
-                            </tr>
-                        """.replace(",", ".")
+                    # TOMBOL DOWNLOAD PILIHAN (WORD / GAMBAR PNG)
+                    col_btn1, col_btn2 = st.columns(2)
 
-                    printable_html = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <style>
-                            /* KAMU BISA EDIT MARGIN CETAK KERTAS DI SINI */
-                            @page {{
-                                size: A4 portrait;
-                                margin: 8mm; /* Bebas ubah misal: 5mm, 10mm, 0mm */
-                            }}
-                            body {{
-                                font-family: Arial, sans-serif;
-                                font-size: 11px;
-                                margin: 0;
-                                padding: 0;
-                                color: #000;
-                            }}
-                            .nota-box {{
-                                border: 1.5px solid #000;
-                                padding: 10px;
-                                max-width: 750px;
-                                margin: 0 auto;
-                            }}
-                            .header-table {{
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin-bottom: 8px;
-                            }}
-                            .items-table {{
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin-top: 6px;
-                            }}
-                            .items-table th {{
-                                border: 1px solid #333;
-                                background-color: #eee;
-                                padding: 4px;
-                                font-size: 11px;
-                            }}
-                            .footer-table {{
-                                width: 100%;
-                                margin-top: 15px;
-                            }}
-                            .btn-print {{
-                                background-color: #C62828;
-                                color: white;
-                                padding: 10px 20px;
-                                font-size: 15px;
-                                font-weight: bold;
-                                border: none;
-                                border-radius: 5px;
-                                cursor: pointer;
-                                width: 100%;
-                            }}
-                            .btn-print:hover {{
-                                background-color: #B71C1C;
-                            }}
-                            @media print {{
-                                .no-print {{ display: none !important; }}
-                                .nota-box {{ border: 1.5px solid #000 !important; }}
-                            }}
-                        </style>
-                    </head>
-                    <body>
-                        <div class="no-print" style="margin-bottom: 10px;">
-                            <button class="btn-print" onclick="window.print()">🖨️ Cetak / Print Nota (Bisa Disimpan Sebagai PDF)</button>
-                        </div>
-                        
-                        <div class="nota-box">
-                            <table class="header-table">
-                                <tr>
-                                    <td style="vertical-align: top; width: 60%;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            {"<img src='data:image/png;base64," + logo_b64 + "' style='height: 42px;' />" if logo_b64 else ""}
-                                            <div>
-                                                <div style="font-size: 15px; font-weight: bold; color: #C62828;">AYAM SEGAR TUMPANG</div>
-                                                <div style="font-size: 10px; color: #555;">Ds. Kambingan - Tumpang - Kab. Malang</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="vertical-align: top; text-align: right; width: 40%; font-size: 10.5px;">
-                                        <b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br>
-                                        <b>Bakul:</b> {selected_bakul}<br>
-                                        <b>Group:</b> {selected_sheet}
-                                    </td>
-                                </tr>
-                            </table>
+                    # 1. Download File Word (.docx)
+                    docx_bytes = generate_word_nota(
+                        tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                        bakul=selected_bakul,
+                        group=selected_sheet,
+                        items=filtered_items,
+                        total_bayar=total_bayar,
+                        logo_path=logo_filename
+                    )
+                    with col_btn1:
+                        st.download_button(
+                            label="📝 Download File Word (.docx)",
+                            data=docx_bytes,
+                            file_name=f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True
+                        )
 
-                            <table class="items-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 15%;">QTY / KG</th>
-                                        <th style="width: 45%; text-align: left;">BARANG</th>
-                                        <th style="width: 20%; text-align: right;">HARGA</th>
-                                        <th style="width: 20%; text-align: right;">JUMLAH</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {html_table_rows}
-                                </tbody>
-                            </table>
-
-                            <table class="footer-table">
-                                <tr>
-                                    <td style="vertical-align: top; width: 50%;">
-                                        <table style="width: 100%; text-align: center; font-size: 10px;">
-                                            <tr>
-                                                <td>Penerima,</td>
-                                                <td>Hormat Kami,</td>
-                                            </tr>
-                                            <tr><td colspan="2" style="height: 35px;"></td></tr>
-                                            <tr>
-                                                <td>( ............................ )</td>
-                                                <td>( ............................ )</td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                    <td style="vertical-align: bottom; text-align: right; width: 50%;">
-                                        <span style="font-size: 12px; font-weight: bold;">TOTAL : </span>
-                                        <span style="font-size: 15px; font-weight: bold; color: #C62828;">Rp {total_bayar:,.0f}</span>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    </body>
-                    </html>
-                    """.replace(",", ".")
-
-                    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-                    components.html(printable_html, height=260, scrolling=True)
+                    # 2. Download File Gambar (.png)
+                    img_bytes = generate_image_nota(
+                        tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                        bakul=selected_bakul,
+                        group=selected_sheet,
+                        items=filtered_items,
+                        total_bayar=total_bayar,
+                        logo_path=logo_filename
+                    )
+                    with col_btn2:
+                        st.download_button(
+                            label="🖼️ Download Gambar Nota (.png)",
+                            data=img_bytes,
+                            file_name=f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.png",
+                            mime="image/png",
+                            use_container_width=True
+                        )
