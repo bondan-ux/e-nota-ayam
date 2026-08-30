@@ -19,10 +19,9 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         logo_filename = fname
         break
 
-# --- CLASS GENERATOR PDF NOTA (STANDAR A4 UNTUK ADOBE ACROBAT) ---
+# --- CLASS GENERATOR PDF NOTA ---
 class NotaPDF(FPDF):
     def __init__(self, logo_path=None):
-        # Format Portrait Standar A4 (Bebas diatur di Adobe Acrobat)
         super().__init__(orientation='P', unit='mm', format='A4')
         self.logo_path = logo_path
 
@@ -30,7 +29,6 @@ class NotaPDF(FPDF):
         self.set_auto_page_break(auto=False)
         self.add_page()
         
-        # Margin standar FPDF
         self.set_margins(6, 6, 6)
         
         # Bingkai Nota Paruh Atas
@@ -38,21 +36,21 @@ class NotaPDF(FPDF):
         y_start = 8
         y_footer = 76
 
-        # Header Logo & Judul
+        # Header Logo (Ukuran Diperbesar ke w=22) & Judul Sejajar
         if self.logo_path and os.path.exists(self.logo_path):
-            self.image(self.logo_path, x=9, y=y_start, w=15)
-            self.set_xy(26, y_start)
+            self.image(self.logo_path, x=8, y=y_start, w=22)
+            self.set_xy(34, y_start + 1)
         else:
-            self.set_xy(9, y_start)
+            self.set_xy(8, y_start + 1)
 
-        self.set_font("Helvetica", "B", 10)
+        self.set_font("Helvetica", "B", 11)
         self.set_text_color(198, 40, 40)
-        self.cell(80, 4, "AYAM SEGAR TUMPANG", ln=1)
+        self.cell(80, 5, "AYAM SEGAR TUMPANG", ln=1)
         
-        self.set_x(26 if (self.logo_path and os.path.exists(self.logo_path)) else 9)
-        self.set_font("Helvetica", "", 7)
+        self.set_x(34 if (self.logo_path and os.path.exists(self.logo_path)) else 8)
+        self.set_font("Helvetica", "", 7.5)
         self.set_text_color(90, 90, 90)
-        self.cell(80, 3, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
+        self.cell(80, 4, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
         # Header Info Kanan
         self.set_xy(105, y_start)
@@ -64,7 +62,7 @@ class NotaPDF(FPDF):
         self.set_x(105)
         self.cell(95, 3.2, f"Group: {group}", ln=1, align='R')
 
-        self.ln(3)
+        self.ln(6)
 
         # Tabel Header
         self.set_x(9)
@@ -332,14 +330,21 @@ if selected_menu == "🧾 Nota":
                 
                 if filtered_items:
                     with st.container(border=True):
-                        col_l, col_m, col_r = st.columns([1.5, 4, 3])
+                        # Layout Header Nota Presisi & Simetris
+                        col_l, col_m, col_r = st.columns([2.5, 5, 3])
                         with col_l:
                             if logo_filename:
-                                st.image(logo_filename, width=90)
+                                st.image(logo_filename, width=140)
                         with col_m:
-                            st.markdown("<h4 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h4><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                            st.markdown(
+                                "<div style='display: flex; flex-direction: column; justify-content: center; height: 100%;'>"
+                                "<h3 style='margin: 0; color: #C62828; font-weight: bold;'>AYAM SEGAR TUMPANG</h3>"
+                                "<span style='color: #555; font-size: 13px;'>Ds. Kambingan - Tumpang - Kab. Malang</span>"
+                                "</div>", 
+                                unsafe_allow_html=True
+                            )
                         with col_r:
-                            st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='text-align:right; font-size: 13px;'><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</div>", unsafe_allow_html=True)
 
                         rows_html = ""
                         for item in filtered_items:
@@ -347,12 +352,12 @@ if selected_menu == "🧾 Nota":
                             rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
 
                         st.markdown(f"""
-                            <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;">
-                                <thead><tr><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:4px; background:#f2f2f2;">JUMLAH</th></tr></thead>
+                            <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
+                                <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
                                 <tbody>{rows_html}</tbody>
                             </table>
-                            <div style="text-align:right; margin-top:8px; font-weight:bold;">
-                                TOTAL: <span style="color:#C62828; font-size:16px;">Rp {total_bayar:,.0f}</span>
+                            <div style="text-align:right; margin-top:10px; font-weight:bold;">
+                                TOTAL: <span style="color:#C62828; font-size:17px;">Rp {total_bayar:,.0f}</span>
                             </div>
                         """.replace(",", "."), unsafe_allow_html=True)
 
