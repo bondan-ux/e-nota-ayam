@@ -134,7 +134,10 @@ def login():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if logo_filename:
-            st.image(logo_filename, width=240)
+            # Menggunakan sub-column di dalam col2 agar gambar logo presisi di tengah
+            c_l, c_img, c_r = st.columns([1, 2, 1])
+            with c_img:
+                st.image(logo_filename, use_container_width=True)
         st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
