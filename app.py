@@ -1,204 +1,377 @@
-import io
-import docx
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt, RGBColor
-import pandas as pd
-from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
+import pandas as pd
+from datetime import datetime
+import json
+import os
+from fpdf import FPDF
 
-st.set_page_config(page_title="E-Nota Bakul Ayam Segar", layout="centered")
-
-st.title("E-Nota Bakul Ayam Segar")
-
-# --- 1. INPUT DATA HEADER ---
-col_h1, col_h2 = st.columns(2)
-with col_h1:
-    toko_name = "AYAM SEGAR TUMPANG"
-    alamat = "Ds. Kambingan - Tumpang - Kab. Malang"
-    st.write(f"**{toko_name}**")
-    st.caption(alamat)
-
-with col_h2:
-    tgl = st.date_input("Tanggal", pd.to_datetime("today"))
-    pembeli = st.text_input("Pembeli / Bakul", "IDA")
-    group = st.text_input("Group", "FARHAN")
-
-st.divider()
-
-# --- 2. INPUT ITEM / TABEL ---
-st.subheader("Detail Barang")
-
-# Form input barang sederhana
-if "items" not in st.session_state:
-    st.session_state.items = [
-        {"BARANG": "GLONDONG", "QTY / KG": 155, "HARGA": 29500},
-        {"BARANG": "JEROAN", "QTY / KG": 5, "HARGA": 10000},
-        {"BARANG": "BIAYA KRESEK", "QTY / KG": 1, "HARGA": 7000},
-    ]
-
-# Tampilan editor data agar bisa diubah dinamis di web
-edited_df = st.data_editor(
-    pd.DataFrame(st.session_state.items),
-    num_rows="dynamic",
-    use_container_width=True,
+# 1. KONFIGURASI HALAMAN
+st.set_page_config(
+    page_title="Sistem Manajemen Ayam Segar", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
 )
 
-# Hitung JUMLAH & TOTAL pembayaran (Logika Utama)
-if not edited_df.empty:
-    edited_df["JUMLAH"] = edited_df["QTY / KG"] * edited_df["HARGA"]
-    total_bayar = edited_df["JUMLAH"].sum()
-else:
-    total_bayar = 0
+# Cek nama file logo yang ada di repository
+logo_filename = None
+for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
+    if os.path.exists(fname):
+        logo_filename = fname
+        break
 
-st.markdown(f"### **TOTAL: Rp {total_bayar:,.0f}**".replace(",", "."))
+# --- CLASS GENERATOR PDF NOTA (PRESISI 1 HALAMAN) ---
+class NotaPDF(FPDF):
+    def __init__(self, logo_path=None):
+        super().__init__(orientation='L', unit='mm', format=(105, 210))
+        self.logo_path = logo_path
 
+    def generate(self, tgl, bakul, group, items, total_bayar):
+        self.set_auto_page_break(auto=False)
+        self.add_page()
+        
+        self.set_margins(6, 5, 6)
+        self.rect(6, 5, 198, 95)
 
-# --- 3. FUNGSI GENERATE FILE WORD (.DOCX) ---
-def generate_word_nota(df_data, total_val, tgl_str, pembeli_str, group_str):
-    doc = docx.Document()
+        # Header Logo & Judul
+        if self.logo_path and os.path.exists(self.logo_path):
+            self.image(self.logo_path, x=9, y=7, w=18)
+            self.set_xy(29, 8)
+        else:
+            self.set_xy(9, 8)
 
-    # Header Nota
-    p_head = doc.add_paragraph()
-    p_head.add_run(f"{toko_name}\n").bold = True
-    p_head.add_run(f"{alamat}\n\n")
-    p_head.add_run(
-        f"Tanggal: {tgl_str}\nPembeli / Bakul: {pembeli_str}\nGroup: {group_str}"
-    )
+        self.set_font("Helvetica", "B", 11)
+        self.set_text_color(198, 40, 40)
+        self.cell(85, 4.5, "AYAM SEGAR TUMPANG", ln=1)
+        
+        self.set_x(29 if (self.logo_path and os.path.exists(self.logo_path)) else 9)
+        self.set_font("Helvetica", "", 7.5)
+        self.set_text_color(90, 90, 90)
+        self.cell(85, 3.5, "Ds. Kambingan - Tumpang - Kab. Malang", ln=0)
 
-    # Tabel Barang
-    table = doc.add_table(rows=1, cols=4)
-    table.style = "Table Grid"
-    hdr_cells = table.rows[0].cells
-    headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
-    for i, header_text in enumerate(headers):
-        hdr_cells[i].text = header_text
-        hdr_cells[i].paragraphs[0].runs[0].font.bold = True
+        # Header Info Kanan
+        self.set_xy(100, 7)
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(0, 0, 0)
+        self.cell(100, 3.8, f"Tanggal: {tgl}", ln=1, align='R')
+        self.set_x(100)
+        self.cell(100, 3.8, f"Pembeli / Bakul: {bakul}", ln=1, align='R')
+        self.set_x(100)
+        self.cell(100, 3.8, f"Group: {group}", ln=1, align='R')
 
-    # Isi Data Tabel
-    for _, row in df_data.iterrows():
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(row["QTY / KG"])
-        row_cells[1].text = str(row["BARANG"])
-        row_cells[2].text = f"Rp {row['HARGA']:,.0f}".replace(",", ".")
-        row_cells[3].text = f"Rp {row['JUMLAH']:,.0f}".replace(",", ".")
+        self.ln(3)
 
-    # Total Pembayaran (Langsung ambil dari total_val)
-    p_total = doc.add_paragraph()
-    p_total.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run_tot = p_total.add_run(
-        f"\nTOTAL : Rp {total_val:,.0f}".replace(",", ".")
-    )
-    run_tot.font.bold = True
-    run_tot.font.size = Pt(14)
-    run_tot.font.color.rgb = RGBColor(192, 0, 0)
+        # Tabel Header
+        self.set_x(9)
+        self.set_font("Helvetica", "B", 8)
+        self.set_fill_color(240, 240, 240)
+        self.cell(22, 5.5, "QTY / KG", 1, 0, 'C', fill=True)
+        self.cell(86, 5.5, "BARANG", 1, 0, 'L', fill=True)
+        self.cell(42, 5.5, "HARGA  ", 1, 0, 'R', fill=True)
+        self.cell(42, 5.5, "JUMLAH  ", 1, 1, 'R', fill=True)
 
-    # Save to buffer
-    target = io.BytesIO()
-    doc.save(target)
-    target.seek(0)
-    return target
+        # Isi Tabel
+        self.set_font("Helvetica", "", 8)
+        for item in items:
+            self.set_x(9)
+            kg_val = item['KG']
+            kg_str = f"{int(kg_val)}" if isinstance(kg_val, float) and kg_val.is_integer() else f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val)
+            h_str = f"Rp {item['Harga']:,.0f}  ".replace(",", ".")
+            j_str = f"Rp {item['Jumlah']:,.0f}  ".replace(",", ".")
 
+            self.cell(22, 5.5, kg_str, 1, 0, 'C')
+            self.cell(86, 5.5, f" {item['Nama Barang']}", 1, 0, 'L')
+            self.cell(42, 5.5, h_str, 1, 0, 'R')
+            self.cell(42, 5.5, j_str, 1, 1, 'R')
 
-# --- 4. FUNGSI GENERATE GAMBAR (.PNG) ---
-def generate_image_nota(df_data, total_val, tgl_str, pembeli_str, group_str):
-    img = Image.new("RGB", (800, 600), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
+        # Footer (Y=68)
+        y_footer = 68
 
-    # Menggunakan font bawaan/default
+        # Tanda Tangan
+        self.set_xy(14, y_footer)
+        self.cell(42, 3.5, "Penerima,", 0, 0, 'C')
+        self.cell(42, 3.5, "Hormat Kami,", 0, 0, 'C')
+
+        self.set_xy(14, y_footer + 14)
+        self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
+        self.cell(42, 3.5, "( ............................ )", 0, 0, 'C')
+
+        # Total Kanan
+        self.set_xy(100, y_footer + 6)
+        self.set_font("Helvetica", "B", 9)
+        self.cell(35, 6, "TOTAL :", 0, 0, 'R')
+        
+        self.set_font("Helvetica", "B", 11.5)
+        self.set_text_color(198, 40, 40)
+        tot_str = f"Rp {total_bayar:,.0f}  ".replace(",", ".")
+        self.cell(57, 6, tot_str, 0, 1, 'R')
+
+        pdf_output = self.output()
+        if isinstance(pdf_output, str):
+            return pdf_output.encode('latin1')
+        return bytes(pdf_output)
+
+# --- CSS STYLING UTAMA ---
+st.markdown("""
+    <style>
+        footer, #MainMenu { visibility: hidden; }
+        [data-testid="stHeader"] { background-color: transparent !important; z-index: 100 !important; }
+        [data-testid="stSidebar"] { background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }
+        [data-testid="stSidebar"] .stRadio label { font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }
+        .block-container {
+            background-color: #FFFFFF;
+            padding-top: 1rem !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 2. LOGIN ---
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.role = ""
+
+def login():
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if logo_filename:
+            st.image(logo_filename, width=240)
+        st.markdown("<h3 style='text-align: center; color: #C62828;'>Ayam Segar Tumpang</h3>", unsafe_allow_html=True)
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Masuk / Login", use_container_width=True):
+            if username == "admin" and password == "admin123":
+                st.session_state.logged_in = True
+                st.session_state.role = "Admin"
+                st.rerun()
+            elif username == "kasir" and password == "kasir123":
+                st.session_state.logged_in = True
+                st.session_state.role = "Kasir"
+                st.rerun()
+            else:
+                st.error("Username atau Password salah!")
+
+if not st.session_state.logged_in:
+    login()
+    st.stop()
+
+# --- 3. MASTER HARGA JSON ---
+FILE_HARGA = "master_harga.json"
+default_harga = {"glondong": 28500, "jeroan": 12000, "usus": 16500, "telur_a": 269000, "telur_b": 250000, "peti": 2000, "box": 28500}
+
+if os.path.exists(FILE_HARGA):
     try:
-        font = ImageFont.truetype("arial.ttf", 16)
-        font_bold = ImageFont.truetype("arialbd.ttf", 18)
-    except IOError:
-        font = font_bold = ImageFont.load_default()
+        with open(FILE_HARGA, "r") as f: saved_harga = json.load(f)
+    except: saved_harga = default_harga
+else: saved_harga = default_harga
 
-    # Draw Header
-    draw.text(
-        (30, 20),
-        f"{toko_name}\n{alamat}",
-        fill=(180, 0, 0),
-        font=font_bold,
-    )
-    draw.text(
-        (500, 20),
-        f"Tanggal: {tgl_str}\nPembeli: {pembeli_str}\nGroup: {group_str}",
-        fill=(0, 0, 0),
-        font=font,
-    )
+# --- 4. SIDEBAR ---
+with st.sidebar:
+    if logo_filename:
+        st.image(logo_filename, width=90)
+    st.markdown("<h2 style='color: #C62828; margin: 0; font-size: 26px; font-weight: bold;'>AST SYSTEM</h2>", unsafe_allow_html=True)
+    st.write(f"Logged in as: **{st.session_state.role}**")
+    st.markdown("---")
+    
+    st.markdown("### 📌 NAVIGASI UTAMA")
+    menu_options = ["📊 Dashboard", "🧾 Nota", "🛍️ Penjualan", "📦 Stock", "💵 Finance", "⏱️ Absensi & Jadwal"]
+    selected_menu = st.radio("Pilih Halaman:", menu_options)
 
-    # Draw Table Header
-    y_pos = 120
-    draw.rectangle([(30, y_pos), (770, y_pos + 30)], outline="black", fill=(240, 240, 240))
-    draw.text((40, y_pos + 5), "QTY/KG", fill="black", font=font_bold)
-    draw.text((150, y_pos + 5), "BARANG", fill="black", font=font_bold)
-    draw.text((450, y_pos + 5), "HARGA", fill="black", font=font_bold)
-    draw.text((620, y_pos + 5), "JUMLAH", fill="black", font=font_bold)
+    sub_menu = None
+    if selected_menu == "🧾 Nota":
+        with st.expander("📂 Sub-Menu Nota", expanded=True):
+            sub_menu = st.radio("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
 
-    # Draw Data Rows
-    y_pos += 30
-    for _, row in df_data.iterrows():
-        draw.rectangle([(30, y_pos), (770, y_pos + 30)], outline="black")
-        draw.text((40, y_pos + 5), str(row["QTY / KG"]), fill="black", font=font)
-        draw.text((150, y_pos + 5), str(row["BARANG"]), fill="black", font=font)
-        draw.text(
-            (450, y_pos + 5),
-            f"Rp {row['HARGA']:,.0f}".replace(",", "."),
-            fill="black",
-            font=font,
-        )
-        draw.text(
-            (620, y_pos + 5),
-            f"Rp {row['JUMLAH']:,.0f}".replace(",", "."),
-            fill="black",
-            font=font,
-        )
-        y_pos += 30
+    if selected_menu == "🧾 Nota":
+        st.markdown("---")
+        st.markdown("<h3 style='color: #C62828;'>⚙️ Master Harga</h3>", unsafe_allow_html=True)
+        
+        def input_harga(label, key_name, default_val, step_val):
+            val = st.number_input(f"{label}", value=int(saved_harga.get(key_name, default_val)), step=step_val, format="%d")
+            st.caption(f"➔ **Rp {val:,.0f}**".replace(",", "."))
+            return val
 
-    # Draw TOTAL (Menggunakan total_val kalkulasi terbaru)
-    y_pos += 20
-    draw.text(
-        (450, y_pos),
-        "TOTAL :",
-        fill="black",
-        font=font_bold,
-    )
-    draw.text(
-        (550, y_pos),
-        f"Rp {total_val:,.0f}".replace(",", "."),
-        fill=(192, 0, 0),
-        font=font_bold,
-    )
+        h_glondong = input_harga("Harga Glondong", "glondong", 28500, 500)
+        h_jeroan = input_harga("Harga Jeroan", "jeroan", 12000, 500)
+        h_usus = input_harga("Harga Usus", "usus", 16500, 500)
+        h_telur_a = input_harga("Harga Telur A", "telur_a", 269000, 1000)
+        h_telur_b = input_harga("Harga Telur B", "telur_b", 250000, 1000)
+        h_peti = input_harga("Harga Peti", "peti", 2000, 100)
+        h_box = input_harga("Harga Box", "box", 28500, 500)
 
-    # Save to buffer
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format="PNG")
-    img_byte_arr.seek(0)
-    return img_byte_arr
+        current_harga = {"glondong": h_glondong, "jeroan": h_jeroan, "usus": h_usus, "telur_a": h_telur_a, "telur_b": h_telur_b, "peti": h_peti, "box": h_box}
+        if current_harga != saved_harga:
+            with open(FILE_HARGA, "w") as f: json.dump(current_harga, f)
 
+    st.markdown("---")
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.role = ""
+        st.rerun()
 
-# --- 5. TOMBOL DOWNLOAD ---
-st.divider()
-col_btn1, col_btn2 = st.columns(2)
+# --- 5. AREA KONTEN UTAMA ---
+col_h1, col_h2 = st.columns([3, 1])
+with col_h1:
+    st.markdown(f"<h2 style='color: #C62828; margin:0;'>Ayam Segar Tumpang - {selected_menu}</h2>", unsafe_allow_html=True)
+with col_h2:
+    st.markdown(f"<div style='text-align: right; font-weight: bold; padding-top: 10px;'>👤 {st.session_state.role}</div>", unsafe_allow_html=True)
 
-tgl_formatted = tgl.strftime("%d-%m-%Y")
+st.markdown("<hr style='border: 1px solid #C62828; margin-top: 5px; margin-bottom: 20px;'>", unsafe_allow_html=True)
 
-with col_btn1:
-    docx_file = generate_word_nota(
-        edited_df, total_bayar, tgl_formatted, pembeli, group
-    )
-    st.download_button(
-        label="📄 Download Nota Word (.docx)",
-        data=docx_file,
-        file_name=f"Nota_{pembeli}_{tgl_formatted}.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    )
+if selected_menu == "🧾 Nota":
+    if sub_menu == "📑 Bakul" or sub_menu is None:
+        col_up1, col_up2 = st.columns([2, 1])
+        with col_up1:
+            uploaded_file = st.file_uploader("Upload File Rekap Excel (.xlsx)", type=["xlsx"])
+        with col_up2:
+            tanggal_transaksi = st.date_input("Tanggal Transaksi", value=datetime.today())
 
-with col_btn2:
-    img_file = generate_image_nota(
-        edited_df, total_bayar, tgl_formatted, pembeli, group
-    )
-    st.download_button(
-        label="🖼️ Download Nota Gambar (.png)",
-        data=img_file,
-        file_name=f"Nota_{pembeli}_{tgl_formatted}.png",
-        mime="image/png",
-    )
+        if uploaded_file is not None:
+            xl = pd.ExcelFile(uploaded_file)
+            sheets = [s for s in xl.sheet_names if s not in ['TOTAL TONASE', 'NOTA FR', 'Sheet1', 'ploting']]
+            selected_sheet = st.selectbox("Pilih Group / Sheet", sheets)
+            
+            df_raw = pd.read_excel(uploaded_file, sheet_name=selected_sheet, header=None)
+            
+            header_idx = 0
+            for idx, row in df_raw.iterrows():
+                if row.astype(str).str.upper().str.contains('NAMA').any():
+                    header_idx = idx
+                    break
+                    
+            df = df_raw.iloc[header_idx+1:].copy()
+            df.columns = [str(c).strip().upper() for c in df_raw.iloc[header_idx].values]
+            
+            name_col = next((c for c in df.columns if 'NAMA' in c), df.columns[1])
+            no_col = next((c for c in df.columns if c in ['NO', 'NO.', 'NOMOR']), None)
+            
+            df = df[df[name_col].notna()].copy()
+            
+            bakul_options = []
+            bakul_map = {}
+            
+            for idx, (real_idx, row) in enumerate(df.iterrows(), start=1):
+                nama_bakul = str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
+                if not nama_bakul: continue
+                
+                if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != '':
+                    no_val = str(row[no_col]).strip()
+                    if no_val.endswith('.0'): no_val = no_val[:-2]
+                    label = f"{no_val}. {nama_bakul}"
+                else:
+                    label = f"{idx}. {nama_bakul}"
+                    
+                bakul_options.append(label)
+                bakul_map[label] = (nama_bakul, real_idx)
+
+            selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
+            selected_bakul_info = bakul_map.get(selected_bakul_label, None)
+
+            if selected_bakul_info:
+                selected_bakul, real_idx = selected_bakul_info
+                
+                # Reset nilai manual saat ganti bakul
+                if 'last_bakul' not in st.session_state or st.session_state['last_bakul'] != selected_bakul_label:
+                    st.session_state['last_bakul'] = selected_bakul_label
+                    st.session_state['qty_box_val'] = 0.0
+                    st.session_state['qty_telur_b_val'] = 0.0
+
+                row_bakul = df.loc[real_idx]
+                
+                def get_valid_float(col_name):
+                    try:
+                        if not col_name or col_name not in df.columns: return 0.0
+                        val = row_bakul[col_name]
+                        num = pd.to_numeric(val, errors='coerce')
+                        return 0.0 if pd.isna(num) else float(num)
+                    except: return 0.0
+
+                # 3 Kolom Input Manual (Peti, Box, Telur B)
+                col_in1, col_in2, col_in3 = st.columns(3)
+                with col_in1:
+                    qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
+                with col_in2:
+                    qty_box = st.number_input("Jumlah Box (Manual)", key='qty_box_val', step=1)
+                with col_in3:
+                    qty_telur_b_manual = st.number_input("Jumlah Telur B (Manual)", key='qty_telur_b_val', step=1)
+
+                qty_tonase = get_valid_float(next((c for c in df.columns if 'TONASE' in c), ''))
+                qty_jeroan = get_valid_float(next((c for c in df.columns if 'JEROAN' in c), ''))
+                qty_usus = get_valid_float(next((c for c in df.columns if 'USUS' in c), ''))
+                qty_telur_a = get_valid_float(next((c for c in df.columns if 'TELUR A' in c or 'TELUR' in c), ''))
+                
+                # Mengambil Telur B dari Excel, jika tidak ada baru gunakan input manual
+                qty_telur_b_excel = get_valid_float(next((c for c in df.columns if 'TELUR B' in c), ''))
+                qty_telur_b = qty_telur_b_excel if qty_telur_b_excel > 0 else qty_telur_b_manual
+
+                val_ket = get_valid_float(next((c for c in df.columns if 'KET' in c), ''))
+                biaya_kresek = 7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
+
+                tot_glondong = qty_tonase * h_glondong
+                tot_jeroan = qty_jeroan * h_jeroan
+                tot_usus = qty_usus * h_usus
+                tot_telur_a = qty_telur_a * h_telur_a
+                tot_telur_b = qty_telur_b * h_telur_b
+                tot_peti = qty_peti * h_peti
+                tot_box = qty_box * h_box
+
+                total_bayar = tot_glondong + tot_jeroan + tot_usus + tot_telur_a + tot_telur_b + tot_peti + tot_box + biaya_kresek
+                
+                items = [
+                    {"Nama Barang": "GLONDONG", "KG": qty_tonase, "Harga": h_glondong, "Jumlah": tot_glondong},
+                    {"Nama Barang": "JEROAN", "KG": qty_jeroan, "Harga": h_jeroan, "Jumlah": tot_jeroan},
+                    {"Nama Barang": "USUS B", "KG": qty_usus, "Harga": h_usus, "Jumlah": tot_usus},
+                    {"Nama Barang": "TELUR A", "KG": qty_telur_a, "Harga": h_telur_a, "Jumlah": tot_telur_a},
+                    {"Nama Barang": "TELUR B", "KG": qty_telur_b, "Harga": h_telur_b, "Jumlah": tot_telur_b},
+                    {"Nama Barang": "PETI", "KG": qty_peti, "Harga": h_peti, "Jumlah": tot_peti},
+                    {"Nama Barang": "BOX", "KG": qty_box, "Harga": h_box, "Jumlah": tot_box},
+                    {"Nama Barang": "BIAYA KRESEK", "KG": 1 if biaya_kresek > 0 else 0, "Harga": 7000, "Jumlah": biaya_kresek},
+                ]
+                
+                filtered_items = [i for i in items if i['KG'] > 0]
+                
+                if filtered_items:
+                    # PREVIEW KERTAS NOTA DI WEB
+                    with st.container(border=True):
+                        col_l, col_m, col_r = st.columns([1.5, 4, 3])
+                        with col_l:
+                            if logo_filename:
+                                st.image(logo_filename, width=110)
+                        with col_m:
+                            st.markdown("<h3 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                        with col_r:
+                            st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
+
+                        rows_html = ""
+                        for item in filtered_items:
+                            kg_str = f"{int(item['KG'])}" if isinstance(item['KG'], float) and item['KG'].is_integer() else f"{item['KG']:.2f}" if isinstance(item['KG'], float) else str(item['KG'])
+                            rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(",", ".")
+
+                        st.markdown(f"""
+                            <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                                <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
+                                <tbody>{rows_html}</tbody>
+                            </table>
+                            <div style="text-align:right; margin-top:10px; font-weight:bold;">
+                                TOTAL: <span style="color:#C62828; font-size:18px;">Rp {total_bayar:,.0f}</span>
+                            </div>
+                        """.replace(",", "."), unsafe_allow_html=True)
+
+                    # GENERATE PDF & TOMBOL DOWNLOAD
+                    pdf_generator = NotaPDF(logo_path=logo_filename)
+                    pdf_data = pdf_generator.generate(
+                        tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                        bakul=selected_bakul,
+                        group=selected_sheet,
+                        items=filtered_items,
+                        total_bayar=total_bayar
+                    )
+
+                    file_name = f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.pdf"
+                    
+                    st.download_button(
+                        label="📄 Download / Print PDF Nota",
+                        data=pdf_data,
+                        file_name=file_name,
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
