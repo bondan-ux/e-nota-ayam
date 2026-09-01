@@ -375,3 +375,4 @@ if selected_menu == "🧾 Nota":
                         mime="application/pdf",
                         use_container_width=True
                     )
+                    
