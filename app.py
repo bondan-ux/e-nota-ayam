@@ -71,13 +71,14 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         run_img.add_picture(logo_path, width=Mm(16))
         p_l.add_run("  ")
         
+    # --- AYAM SEGAR TUMPANG (TEBAL & BESAR) ---
     run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
-    run_title.font.size = Pt(11)
+    run_title.font.size = Pt(15)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
     
     run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Kab. Malang")
-    run_sub.font.size = Pt(7.5)
+    run_sub.font.size = Pt(8)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     p_r = cell_r.paragraphs[0]
@@ -87,7 +88,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     p_r.paragraph_format.line_spacing = 1.15
     
     r_info = p_r.add_run(f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}")
-    r_info.font.size = Pt(8)
+    r_info.font.size = Pt(8.5)
     r_info.font.color.rgb = RGBColor(0, 0, 0)
 
     p_spacer = doc.add_paragraph()
@@ -114,7 +115,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         p.paragraph_format.space_after = Pt(0)
         r = p.add_run(h_text)
         r.bold = True
-        r.font.size = Pt(8)
+        r.font.size = Pt(8.5)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -132,7 +133,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
-            r.font.size = Pt(8)
+            r.font.size = Pt(8.5)
 
     # Footer Table
     tbl_ftr = doc.add_table(rows=1, cols=2)
@@ -156,12 +157,13 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     
     r_lbl = p_fr.add_run("TOTAL : ")
     r_lbl.bold = True
-    r_lbl.font.size = Pt(9)
+    r_lbl.font.size = Pt(11)
     
+    # --- NOMINAL TOTAL (TEBAL & BESAR) ---
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_fr.add_run(tot_str)
     r_tot.bold = True
-    r_tot.font.size = Pt(11.5)
+    r_tot.font.size = Pt(16)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
     target_stream = io.BytesIO()
@@ -176,8 +178,16 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
-    try: font_title = ImageFont.truetype("arial.ttf", 22)
-    except: font_title = ImageFont.load_default()
+    # FONT UNTUK HEADER & TOTAL (TEBAL & BESAR)
+    try: font_title = ImageFont.truetype("arialbd.ttf", 28)
+    except: 
+        try: font_title = ImageFont.truetype("arial.ttf", 28)
+        except: font_title = ImageFont.load_default()
+
+    try: font_total = ImageFont.truetype("arialbd.ttf", 24)
+    except:
+        try: font_total = ImageFont.truetype("arial.ttf", 24)
+        except: font_total = ImageFont.load_default()
 
     try: font_bold = ImageFont.truetype("arialbd.ttf", 14)
     except: font_bold = ImageFont.load_default()
@@ -193,17 +203,17 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         try:
             logo_img = Image.open(logo_path).convert("RGBA")
             logo_img.thumbnail((70, 70))
-            img.paste(logo_img, (25, 25), logo_img)
+            img.paste(logo_img, (25, 20), logo_img)
         except: pass
 
-    # Header Title
-    draw.text((105, 25), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title)
-    draw.text((105, 55), "Ds. Kambingan - Tumpang - Kab. Malang", fill=(90, 90, 90), font=font_small)
+    # Header Title (AYAM SEGAR TUMPANG)
+    draw.text((105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title)
+    draw.text((105, 58), "Ds. Kambingan - Tumpang - Kab. Malang", fill=(90, 90, 90), font=font_small)
 
     # Header Kanan
-    draw.text((width - 240, 25), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
-    draw.text((width - 240, 43), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
-    draw.text((width - 240, 61), f"Group: {group}", fill=(0, 0, 0), font=font_small)
+    draw.text((width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+    draw.text((width - 240, 40), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
     # Table Header
     y_tbl = 95
@@ -243,9 +253,10 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     draw.text((40, y_ftr + 55), "( ............................ )", fill=(0, 0, 0), font=font_regular)
     draw.text((210, y_ftr + 55), "( ............................ )", fill=(0, 0, 0), font=font_regular)
 
+    # NOMINAL TOTAL HASIL PENYESUAIAN
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     draw.text((460, y_ftr + 30), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-    draw.text((550, y_ftr + 26), tot_str, fill=(198, 40, 40), font=font_title)
+    draw.text((545, y_ftr + 24), tot_str, fill=(198, 40, 40), font=font_total)
 
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format='PNG')
@@ -477,7 +488,7 @@ if selected_menu == "🧾 Nota":
                             if logo_filename:
                                 st.image(logo_filename, width=110)
                         with col_m:
-                            st.markdown("<h3 style='margin:0; color:#C62828;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
+                            st.markdown("<h3 style='margin:0; color:#C62828; font-weight: bold; font-size:24px;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan - Tumpang - Kab. Malang</small>", unsafe_allow_html=True)
                         with col_r:
                             st.markdown(f"<div style='text-align:right;'><small><b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b> {selected_bakul}<br><b>Group:</b> {selected_sheet}</small></div>", unsafe_allow_html=True)
 
@@ -492,7 +503,7 @@ if selected_menu == "🧾 Nota":
                                 <tbody>{rows_html}</tbody>
                             </table>
                             <div style="text-align:right; margin-top:10px; font-weight:bold;">
-                                TOTAL: <span style="color:#C62828; font-size:18px;">Rp {total_bayar:,.0f}</span>
+                                TOTAL: <span style="color:#C62828; font-size:22px; font-weight:bold;">Rp {total_bayar:,.0f}</span>
                             </div>
                         """.replace(",", "."), unsafe_allow_html=True)
 
