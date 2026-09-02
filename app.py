@@ -199,43 +199,57 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 # --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   width = 800
-  # Hitung tinggi gambar dinamis berdasarkan jumlah item
   height = max(420, 220 + (len(items) * 25) + 100)
   img = Image.new("RGB", (width, height), color=(255, 255, 255))
   draw = ImageDraw.Draw(img)
 
   draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
-  try:
-    font_title = ImageFont.truetype("arialbd.ttf", 28)
-  except:
+  # --- PERBAIKAN FONT ---
+  # Gunakan daftar font yang biasa ada di sistem Linux/Streamlit Cloud
+  bold_fonts = ["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf", "FreeSansBold.ttf"]
+  reg_fonts = ["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf", "FreeSans.ttf"]
+
+  font_title = None
+  for fn in bold_fonts:
     try:
-      font_title = ImageFont.truetype("arial.ttf", 28)
-    except:
-      font_title = ImageFont.load_default()
+      font_title = ImageFont.truetype(fn, 34) # Diperbesar
+      break
+    except: pass
+  if not font_title: font_title = ImageFont.load_default()
 
-  try:
-    font_total = ImageFont.truetype("arialbd.ttf", 24)
-  except:
+  font_total = None
+  for fn in bold_fonts:
     try:
-      font_total = ImageFont.truetype("arial.ttf", 24)
-    except:
-      font_total = ImageFont.load_default()
+      font_total = ImageFont.truetype(fn, 28) # Diperbesar
+      break
+    except: pass
+  if not font_total: font_total = ImageFont.load_default()
 
-  try:
-    font_bold = ImageFont.truetype("arialbd.ttf", 14)
-  except:
-    font_bold = ImageFont.load_default()
+  font_bold = None
+  for fn in bold_fonts:
+    try:
+      font_bold = ImageFont.truetype(fn, 14)
+      break
+    except: pass
+  if not font_bold: font_bold = ImageFont.load_default()
 
-  try:
-    font_regular = ImageFont.truetype("arial.ttf", 13)
-  except:
-    font_regular = ImageFont.load_default()
+  font_regular = None
+  for fn in reg_fonts:
+    try:
+      font_regular = ImageFont.truetype(fn, 13)
+      break
+    except: pass
+  if not font_regular: font_regular = ImageFont.load_default()
 
-  try:
-    font_small = ImageFont.truetype("arial.ttf", 11)
-  except:
-    font_small = ImageFont.load_default()
+  font_small = None
+  for fn in reg_fonts:
+    try:
+      font_small = ImageFont.truetype(fn, 11)
+      break
+    except: pass
+  if not font_small: font_small = ImageFont.load_default()
+  # ----------------------
 
   if logo_path and os.path.exists(logo_path):
     try:
