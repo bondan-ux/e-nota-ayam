@@ -800,3 +800,4 @@ if selected_menu == "🧾 Nota":
     st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
 else:
   st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
+    # update
