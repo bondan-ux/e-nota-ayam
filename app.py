@@ -178,25 +178,36 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
-    # FONT UNTUK HEADER & TOTAL (TEBAL & BESAR)
-    try: font_title = ImageFont.truetype("arialbd.ttf", 36)
-    except: 
-        try: font_title = ImageFont.truetype("arial.ttf", 36)
-        except: font_title = ImageFont.load_default()
+    # FONT DOWNLOAD PNG
+    # Jangan hanya mengandalkan Arial karena di server/Streamlit Cloud
+    # Arial sering tidak tersedia sehingga PIL jatuh ke font default yang sangat kecil.
+    def load_font(size, bold=False):
+        candidates = []
+        if bold:
+            candidates += [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+                "arialbd.ttf",
+            ]
+        else:
+            candidates += [
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+                "arial.ttf",
+            ]
+        for font_path in candidates:
+            try:
+                return ImageFont.truetype(font_path, size)
+            except (OSError, IOError):
+                continue
+        return ImageFont.load_default()
 
-    try: font_total = ImageFont.truetype("arialbd.ttf", 32)
-    except:
-        try: font_total = ImageFont.truetype("arial.ttf", 32)
-        except: font_total = ImageFont.load_default()
-
-    try: font_bold = ImageFont.truetype("arialbd.ttf", 14)
-    except: font_bold = ImageFont.load_default()
-
-    try: font_regular = ImageFont.truetype("arial.ttf", 13)
-    except: font_regular = ImageFont.load_default()
-
-    try: font_small = ImageFont.truetype("arial.ttf", 11)
-    except: font_small = ImageFont.load_default()
+    # Ukuran ini khusus untuk file hasil download. Preview web TIDAK diubah.
+    font_title = load_font(28, bold=True)
+    font_total = load_font(25, bold=True)
+    font_bold = load_font(14, bold=True)
+    font_regular = load_font(13, bold=False)
+    font_small = load_font(11, bold=False)
 
     # Logo
     if logo_path and os.path.exists(logo_path):
@@ -256,7 +267,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     # NOMINAL TOTAL HASIL PENYESUAIAN
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     draw.text((460, y_ftr + 30), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-    draw.text((515, y_ftr + 20), tot_str, fill=(198, 40, 40), font=font_total)
+    draw.text((535, y_ftr + 18), tot_str, fill=(198, 40, 40), font=font_total)
 
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format='PNG')
