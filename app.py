@@ -205,51 +205,36 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
   draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
-  # --- PERBAIKAN FONT ---
-  # Gunakan daftar font yang biasa ada di sistem Linux/Streamlit Cloud
-  bold_fonts = ["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf", "FreeSansBold.ttf"]
-  reg_fonts = ["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf", "FreeSans.ttf"]
+  # --- PERBAIKAN FONT (DENGAN ABSOLUTE PATH LINUX/STREAMLIT CLOUD) ---
+  bold_fonts = [
+      "arialbd.ttf", 
+      "DejaVuSans-Bold.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+      "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
+  ]
+  reg_fonts = [
+      "arial.ttf", 
+      "DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+      "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+  ]
 
-  font_title = None
-  for fn in bold_fonts:
-    try:
-      font_title = ImageFont.truetype(fn, 34) # Diperbesar
-      break
-    except: pass
-  if not font_title: font_title = ImageFont.load_default()
+  def load_font(font_list, size):
+      for fn in font_list:
+          try:
+              return ImageFont.truetype(fn, size)
+          except IOError:
+              continue
+      return ImageFont.load_default()
 
-  font_total = None
-  for fn in bold_fonts:
-    try:
-      font_total = ImageFont.truetype(fn, 28) # Diperbesar
-      break
-    except: pass
-  if not font_total: font_total = ImageFont.load_default()
-
-  font_bold = None
-  for fn in bold_fonts:
-    try:
-      font_bold = ImageFont.truetype(fn, 14)
-      break
-    except: pass
-  if not font_bold: font_bold = ImageFont.load_default()
-
-  font_regular = None
-  for fn in reg_fonts:
-    try:
-      font_regular = ImageFont.truetype(fn, 13)
-      break
-    except: pass
-  if not font_regular: font_regular = ImageFont.load_default()
-
-  font_small = None
-  for fn in reg_fonts:
-    try:
-      font_small = ImageFont.truetype(fn, 11)
-      break
-    except: pass
-  if not font_small: font_small = ImageFont.load_default()
-  # ----------------------
+  font_title = load_font(bold_fonts, 34) # Judul diperbesar
+  font_total = load_font(bold_fonts, 28) # Total diperbesar
+  font_bold = load_font(bold_fonts, 14)
+  font_regular = load_font(reg_fonts, 13)
+  font_small = load_font(reg_fonts, 11)
+  # -------------------------------------------------------------------
 
   if logo_path and os.path.exists(logo_path):
     try:
@@ -259,35 +244,15 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     except:
       pass
 
-  draw.text(
-      (105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title
-  )
-  draw.text(
-      (105, 58),
-      "Ds. Kambingan - Tumpang - Kab. Malang",
-      fill=(90, 90, 90),
-      font=font_small,
-  )
+  draw.text((105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title)
+  draw.text((105, 58), "Ds. Kambingan - Tumpang - Kab. Malang", fill=(90, 90, 90), font=font_small)
 
-  draw.text(
-      (width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small
-  )
-  draw.text(
-      (width - 240, 40),
-      f"Pembeli / Bakul: {bakul}",
-      fill=(0, 0, 0),
-      font=font_small,
-  )
-  draw.text(
-      (width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small
-  )
+  draw.text((width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+  draw.text((width - 240, 40), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+  draw.text((width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
   y_tbl = 95
-  draw.rectangle(
-      [25, y_tbl, width - 25, y_tbl + 25],
-      fill=(240, 240, 240),
-      outline=(0, 0, 0),
-  )
+  draw.rectangle([25, y_tbl, width - 25, y_tbl + 25], fill=(240, 240, 240), outline=(0, 0, 0))
   draw.line([(120, y_tbl), (120, y_tbl + 25)], fill=(0, 0, 0))
   draw.line([(450, y_tbl), (450, y_tbl + 25)], fill=(0, 0, 0))
   draw.line([(610, y_tbl), (610, y_tbl + 25)], fill=(0, 0, 0))
@@ -305,22 +270,12 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     draw.line([(610, y_curr), (610, y_curr + 22)], fill=(0, 0, 0))
 
     kg_val = item["KG"]
-    kg_str = (
-        f"{int(kg_val)}"
-        if isinstance(kg_val, float) and kg_val.is_integer()
-        else (
-            f"{kg_val:.2f}"
-            if isinstance(kg_val, float)
-            else str(kg_val)
-        )
-    )
+    kg_str = f"{int(kg_val)}" if isinstance(kg_val, float) and kg_val.is_integer() else (f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val))
     h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
     j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
     draw.text((45, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
-    draw.text(
-        (130, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
-    )
+    draw.text((130, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular)
     draw.text((460, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
     draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
     y_curr += 22
@@ -328,18 +283,8 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   y_ftr = max(y_curr + 20, height - 100)
   draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
   draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
-  draw.text(
-      (40, y_ftr + 55),
-      "( ............................ )",
-      fill=(0, 0, 0),
-      font=font_regular,
-  )
-  draw.text(
-      (210, y_ftr + 55),
-      "( ............................ )",
-      fill=(0, 0, 0),
-      font=font_regular,
-  )
+  draw.text((40, y_ftr + 55), "( ............................ )", fill=(0, 0, 0), font=font_regular)
+  draw.text((210, y_ftr + 55), "( ............................ )", fill=(0, 0, 0), font=font_regular)
 
   tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
   draw.text((460, y_ftr + 30), "TOTAL :", fill=(0, 0, 0), font=font_bold)
