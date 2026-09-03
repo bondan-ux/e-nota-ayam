@@ -195,8 +195,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 # --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI (FIXED LAYOUT) ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   width = 800
-  # Tinggi canvas dikunci minimal 450px agar area bawah selalu di bawah
-  height = 450
+  height = 500  # Luas canvas diperbesar agar muat font total raksasa
   img = Image.new("RGB", (width, height), color=(255, 255, 255))
   draw = ImageDraw.Draw(img)
 
@@ -225,9 +224,11 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         continue
     return ImageFont.load_default()
 
-  font_title = load_font(bold_fonts, 60)
-  font_total = load_font(bold_fonts, 45)
-  font_bold = load_font(bold_fonts, 14)
+  font_title = load_font(bold_fonts, 32)
+  font_total = load_font(
+      bold_fonts, 36
+  )  # Ukuran font total diperbesar & ditebalkan
+  font_bold = load_font(bold_fonts, 16)
   font_regular = load_font(reg_fonts, 13)
   font_small = load_font(reg_fonts, 11)
 
@@ -305,33 +306,33 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
     y_curr += 22
 
-  # Posisi footer & total dikunci di bawah (y=310 & y=340) agar konsisten
-  y_ftr = 310
+  # Posisi footer & total dikunci di bawah dengan ruang yang pas
+  y_ftr = 330
   draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
   draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
   draw.text(
-      (40, y_ftr + 55),
+      (40, y_ftr + 65),
       "( ............................ )",
       fill=(0, 0, 0),
       font=font_regular,
   )
   draw.text(
-      (210, y_ftr + 55),
+      (210, y_ftr + 65),
       "( ............................ )",
       fill=(0, 0, 0),
       font=font_regular,
   )
 
   tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-  draw.text((460, y_ftr + 30), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-  draw.text((535, y_ftr + 25), tot_str, fill=(198, 40, 40), font=font_total)
+  draw.text((430, y_ftr + 25), "TOTAL :", fill=(0, 0, 0), font=font_bold)
+  draw.text((510, y_ftr + 15), tot_str, fill=(198, 40, 40), font=font_total)
 
   img_byte_arr = io.BytesIO()
   img.save(img_byte_arr, format="PNG")
   return img_byte_arr.getvalue()
 
 
-# --- CSS STYLING UTAMA ---
+# --- CSS STYLING UTAMA (TERMASUK BACKGROUND LOGIN MERAH PUTIH) ---
 st.markdown(
     """
     <style>
@@ -339,9 +340,28 @@ st.markdown(
         [data-testid="stHeader"] { background-color: transparent !important; z-index: 100 !important; }
         [data-testid="stSidebar"] { background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }
         [data-testid="stSidebar"] .stRadio label { font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }
+        
+        /* Background Gambar Merah Putih untuk Halaman Utama/Login */
+        .stApp {
+            background-image: url("https://raw.githubusercontent.com/bondan-ux/e-nota-ayam/main/merahputih.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* Container aplikasi utama di dalam */
         .block-container {
-            background-color: #FFFFFF;
-            padding-top: 1rem !important;
+            padding-top: 1.5rem !important;
+        }
+
+        /* Styling Kartu Putih Melayang untuk Form Login */
+        div[data-testid="stColumn"] > div:has(input[type="password"]) {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid #FFCDD2;
         }
     </style>
 """,
@@ -355,21 +375,31 @@ if "logged_in" not in st.session_state:
 
 
 def login():
-  st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-  col1, col2, col3 = st.columns([1, 2, 1])
+  st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+  col1, col2, col3 = st.columns([1, 1.8, 1])
+
   with col2:
     if logo_filename:
       c_l, c_img, c_r = st.columns([1, 2, 1])
       with c_img:
         st.image(logo_filename, use_container_width=True)
+
     st.markdown(
-        "<h3 style='text-align: center; color: #C62828;'>Ayam Segar"
-        " Tumpang</h3>",
+        "<h3 style='text-align: center; color: #C62828; margin-top:"
+        " 10px;'>Ayam Segar Tumpang</h3>",
         unsafe_allow_html=True,
     )
+    st.markdown(
+        "<p style='text-align: center; color: #666; font-size: 13px;'>Silakan"
+        " login untuk mengakses sistem</p>",
+        unsafe_allow_html=True,
+    )
+
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    if st.button("Masuk / Login", use_container_width=True):
+
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    if st.button("Masuk / Login", use_container_width=True, type="primary"):
       if username == "admin" and password == "admin123":
         st.session_state.logged_in = True
         st.session_state.role = "Admin"
@@ -800,4 +830,3 @@ if selected_menu == "🧾 Nota":
     st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
 else:
   st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
-    # update
