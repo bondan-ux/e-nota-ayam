@@ -229,11 +229,17 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   ]
 
   def load_font(font_list, size):
-    for fn in font_list:
-      try:
-        return ImageFont.truetype(fn, size)
-      except IOError:
-        continue
+  # Coba muat font dari sistem
+  for fn in font_list:
+    try:
+      return ImageFont.truetype(fn, size)
+    except IOError:
+      continue
+
+  # Solusi fallback PIL modern: load_default dengan ukuran (Pillow v10.1.0+)
+  try:
+    return ImageFont.load_default(size=size)
+  except TypeError:
     return ImageFont.load_default()
 
   font_title = load_font(bold_fonts, 32)
