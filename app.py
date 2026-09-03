@@ -214,33 +214,28 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
   bold_fonts = [
-      "arialbd.ttf",
-      "DejaVuSans-Bold.ttf",
-      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-      "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-      "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
-  ]
-  reg_fonts = [
-      "arial.ttf",
-      "DejaVuSans.ttf",
-      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
-      "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-  ]
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "arialbd.ttf",
+    ]
+    reg_fonts = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+        "arial.ttf",
+    ]
 
-  def load_font(font_list, size):
-  # Coba muat font dari sistem
-  for fn in font_list:
-    try:
-      return ImageFont.truetype(fn, size)
-    except IOError:
-      continue
-
-  # Solusi fallback PIL modern: load_default dengan ukuran (Pillow v10.1.0+)
-  try:
-    return ImageFont.load_default(size=size)
-  except TypeError:
-    return ImageFont.load_default()
+    def load_font(font_list, size):
+        for fn in font_list:
+            try:
+                return ImageFont.truetype(fn, size)
+            except IOError:
+                continue
+        try:
+            return ImageFont.load_default(size=size)
+        except TypeError:
+            return ImageFont.load_default()
 
   font_title = load_font(bold_fonts, 32)
   font_total = load_font(bold_fonts, 36)
