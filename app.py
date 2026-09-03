@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 import io
 import json
@@ -24,6 +25,17 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
   if os.path.exists(fname):
     logo_filename = fname
     break
+
+
+# --- HELPER BASE64 UNTUK BACKGROUND GAMBAR LOKAL ---
+def get_base64_image(image_path):
+  if os.path.exists(image_path):
+    with open(image_path, "rb") as img_file:
+      return base64.b64encode(img_file.read()).decode()
+  return None
+
+
+bg_base64 = get_base64_image("merahputih.jpg")
 
 
 # --- HELPER GENERATOR WORD (.DOCX) NOTA PRESISI ---
@@ -329,33 +341,41 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   return img_byte_arr.getvalue()
 
 
-# --- CSS STYLING UTAMA (GRADIENT MERAH PUTIH) ---
-st.markdown(
-    """
-    <style>
-        footer, #MainMenu { visibility: hidden; }
-        [data-testid="stHeader"] { background-color: transparent !important; z-index: 100 !important; }
-        [data-testid="stSidebar"] { background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }
-        [data-testid="stSidebar"] .stRadio label { font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }
-        
-        /* Background Merah Putih dengan Gradient */
-        .stApp {
-            background: linear-gradient(180deg, #D32F2F 0%, #D32F2F 45%, #FFFFFF 45%, #FFFFFF 100%);
+# --- CSS STYLING UTAMA (MENGGUNAKAN GAMBAR MERAHPUTIH.JPG LOKAL) ---
+bg_css = ""
+if bg_base64:
+  bg_css = f"""
+        .stApp {{
+            background-image: url("data:image/jpeg;base64,{bg_base64}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             background-attachment: fixed;
-        }
+        }}
+  """
 
-        .block-container {
+st.markdown(
+    f"""
+    <style>
+        footer, #MainMenu {{ visibility: hidden; }}
+        [data-testid="stHeader"] {{ background-color: transparent !important; z-index: 100 !important; }}
+        [data-testid="stSidebar"] {{ background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }}
+        [data-testid="stSidebar"] .stRadio label {{ font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }}
+        
+        {bg_css}
+
+        .block-container {{
             padding-top: 1.5rem !important;
-        }
+        }}
 
         /* Kartu Login Melayang */
-        div[data-testid="stColumn"] > div:has(input[type="password"]) {
+        div[data-testid="stColumn"] > div:has(input[type="password"]) {{
             background-color: rgba(255, 255, 255, 0.98);
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
             border: 1px solid #FFCDD2;
-        }
+        }}
     </style>
 """,
     unsafe_allow_html=True,
