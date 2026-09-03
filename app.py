@@ -205,15 +205,16 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
 
 # --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI ---
+# --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
-  width = 800
-  height = 500
-  img = Image.new("RGB", (width, height), color=(255, 255, 255))
-  draw = ImageDraw.Draw(img)
+    width = 800
+    height = 500
+    img = Image.new("RGB", (width, height), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
 
-  draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
+    draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
 
-  bold_fonts = [
+    bold_fonts = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
@@ -237,109 +238,77 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         except TypeError:
             return ImageFont.load_default()
 
-  font_title = load_font(bold_fonts, 32)
-  font_total = load_font(bold_fonts, 36)
-  font_bold = load_font(bold_fonts, 16)
-  font_regular = load_font(reg_fonts, 13)
-  font_small = load_font(reg_fonts, 11)
+    font_title = load_font(bold_fonts, 32)
+    font_total = load_font(bold_fonts, 36)
+    font_bold = load_font(bold_fonts, 16)
+    font_regular = load_font(reg_fonts, 13)
+    font_small = load_font(reg_fonts, 11)
 
-  if logo_path and os.path.exists(logo_path):
-    try:
-      logo_img = Image.open(logo_path).convert("RGBA")
-      logo_img.thumbnail((70, 70))
-      img.paste(logo_img, (25, 20), logo_img)
-    except:
-      pass
+    if logo_path and os.path.exists(logo_path):
+        try:
+            logo_img = Image.open(logo_path).convert("RGBA")
+            logo_img.thumbnail((70, 70))
+            img.paste(logo_img, (25, 20), logo_img)
+        except:
+            pass
 
-  draw.text(
-      (105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title
-  )
-  draw.text(
-      (105, 58),
-      "Ds. Kambingan - Tumpang - Kab. Malang",
-      fill=(90, 90, 90),
-      font=font_small,
-  )
+    draw.text((105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title)
+    draw.text((105, 58), "Ds. Kambingan - Tumpang - Kab. Malang", fill=(90, 90, 90), font=font_small)
 
-  draw.text(
-      (width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small
-  )
-  draw.text(
-      (width - 240, 40),
-      f"Pembeli / Bakul: {bakul}",
-      fill=(0, 0, 0),
-      font=font_small,
-  )
-  draw.text(
-      (width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small
-  )
+    draw.text((width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+    draw.text((width - 240, 40), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
-  y_tbl = 95
-  draw.rectangle(
-      [25, y_tbl, width - 25, y_tbl + 25],
-      fill=(240, 240, 240),
-      outline=(0, 0, 0),
-  )
-  draw.line([(120, y_tbl), (120, y_tbl + 25)], fill=(0, 0, 0))
-  draw.line([(450, y_tbl), (450, y_tbl + 25)], fill=(0, 0, 0))
-  draw.line([(610, y_tbl), (610, y_tbl + 25)], fill=(0, 0, 0))
+    y_tbl = 95
+    draw.rectangle([25, y_tbl, width - 25, y_tbl + 25], fill=(240, 240, 240), outline=(0, 0, 0))
+    draw.line([(120, y_tbl), (120, y_tbl + 25)], fill=(0, 0, 0))
+    draw.line([(450, y_tbl), (450, y_tbl + 25)], fill=(0, 0, 0))
+    draw.line([(610, y_tbl), (610, y_tbl + 25)], fill=(0, 0, 0))
 
-  draw.text((40, y_tbl + 5), "QTY / KG", fill=(0, 0, 0), font=font_bold)
-  draw.text((130, y_tbl + 5), "BARANG", fill=(0, 0, 0), font=font_bold)
-  draw.text((470, y_tbl + 5), "HARGA", fill=(0, 0, 0), font=font_bold)
-  draw.text((630, y_tbl + 5), "JUMLAH", fill=(0, 0, 0), font=font_bold)
+    draw.text((40, y_tbl + 5), "QTY / KG", fill=(0, 0, 0), font=font_bold)
+    draw.text((130, y_tbl + 5), "BARANG", fill=(0, 0, 0), font=font_bold)
+    draw.text((470, y_tbl + 5), "HARGA", fill=(0, 0, 0), font=font_bold)
+    draw.text((630, y_tbl + 5), "JUMLAH", fill=(0, 0, 0), font=font_bold)
 
-  y_curr = y_tbl + 25
-  for item in items:
-    draw.rectangle([25, y_curr, width - 25, y_curr + 22], outline=(0, 0, 0))
-    draw.line([(120, y_curr), (120, y_curr + 22)], fill=(0, 0, 0))
-    draw.line([(450, y_curr), (450, y_curr + 22)], fill=(0, 0, 0))
-    draw.line([(610, y_curr), (610, y_curr + 22)], fill=(0, 0, 0))
+    y_curr = y_tbl + 25
+    for item in items:
+        draw.rectangle([25, y_curr, width - 25, y_curr + 22], outline=(0, 0, 0))
+        draw.line([(120, y_curr), (120, y_curr + 22)], fill=(0, 0, 0))
+        draw.line([(450, y_curr), (450, y_curr + 22)], fill=(0, 0, 0))
+        draw.line([(610, y_curr), (610, y_curr + 22)], fill=(0, 0, 0))
 
-    kg_val = item["KG"]
-    kg_str = (
-        f"{int(kg_val)}"
-        if isinstance(kg_val, float) and kg_val.is_integer()
-        else (
-            f"{kg_val:.2f}"
-            if isinstance(kg_val, float)
-            else str(kg_val)
+        kg_val = item["KG"]
+        kg_str = (
+            f"{int(kg_val)}"
+            if isinstance(kg_val, float) and kg_val.is_integer()
+            else (
+                f"{kg_val:.2f}"
+                if isinstance(kg_val, float)
+                else str(kg_val)
+            )
         )
-    )
-    h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
-    j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+        h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
+        j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
-    draw.text((45, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
-    draw.text(
-        (130, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
-    )
-    draw.text((460, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
-    draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
-    y_curr += 22
+        draw.text((45, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((130, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular)
+        draw.text((460, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
+        y_curr += 22
 
-  y_ftr = 330
-  draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
-  draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
-  draw.text(
-      (40, y_ftr + 65),
-      "( ............................ )",
-      fill=(0, 0, 0),
-      font=font_regular,
-  )
-  draw.text(
-      (210, y_ftr + 65),
-      "( ............................ )",
-      fill=(0, 0, 0),
-      font=font_regular,
-  )
+    y_ftr = 330
+    draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
+    draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
+    draw.text((40, y_ftr + 65), "( ............................ )", fill=(0, 0, 0), font=font_regular)
+    draw.text((210, y_ftr + 65), "( ............................ )", fill=(0, 0, 0), font=font_regular)
 
-  tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-  draw.text((430, y_ftr + 25), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-  draw.text((510, y_ftr + 15), tot_str, fill=(198, 40, 40), font=font_total)
+    tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
+    draw.text((430, y_ftr + 25), "TOTAL :", fill=(0, 0, 0), font=font_bold)
+    draw.text((510, y_ftr + 15), tot_str, fill=(198, 40, 40), font=font_total)
 
-  img_byte_arr = io.BytesIO()
-  img.save(img_byte_arr, format="PNG")
-  return img_byte_arr.getvalue()
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format="PNG")
+    return img_byte_arr.getvalue()
 
 
 # --- CSS STYLING UTAMA (MENGGUNAKAN GAMBAR MERAHPUTIH.JPG LOKAL) ---
