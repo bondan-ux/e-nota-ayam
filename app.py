@@ -35,7 +35,7 @@ def get_base64_image(image_path):
   return None
 
 
-bg_base64 = get_base64_image("merahputih.jpg")
+bg_base64 = get_base64_image("back.jpg")
 
 
 # --- HELPER GENERATOR WORD (.DOCX) NOTA PRESISI ---
