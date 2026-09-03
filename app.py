@@ -192,10 +192,10 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
   return target_stream.getvalue()
 
 
-# --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI (FIXED LAYOUT) ---
+# --- HELPER GENERATOR GAMBAR (PNG) NOTA PRESISI ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   width = 800
-  height = 500  # Luas canvas diperbesar agar muat font total raksasa
+  height = 500
   img = Image.new("RGB", (width, height), color=(255, 255, 255))
   draw = ImageDraw.Draw(img)
 
@@ -225,9 +225,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return ImageFont.load_default()
 
   font_title = load_font(bold_fonts, 32)
-  font_total = load_font(
-      bold_fonts, 36
-  )  # Ukuran font total diperbesar & ditebalkan
+  font_total = load_font(bold_fonts, 36)
   font_bold = load_font(bold_fonts, 16)
   font_regular = load_font(reg_fonts, 13)
   font_small = load_font(reg_fonts, 11)
@@ -306,7 +304,6 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
     y_curr += 22
 
-  # Posisi footer & total dikunci di bawah dengan ruang yang pas
   y_ftr = 330
   draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
   draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
@@ -332,7 +329,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   return img_byte_arr.getvalue()
 
 
-# --- CSS STYLING UTAMA (TERMASUK BACKGROUND LOGIN MERAH PUTIH) ---
+# --- CSS STYLING UTAMA (GRADIENT MERAH PUTIH) ---
 st.markdown(
     """
     <style>
@@ -341,26 +338,22 @@ st.markdown(
         [data-testid="stSidebar"] { background-color: #FFEBEE !important; border-right: 3px solid #C62828 !important; }
         [data-testid="stSidebar"] .stRadio label { font-size: 15px !important; font-weight: bold !important; color: #262626 !important; }
         
-        /* Background Gambar Merah Putih untuk Halaman Utama/Login */
+        /* Background Merah Putih dengan Gradient */
         .stApp {
-            background-image: url("https://raw.githubusercontent.com/bondan-ux/e-nota-ayam/main/merahputih.jpg");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            background: linear-gradient(180deg, #D32F2F 0%, #D32F2F 45%, #FFFFFF 45%, #FFFFFF 100%);
             background-attachment: fixed;
         }
 
-        /* Container aplikasi utama di dalam */
         .block-container {
             padding-top: 1.5rem !important;
         }
 
-        /* Styling Kartu Putih Melayang untuk Form Login */
+        /* Kartu Login Melayang */
         div[data-testid="stColumn"] > div:has(input[type="password"]) {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.98);
             padding: 30px;
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
             border: 1px solid #FFCDD2;
         }
     </style>
