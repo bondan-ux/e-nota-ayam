@@ -236,7 +236,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         continue
     return ImageFont.load_default()
 
-  font_title = load_font(bold_fonts, 1)
+  font_title = load_font(bold_fonts, 32)
   font_total = load_font(bold_fonts, 36)
   font_bold = load_font(bold_fonts, 16)
   font_regular = load_font(reg_fonts, 13)
