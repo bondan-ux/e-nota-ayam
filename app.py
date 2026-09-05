@@ -884,13 +884,15 @@ if selected_menu == "🧾 Nota":
               )
 
       # ==========================================
-      # TAB 2: FILTER & DOWNLOAD ALL NOTA EXCEL
+      # TAB 2: EXPORT ALL NOTA (ZIP GAMBAR JPG/PNG)
       # ==========================================
+      import zipfile
+
       with tab_bulk:
-        st.markdown("### 🔍 Filter Bakul untuk File Excel All Nota")
+        st.markdown("### 🖼️ Download Semua Gambar Nota (.ZIP)")
         st.caption(
-            "Centang nama bakul yang ingin dimasukkan ke dalam file Excel"
-            " gabungan."
+            "Pilih bakul yang ingin diproses. Sistem akan generate gambar nota"
+            " satu per satu dan menggabungkannya ke dalam 1 file ZIP."
         )
 
         selected_bakul_by_sheet = {}
@@ -908,10 +910,13 @@ if selected_menu == "🧾 Nota":
 
           df_s = df_raw_sheet.iloc[header_idx_sheet + 1 :].copy()
           df_s.columns = [
-              str(c).strip().upper() for c in df_raw_sheet.iloc[header_idx_sheet].values
+              str(c).strip().upper()
+              for c in df_raw_sheet.iloc[header_idx_sheet].values
           ]
 
-          name_c = next((c for c in df_s.columns if "NAMA" in c), df_s.columns[1])
+          name_c = next(
+              (c for c in df_s.columns if "NAMA" in c), df_s.columns[1]
+          )
           df_s = df_s[df_s[name_c].notna()].copy()
 
           list_bakul = [
@@ -926,7 +931,7 @@ if selected_menu == "🧾 Nota":
               col_a, col_b = st.columns([1, 4])
               with col_a:
                 select_all = st.checkbox(
-                    "Pilih Semua", value=True, key=f"all_{sheet_name}"
+                    "Pilih Semua", value=True, key=f"all_img_{sheet_name}"
                 )
 
               default_selected = list_bakul if select_all else []
@@ -934,22 +939,30 @@ if selected_menu == "🧾 Nota":
                   "Daftar Bakul Terpilih:",
                   options=list_bakul,
                   default=default_selected,
-                  key=f"ms_{sheet_name}",
+                  key=f"ms_img_{sheet_name}",
               )
               selected_bakul_by_sheet[sheet_name] = (df_s, name_c, chosen)
 
         st.markdown("---")
 
+        format_gambar = st.radio(
+            "Format Gambar:",
+            ["PNG", "JPG"],
+            horizontal=True,
+            key="fmt_img_bulk",
+        )
+
         if st.button(
-            "🚀 Generate & Download Excel All Nota",
+            "🚀 Generate & Download All Nota Gambar (.ZIP)",
             type="primary",
             use_container_width=True,
         ):
-          output_stream = io.BytesIO()
+          zip_buffer = io.BytesIO()
+          total_processed = 0
 
-          with pd.ExcelWriter(output_stream, engine="openpyxl") as writer:
-            total_processed = 0
-
+          with zipfile.ZipFile(
+              zip_buffer, "w", zipfile.ZIP_DEFLATED
+          ) as zip_file:
             for sheet_name, (
                 df_s,
                 name_c,
@@ -962,8 +975,7 @@ if selected_menu == "🧾 Nota":
                   df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
               ].copy()
 
-              nota_rows = []
-              for _, row in df_filtered.iterrows():
+              for idx, row in df_filtered.iterrows():
                 nama_bakul = str(row[name_c]).strip()
 
                 def get_val(c_name):
@@ -988,54 +1000,112 @@ if selected_menu == "🧾 Nota":
                     else 0
                 )
 
+                tot_glondong = kg_tonase * h_glondong
+                tot_jeroan = kg_jeroan * h_jeroan
+                tot_usus = kg_usus * h_usus
+                tot_telur_a = kg_telur_a * h_telur_a
+                tot_telur_b = kg_telur_b * h_telur_b
+
                 tot_bayar = (
-                    (kg_tonase * h_glondong)
-                    + (kg_jeroan * h_jeroan)
-                    + (kg_usus * h_usus)
-                    + (kg_telur_a * h_telur_a)
-                    + (kg_telur_b * h_telur_b)
+                    tot_glondong
+                    + tot_jeroan
+                    + tot_usus
+                    + tot_telur_a
+                    + tot_telur_b
                     + biaya_kresek
                 )
 
-                nota_rows.append({
-                    "NAMA BAKUL": nama_bakul,
-                    "GLONDONG (KG)": kg_tonase,
-                    "JEROAN (KG)": kg_jeroan,
-                    "USUS (KG)": kg_usus,
-                    "TELUR A (KG)": kg_telur_a,
-                    "TELUR B (KG)": kg_telur_b,
-                    "BIAYA KRESEK": biaya_kresek,
-                    "TOTAL TAGIHAN (RP)": tot_bayar,
-                })
-                total_processed += 1
+                items = [
+                    {
+                        "Nama Barang": "GLONDONG",
+                        "KG": kg_tonase,
+                        "Harga": h_glondong,
+                        "Jumlah": tot_glondong,
+                    },
+                    {
+                        "Nama Barang": "JEROAN",
+                        "KG": kg_jeroan,
+                        "Harga": h_jeroan,
+                        "Jumlah": tot_jeroan,
+                    },
+                    {
+                        "Nama Barang": "USUS B",
+                        "KG": kg_usus,
+                        "Harga": h_usus,
+                        "Jumlah": tot_usus,
+                    },
+                    {
+                        "Nama Barang": "TELUR A",
+                        "KG": kg_telur_a,
+                        "Harga": h_telur_a,
+                        "Jumlah": tot_telur_a,
+                    },
+                    {
+                        "Nama Barang": "TELUR B",
+                        "KG": kg_telur_b,
+                        "Harga": h_telur_b,
+                        "Jumlah": tot_telur_b,
+                    },
+                    {
+                        "Nama Barang": "BIAYA KRESEK",
+                        "KG": 1 if biaya_kresek > 0 else 0,
+                        "Harga": 7000,
+                        "Jumlah": biaya_kresek,
+                    },
+                ]
 
-              if nota_rows:
-                df_export = pd.DataFrame(nota_rows)
-                df_export.to_excel(
-                    writer, sheet_name=sheet_name[:31], index=False
-                )
+                filtered_items = [i for i in items if i["KG"] > 0]
+
+                if filtered_items:
+                  img_bytes = generate_image_nota(
+                      tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                      bakul=nama_bakul,
+                      group=sheet_name,
+                      items=filtered_items,
+                      total_bayar=tot_bayar,
+                      logo_path=logo_filename,
+                  )
+
+                  # Jika pilih JPG, konversi dari PNG
+                  ext = "png"
+                  if format_gambar == "JPG":
+                    ext = "jpg"
+                    img_obj = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                    out_jpg = io.BytesIO()
+                    img_obj.save(out_jpg, format="JPEG", quality=95)
+                    img_bytes = out_jpg.getvalue()
+
+                  # Buat nama file yang aman (hilangkan karakter aneh)
+                  clean_name = "".join(
+                      c for c in nama_bakul if c.isalnum() or c in (" ", "_", "-")
+                  ).rstrip()
+                  file_filename = f"{sheet_name}/{clean_name}.{ext}"
+
+                  zip_file.writestr(file_filename, img_bytes)
+                  total_processed += 1
 
           if total_processed > 0:
             st.success(
-                f"✅ Berhasil memproses {total_processed} nota bakul ke file"
-                " Excel!"
+                f"✅ Berhasil membuat {total_processed} gambar nota dalam file"
+                " ZIP!"
             )
             st.download_button(
-                label="📥 Klik Disini Untuk Unduh File Excel All Nota",
-                data=output_stream.getvalue(),
+                label=(
+                    f"📥 Download File ZIP ({total_processed} Gambar Nota"
+                    f" {format_gambar})"
+                ),
+                data=zip_buffer.getvalue(),
                 file_name=(
-                    "ALL_NOTA_AST_"
-                    f"{tanggal_transaksi.strftime('%Y%m%d')}.xlsx"
+                    "SEMUA_NOTA_GAMBAR_"
+                    f"{tanggal_transaksi.strftime('%Y%m%d')}.zip"
                 ),
-                mime=(
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                ),
+                mime="application/zip",
                 use_container_width=True,
             )
           else:
             st.warning(
-                "⚠️ Tidak ada bakul yang dipilih. Silakan centang minimal 1"
-                " bakul."
+                "⚠️ Tidak ada nota yang diproses. Pastikan bakul memiliki data"
+                " item/belanjaan."
             )
 
     else:
