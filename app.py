@@ -371,7 +371,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
   return img_byte_arr.getvalue()
 
 
-# --- CSS STYLING UTAMA (MENGGUNAKAN GAMBAR MERAHPUTIH.JPG LOKAL) ---
+# --- CSS STYLING UTAMA ---
 bg_css = ""
 if bg_base64:
   bg_css = f"""
@@ -398,7 +398,6 @@ st.markdown(
             padding-top: 1.5rem !important;
         }}
 
-        /* Kartu Login Melayang */
         div[data-testid="stColumn"] > div:has(input[type="password"]) {{
             background-color: rgba(255, 255, 255, 0.98);
             padding: 30px;
@@ -587,286 +586,458 @@ if selected_menu == "🧾 Nota":
 
     if uploaded_file is not None:
       xl = pd.ExcelFile(uploaded_file)
-      sheets = [
+      valid_sheets = [
           s
           for s in xl.sheet_names
           if s not in ["TOTAL TONASE", "NOTA FR", "Sheet1", "ploting"]
       ]
-      selected_sheet = st.selectbox("Pilih Group / Sheet", sheets)
 
-      df_raw = pd.read_excel(
-          uploaded_file, sheet_name=selected_sheet, header=None
+      # TABS UNTUK MEMISAHKAN FITUR NOTA SATUAN DAN EXPORT ALL NOTA
+      tab_satuan, tab_bulk = st.tabs(
+          ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota (Excel Filter)"]
       )
 
-      header_idx = 0
-      for idx, row in df_raw.iterrows():
-        if row.astype(str).str.upper().str.contains("NAMA").any():
-          header_idx = idx
-          break
+      # ==========================================
+      # TAB 1: NOTA SATUAN (PILIH 1 BAKUL)
+      # ==========================================
+      with tab_satuan:
+        selected_sheet = st.selectbox("Pilih Group / Sheet", valid_sheets)
 
-      df = df_raw.iloc[header_idx + 1 :].copy()
-      df.columns = [
-          str(c).strip().upper() for c in df_raw.iloc[header_idx].values
-      ]
-
-      name_col = next((c for c in df.columns if "NAMA" in c), df.columns[1])
-      no_col = next(
-          (c for c in df.columns if c in ["NO", "NO.", "NOMOR"]), None
-      )
-
-      df = df[df[name_col].notna()].copy()
-
-      bakul_options = []
-      bakul_map = {}
-
-      for idx, (real_idx, row) in enumerate(df.iterrows(), start=1):
-        nama_bakul = (
-            str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
-        )
-        if not nama_bakul:
-          continue
-
-        if no_col and pd.notna(row[no_col]) and str(row[no_col]).strip() != "":
-          no_val = str(row[no_col]).strip()
-          if no_val.endswith(".0"):
-            no_val = no_val[:-2]
-          label = f"{no_val}. {nama_bakul}"
-        else:
-          label = f"{idx}. {nama_bakul}"
-
-        bakul_options.append(label)
-        bakul_map[label] = (nama_bakul, real_idx)
-
-      selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
-      selected_bakul_info = bakul_map.get(selected_bakul_label, None)
-
-      if selected_bakul_info:
-        selected_bakul, real_idx = selected_bakul_info
-
-        if (
-            "last_bakul" not in st.session_state
-            or st.session_state["last_bakul"] != selected_bakul_label
-        ):
-          st.session_state["last_bakul"] = selected_bakul_label
-          st.session_state["qty_box_val"] = 0.0
-          st.session_state["qty_telur_b_val"] = 0.0
-
-        row_bakul = df.loc[real_idx]
-
-        def get_valid_float(col_name):
-          try:
-            if not col_name or col_name not in df.columns:
-              return 0.0
-            val = row_bakul[col_name]
-            num = pd.to_numeric(val, errors="coerce")
-            return 0.0 if pd.isna(num) else float(num)
-          except:
-            return 0.0
-
-        col_in1, col_in2, col_in3 = st.columns(3)
-        with col_in1:
-          qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
-        with col_in2:
-          qty_box = st.number_input(
-              "Jumlah Box (Manual)", key="qty_box_val", step=1
-          )
-        with col_in3:
-          qty_telur_b_manual = st.number_input(
-              "Jumlah Telur B (Manual)", key="qty_telur_b_val", step=1
-          )
-
-        qty_tonase = get_valid_float(
-            next((c for c in df.columns if "TONASE" in c), "")
-        )
-        qty_jeroan = get_valid_float(
-            next((c for c in df.columns if "JEROAN" in c), "")
-        )
-        qty_usus = get_valid_float(
-            next((c for c in df.columns if "USUS" in c), "")
-        )
-        qty_telur_a = get_valid_float(
-            next((c for c in df.columns if "TELUR A" in c or "TELUR" in c), "")
+        df_raw = pd.read_excel(
+            uploaded_file, sheet_name=selected_sheet, header=None
         )
 
-        qty_telur_b_excel = get_valid_float(
-            next((c for c in df.columns if "TELUR B" in c), "")
-        )
-        qty_telur_b = (
-            qty_telur_b_excel
-            if qty_telur_b_excel > 0
-            else qty_telur_b_manual
-        )
+        header_idx = 0
+        for idx, row in df_raw.iterrows():
+          if row.astype(str).str.upper().str.contains("NAMA").any():
+            header_idx = idx
+            break
 
-        val_ket = get_valid_float(
-            next((c for c in df.columns if "KET" in c), "")
-        )
-        biaya_kresek = (
-            7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
-        )
-
-        tot_glondong = qty_tonase * h_glondong
-        tot_jeroan = qty_jeroan * h_jeroan
-        tot_usus = qty_usus * h_usus
-        tot_telur_a = qty_telur_a * h_telur_a
-        tot_telur_b = qty_telur_b * h_telur_b
-        tot_peti = qty_peti * h_peti
-        tot_box = qty_box * h_box
-
-        total_bayar = (
-            tot_glondong
-            + tot_jeroan
-            + tot_usus
-            + tot_telur_a
-            + tot_telur_b
-            + tot_peti
-            + tot_box
-            + biaya_kresek
-        )
-
-        items = [
-            {
-                "Nama Barang": "GLONDONG",
-                "KG": qty_tonase,
-                "Harga": h_glondong,
-                "Jumlah": tot_glondong,
-            },
-            {
-                "Nama Barang": "JEROAN",
-                "KG": qty_jeroan,
-                "Harga": h_jeroan,
-                "Jumlah": tot_jeroan,
-            },
-            {
-                "Nama Barang": "USUS B",
-                "KG": qty_usus,
-                "Harga": h_usus,
-                "Jumlah": tot_usus,
-            },
-            {
-                "Nama Barang": "TELUR A",
-                "KG": qty_telur_a,
-                "Harga": h_telur_a,
-                "Jumlah": tot_telur_a,
-            },
-            {
-                "Nama Barang": "TELUR B",
-                "KG": qty_telur_b,
-                "Harga": h_telur_b,
-                "Jumlah": tot_telur_b,
-            },
-            {
-                "Nama Barang": "PETI",
-                "KG": qty_peti,
-                "Harga": h_peti,
-                "Jumlah": tot_peti,
-            },
-            {
-                "Nama Barang": "BOX",
-                "KG": qty_box,
-                "Harga": h_box,
-                "Jumlah": tot_box,
-            },
-            {
-                "Nama Barang": "BIAYA KRESEK",
-                "KG": 1 if biaya_kresek > 0 else 0,
-                "Harga": 7000,
-                "Jumlah": biaya_kresek,
-            },
+        df = df_raw.iloc[header_idx + 1 :].copy()
+        df.columns = [
+            str(c).strip().upper() for c in df_raw.iloc[header_idx].values
         ]
 
-        filtered_items = [i for i in items if i["KG"] > 0]
+        name_col = next((c for c in df.columns if "NAMA" in c), df.columns[1])
+        no_col = next(
+            (c for c in df.columns if c in ["NO", "NO.", "NOMOR"]), None
+        )
 
-        if filtered_items:
-          with st.container(border=True):
-            col_l, col_m, col_r = st.columns([1.5, 4, 3])
-            with col_l:
-              if logo_filename:
-                st.image(logo_filename, width=110)
-            with col_m:
-              st.markdown(
-                  "<h3 style='margin:0; color:#C62828; font-weight: bold;"
-                  " font-size:24px;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan"
-                  " - Tumpang - Kab. Malang</small>",
-                  unsafe_allow_html=True,
-              )
-            with col_r:
-              st.markdown(
-                  f"<div style='text-align:right;'><small><b>Tanggal:</b>"
-                  f" {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b>"
-                  f" {selected_bakul}<br><b>Group:</b>"
-                  f" {selected_sheet}</small></div>",
-                  unsafe_allow_html=True,
-              )
+        df = df[df[name_col].notna()].copy()
 
-            rows_html = ""
-            for item in filtered_items:
-              kg_str = (
-                  f"{int(item['KG'])}"
-                  if isinstance(item["KG"], float) and item["KG"].is_integer()
-                  else (
-                      f"{item['KG']:.2f}"
-                      if isinstance(item["KG"], float)
-                      else str(item["KG"])
-                  )
-              )
-              rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(
-                  ",", "."
-              )
+        bakul_options = []
+        bakul_map = {}
 
-            st.markdown(
-                f"""
-                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-                    <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
-                    <tbody>{rows_html}</tbody>
-                </table>
-                <div style="text-align:right; margin-top:10px; font-weight:bold;">
-                    TOTAL: <span style="color:#C62828; font-size:22px; font-weight:bold;">Rp {total_bayar:,.0f}</span>
-                </div>
-            """.replace(",", "."),
-                unsafe_allow_html=True,
+        for idx, (real_idx, row) in enumerate(df.iterrows(), start=1):
+          nama_bakul = (
+              str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
+          )
+          if not nama_bakul:
+            continue
+
+          if (
+              no_col
+              and pd.notna(row[no_col])
+              and str(row[no_col]).strip() != ""
+          ):
+            no_val = str(row[no_col]).strip()
+            if no_val.endswith(".0"):
+              no_val = no_val[:-2]
+            label = f"{no_val}. {nama_bakul}"
+          else:
+            label = f"{idx}. {nama_bakul}"
+
+          bakul_options.append(label)
+          bakul_map[label] = (nama_bakul, real_idx)
+
+        selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
+        selected_bakul_info = bakul_map.get(selected_bakul_label, None)
+
+        if selected_bakul_info:
+          selected_bakul, real_idx = selected_bakul_info
+
+          if (
+              "last_bakul" not in st.session_state
+              or st.session_state["last_bakul"] != selected_bakul_label
+          ):
+            st.session_state["last_bakul"] = selected_bakul_label
+            st.session_state["qty_box_val"] = 0.0
+            st.session_state["qty_telur_b_val"] = 0.0
+
+          row_bakul = df.loc[real_idx]
+
+          def get_valid_float(col_name):
+            try:
+              if not col_name or col_name not in df.columns:
+                return 0.0
+              val = row_bakul[col_name]
+              num = pd.to_numeric(val, errors="coerce")
+              return 0.0 if pd.isna(num) else float(num)
+            except:
+              return 0.0
+
+          col_in1, col_in2, col_in3 = st.columns(3)
+          with col_in1:
+            qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
+          with col_in2:
+            qty_box = st.number_input(
+                "Jumlah Box (Manual)", key="qty_box_val", step=1
+            )
+          with col_in3:
+            qty_telur_b_manual = st.number_input(
+                "Jumlah Telur B (Manual)", key="qty_telur_b_val", step=1
             )
 
-          col_btn1, col_btn2 = st.columns(2)
+          qty_tonase = get_valid_float(
+              next((c for c in df.columns if "TONASE" in c), "")
+          )
+          qty_jeroan = get_valid_float(
+              next((c for c in df.columns if "JEROAN" in c), "")
+          )
+          qty_usus = get_valid_float(
+              next((c for c in df.columns if "USUS" in c), "")
+          )
+          qty_telur_a = get_valid_float(
+              next(
+                  (c for c in df.columns if "TELUR A" in c or "TELUR" in c), ""
+              )
+          )
 
-          with col_btn1:
-            word_data = generate_word_nota(
-                tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
-                bakul=selected_bakul,
-                group=selected_sheet,
-                items=filtered_items,
-                total_bayar=total_bayar,
-                logo_path=logo_filename,
+          qty_telur_b_excel = get_valid_float(
+              next((c for c in df.columns if "TELUR B" in c), "")
+          )
+          qty_telur_b = (
+              qty_telur_b_excel
+              if qty_telur_b_excel > 0
+              else qty_telur_b_manual
+          )
+
+          val_ket = get_valid_float(
+              next((c for c in df.columns if "KET" in c), "")
+          )
+          biaya_kresek = (
+              7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
+          )
+
+          tot_glondong = qty_tonase * h_glondong
+          tot_jeroan = qty_jeroan * h_jeroan
+          tot_usus = qty_usus * h_usus
+          tot_telur_a = qty_telur_a * h_telur_a
+          tot_telur_b = qty_telur_b * h_telur_b
+          tot_peti = qty_peti * h_peti
+          tot_box = qty_box * h_box
+
+          total_bayar = (
+              tot_glondong
+              + tot_jeroan
+              + tot_usus
+              + tot_telur_a
+              + tot_telur_b
+              + tot_peti
+              + tot_box
+              + biaya_kresek
+          )
+
+          items = [
+              {
+                  "Nama Barang": "GLONDONG",
+                  "KG": qty_tonase,
+                  "Harga": h_glondong,
+                  "Jumlah": tot_glondong,
+              },
+              {
+                  "Nama Barang": "JEROAN",
+                  "KG": qty_jeroan,
+                  "Harga": h_jeroan,
+                  "Jumlah": tot_jeroan,
+              },
+              {
+                  "Nama Barang": "USUS B",
+                  "KG": qty_usus,
+                  "Harga": h_usus,
+                  "Jumlah": tot_usus,
+              },
+              {
+                  "Nama Barang": "TELUR A",
+                  "KG": qty_telur_a,
+                  "Harga": h_telur_a,
+                  "Jumlah": tot_telur_a,
+              },
+              {
+                  "Nama Barang": "TELUR B",
+                  "KG": qty_telur_b,
+                  "Harga": h_telur_b,
+                  "Jumlah": tot_telur_b,
+              },
+              {
+                  "Nama Barang": "PETI",
+                  "KG": qty_peti,
+                  "Harga": h_peti,
+                  "Jumlah": tot_peti,
+              },
+              {
+                  "Nama Barang": "BOX",
+                  "KG": qty_box,
+                  "Harga": h_box,
+                  "Jumlah": tot_box,
+              },
+              {
+                  "Nama Barang": "BIAYA KRESEK",
+                  "KG": 1 if biaya_kresek > 0 else 0,
+                  "Harga": 7000,
+                  "Jumlah": biaya_kresek,
+              },
+          ]
+
+          filtered_items = [i for i in items if i["KG"] > 0]
+
+          if filtered_items:
+            with st.container(border=True):
+              col_l, col_m, col_r = st.columns([1.5, 4, 3])
+              with col_l:
+                if logo_filename:
+                  st.image(logo_filename, width=110)
+              with col_m:
+                st.markdown(
+                    "<h3 style='margin:0; color:#C62828; font-weight: bold;"
+                    " font-size:24px;'>AYAM SEGAR TUMPANG</h3><small>Ds. Kambingan"
+                    " - Tumpang - Kab. Malang</small>",
+                    unsafe_allow_html=True,
+                )
+              with col_r:
+                st.markdown(
+                    f"<div style='text-align:right;'><small><b>Tanggal:</b>"
+                    f" {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b>"
+                    f" {selected_bakul}<br><b>Group:</b>"
+                    f" {selected_sheet}</small></div>",
+                    unsafe_allow_html=True,
+                )
+
+              rows_html = ""
+              for item in filtered_items:
+                kg_str = (
+                    f"{int(item['KG'])}"
+                    if isinstance(item["KG"], float) and item["KG"].is_integer()
+                    else (
+                        f"{item['KG']:.2f}"
+                        if isinstance(item["KG"], float)
+                        else str(item["KG"])
+                    )
+                )
+                rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(
+                    ",", "."
+                )
+
+              st.markdown(
+                  f"""
+                  <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                      <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
+                      <tbody>{rows_html}</tbody>
+                  </table>
+                  <div style="text-align:right; margin-top:10px; font-weight:bold;">
+                      TOTAL: <span style="color:#C62828; font-size:22px; font-weight:bold;">Rp {total_bayar:,.0f}</span>
+                  </div>
+              """.replace(",", "."),
+                  unsafe_allow_html=True,
+              )
+
+            col_btn1, col_btn2 = st.columns(2)
+
+            with col_btn1:
+              word_data = generate_word_nota(
+                  tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                  bakul=selected_bakul,
+                  group=selected_sheet,
+                  items=filtered_items,
+                  total_bayar=total_bayar,
+                  logo_path=logo_filename,
+              )
+              st.download_button(
+                  label="📝 Download Nota Word (.docx)",
+                  data=word_data,
+                  file_name=(
+                      f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.docx"
+                  ),
+                  mime=(
+                      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  ),
+                  use_container_width=True,
+              )
+
+            with col_btn2:
+              img_data = generate_image_nota(
+                  tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                  bakul=selected_bakul,
+                  group=selected_sheet,
+                  items=filtered_items,
+                  total_bayar=total_bayar,
+                  logo_path=logo_filename,
+              )
+              st.download_button(
+                  label="🖼️ Download Nota Gambar (.png)",
+                  data=img_data,
+                  file_name=(
+                      f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.png"
+                  ),
+                  mime="image/png",
+                  use_container_width=True,
+              )
+
+      # ==========================================
+      # TAB 2: FILTER & DOWNLOAD ALL NOTA EXCEL
+      # ==========================================
+      with tab_bulk:
+        st.markdown("### 🔍 Filter Bakul untuk File Excel All Nota")
+        st.caption(
+            "Centang nama bakul yang ingin dimasukkan ke dalam file Excel"
+            " gabungan."
+        )
+
+        selected_bakul_by_sheet = {}
+
+        for sheet_name in valid_sheets:
+          df_raw_sheet = pd.read_excel(
+              uploaded_file, sheet_name=sheet_name, header=None
+          )
+
+          header_idx_sheet = 0
+          for idx, row in df_raw_sheet.iterrows():
+            if row.astype(str).str.upper().str.contains("NAMA").any():
+              header_idx_sheet = idx
+              break
+
+          df_s = df_raw_sheet.iloc[header_idx_sheet + 1 :].copy()
+          df_s.columns = [
+              str(c).strip().upper() for c in df_raw_sheet.iloc[header_idx_sheet].values
+          ]
+
+          name_c = next((c for c in df_s.columns if "NAMA" in c), df_s.columns[1])
+          df_s = df_s[df_s[name_c].notna()].copy()
+
+          list_bakul = [
+              str(b).strip() for b in df_s[name_c].tolist() if str(b).strip()
+          ]
+
+          if list_bakul:
+            with st.expander(
+                f"📋 Sheet: {sheet_name} ({len(list_bakul)} Bakul)",
+                expanded=True,
+            ):
+              col_a, col_b = st.columns([1, 4])
+              with col_a:
+                select_all = st.checkbox(
+                    "Pilih Semua", value=True, key=f"all_{sheet_name}"
+                )
+
+              default_selected = list_bakul if select_all else []
+              chosen = st.multiselect(
+                  "Daftar Bakul Terpilih:",
+                  options=list_bakul,
+                  default=default_selected,
+                  key=f"ms_{sheet_name}",
+              )
+              selected_bakul_by_sheet[sheet_name] = (df_s, name_c, chosen)
+
+        st.markdown("---")
+
+        if st.button(
+            "🚀 Generate & Download Excel All Nota",
+            type="primary",
+            use_container_width=True,
+        ):
+          output_stream = io.BytesIO()
+
+          with pd.ExcelWriter(output_stream, engine="openpyxl") as writer:
+            total_processed = 0
+
+            for sheet_name, (
+                df_s,
+                name_c,
+                chosen_bakul,
+            ) in selected_bakul_by_sheet.items():
+              if not chosen_bakul:
+                continue
+
+              df_filtered = df_s[
+                  df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
+              ].copy()
+
+              nota_rows = []
+              for _, row in df_filtered.iterrows():
+                nama_bakul = str(row[name_c]).strip()
+
+                def get_val(c_name):
+                  try:
+                    col = next(
+                        (c for c in df_filtered.columns if c_name in c), ""
+                    )
+                    val = pd.to_numeric(row[col], errors="coerce")
+                    return 0.0 if pd.isna(val) else float(val)
+                  except:
+                    return 0.0
+
+                kg_tonase = get_val("TONASE")
+                kg_jeroan = get_val("JEROAN")
+                kg_usus = get_val("USUS")
+                kg_telur_a = get_val("TELUR A")
+                kg_telur_b = get_val("TELUR B")
+                val_ket = get_val("KET")
+                biaya_kresek = (
+                    7000
+                    if (val_ket > 0 and not float(val_ket).is_integer())
+                    else 0
+                )
+
+                tot_bayar = (
+                    (kg_tonase * h_glondong)
+                    + (kg_jeroan * h_jeroan)
+                    + (kg_usus * h_usus)
+                    + (kg_telur_a * h_telur_a)
+                    + (kg_telur_b * h_telur_b)
+                    + biaya_kresek
+                )
+
+                nota_rows.append({
+                    "NAMA BAKUL": nama_bakul,
+                    "GLONDONG (KG)": kg_tonase,
+                    "JEROAN (KG)": kg_jeroan,
+                    "USUS (KG)": kg_usus,
+                    "TELUR A (KG)": kg_telur_a,
+                    "TELUR B (KG)": kg_telur_b,
+                    "BIAYA KRESEK": biaya_kresek,
+                    "TOTAL TAGIHAN (RP)": tot_bayar,
+                })
+                total_processed += 1
+
+              if nota_rows:
+                df_export = pd.DataFrame(nota_rows)
+                df_export.to_excel(
+                    writer, sheet_name=sheet_name[:31], index=False
+                )
+
+          if total_processed > 0:
+            st.success(
+                f"✅ Berhasil memproses {total_processed} nota bakul ke file"
+                " Excel!"
             )
             st.download_button(
-                label="📝 Download Nota Word (.docx)",
-                data=word_data,
+                label="📥 Klik Disini Untuk Unduh File Excel All Nota",
+                data=output_stream.getvalue(),
                 file_name=(
-                    f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.docx"
+                    "ALL_NOTA_AST_"
+                    f"{tanggal_transaksi.strftime('%Y%m%d')}.xlsx"
                 ),
                 mime=(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ),
                 use_container_width=True,
+            )
+          else:
+            st.warning(
+                "⚠️ Tidak ada bakul yang dipilih. Silakan centang minimal 1"
+                " bakul."
             )
 
-          with col_btn2:
-            img_data = generate_image_nota(
-                tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
-                bakul=selected_bakul,
-                group=selected_sheet,
-                items=filtered_items,
-                total_bayar=total_bayar,
-                logo_path=logo_filename,
-            )
-            st.download_button(
-                label="🖼️ Download Nota Gambar (.png)",
-                data=img_data,
-                file_name=(
-                    f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.png"
-                ),
-                mime="image/png",
-                use_container_width=True,
-            )
     else:
       st.info("💡 Silakan upload file Rekap Excel untuk memproses nota.")
   else:
