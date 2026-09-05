@@ -40,14 +40,14 @@ def get_base64_image(image_path):
 bg_base64 = get_base64_image("back.jpg")
 
 
-# --- HELPER GENERATOR WORD (.DOCX) NOTA PRESISI ---
+# --- HELPER GENERATOR WORD (.DOCX) NOTA KOTAK PRESISI ---
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
     tcPr.append(shd)
 
 
-def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
+def set_cell_margins(cell, top=60, bottom=60, left=80, right=80):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement("w:tcMar")
     for m, val in [
@@ -66,10 +66,11 @@ def set_cell_margins(cell, top=80, bottom=80, left=100, right=100):
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Mm(210)
-    section.page_height = Mm(105)
-    section.top_margin = Mm(5)
-    section.bottom_margin = Mm(5)
+    # KERTAS KOTAK (148mm x 148mm)
+    section.page_width = Mm(148)
+    section.page_height = Mm(148)
+    section.top_margin = Mm(6)
+    section.bottom_margin = Mm(6)
     section.left_margin = Mm(6)
     section.right_margin = Mm(6)
 
@@ -78,39 +79,37 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(100)
-    cell_r.width = Mm(98)
+    cell_l.width = Mm(70)
+    cell_r.width = Mm(66)
 
     p_l = cell_l.paragraphs[0]
     p_l.paragraph_format.space_before = Pt(0)
     p_l.paragraph_format.space_after = Pt(0)
-    p_l.paragraph_format.line_spacing = 1.15
+    p_l.paragraph_format.line_spacing = 1.1
 
     if logo_path and os.path.exists(logo_path):
         run_img = p_l.add_run()
-        run_img.add_picture(logo_path, width=Mm(16))
+        run_img.add_picture(logo_path, width=Mm(12))
         p_l.add_run("  ")
 
     run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
-    run_title.font.size = Pt(15)
+    run_title.font.size = Pt(12)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Kab. Malang")
-    run_sub.font.size = Pt(8)
+    run_sub.font.size = Pt(7.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_r.paragraph_format.space_before = Pt(0)
     p_r.paragraph_format.space_after = Pt(0)
-    p_r.paragraph_format.line_spacing = 1.15
 
     r_info = p_r.add_run(
         f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     )
-    r_info.font.size = Pt(8.5)
-    r_info.font.color.rgb = RGBColor(0, 0, 0)
+    r_info.font.size = Pt(8)
 
     p_spacer = doc.add_paragraph()
     p_spacer.paragraph_format.space_before = Pt(2)
@@ -120,7 +119,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(22), Mm(86), Mm(45), Mm(45)]
+    col_widths = [Mm(20), Mm(56), Mm(30), Mm(30)]
     headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.CENTER,
@@ -133,14 +132,14 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "F0F0F0")
-        set_cell_margins(hdr_cells[i], top=60, bottom=60, left=80, right=80)
+        set_cell_margins(hdr_cells[i], top=40, bottom=40, left=60, right=60)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
         r = p.add_run(h_text)
         r.bold = True
-        r.font.size = Pt(8.5)
+        r.font.size = Pt(8)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -160,43 +159,44 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=50, bottom=50, left=80, right=80)
+            set_cell_margins(row_cells[i], top=40, bottom=40, left=60, right=60)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
-            r.font.size = Pt(8.5)
+            r.font.size = Pt(8)
 
     tbl_ftr = doc.add_table(rows=1, cols=2)
     tbl_ftr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_ftr.autofit = False
 
     f_left, f_right = tbl_ftr.rows[0].cells
-    f_left.width = Mm(100)
-    f_right.width = Mm(98)
+    f_left.width = Mm(68)
+    f_right.width = Mm(68)
 
     p_fl = f_left.paragraphs[0]
     p_fl.paragraph_format.space_before = Pt(6)
     p_fl.paragraph_format.space_after = Pt(0)
     r_sig = p_fl.add_run(
-        "Penerima,                                    Hormat Kami,\n\n\n( ............................ )                 ( ............................ )"
+        "Penerima,                       Hormat Kami,\n\n\n( ............................ )   ("
+        " ............................ )"
     )
-    r_sig.font.size = Pt(8)
+    r_sig.font.size = Pt(7.5)
 
     p_fr = f_right.paragraphs[0]
     p_fr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_fr.paragraph_format.space_before = Pt(10)
+    p_fr.paragraph_format.space_before = Pt(8)
     p_fr.paragraph_format.space_after = Pt(0)
 
     r_lbl = p_fr.add_run("TOTAL : ")
     r_lbl.bold = True
-    r_lbl.font.size = Pt(11)
+    r_lbl.font.size = Pt(10)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_fr.add_run(tot_str)
     r_tot.bold = True
-    r_tot.font.size = Pt(16)
+    r_tot.font.size = Pt(14)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
     target_stream = io.BytesIO()
@@ -204,28 +204,17 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return target_stream.getvalue()
 
 
-# --- HELPER GENERATOR GAMBAR (PNG) NOTA DINAMIS ---
+# --- HELPER GENERATOR GAMBAR (PNG) NOTA KOTAK PRESISI ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
-    width = 800
-
-    row_height = 22
-    num_items = len(items)
-
-    y_tbl = 95
-    header_tbl_height = 25
-    table_items_height = num_items * row_height
-
-    footer_height = 160
-    margin_bottom = 20
-
-    height = (
-        y_tbl + header_tbl_height + table_items_height + footer_height + margin_bottom
-    )
+    # KANVAS PERSEGI / KOTAK (600x600 px)
+    width = 600
+    height = 600
 
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    draw.rectangle([15, 15, width - 15, height - 15], outline=(0, 0, 0), width=2)
+    # Frame Pinggir
+    draw.rectangle([12, 12, width - 12, height - 12], outline=(0, 0, 0), width=2)
 
     bold_fonts = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -251,71 +240,75 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         except TypeError:
             return ImageFont.load_default()
 
-    font_title = load_font(bold_fonts, 22)
-    font_total = load_font(bold_fonts, 36)
-    font_bold = load_font(bold_fonts, 16)
-    font_regular = load_font(reg_fonts, 13)
-    font_small = load_font(reg_fonts, 11)
+    font_title = load_font(bold_fonts, 18)
+    font_total = load_font(bold_fonts, 26)
+    font_bold = load_font(bold_fonts, 13)
+    font_regular = load_font(reg_fonts, 12)
+    font_small = load_font(reg_fonts, 10)
 
     if logo_path and os.path.exists(logo_path):
         try:
             logo_img = Image.open(logo_path).convert("RGBA")
-            logo_img.thumbnail((70, 70))
-            img.paste(logo_img, (25, 20), logo_img)
+            logo_img.thumbnail((50, 50))
+            img.paste(logo_img, (22, 20), logo_img)
         except Exception:
             pass
 
     draw.text(
-        (105, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title
+        (80, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title
     )
     draw.text(
-        (105, 58),
+        (80, 48),
         "Ds. Kambingan - Tumpang - Kab. Malang",
         fill=(90, 90, 90),
         font=font_small,
     )
 
     draw.text(
-        (width - 240, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small
+        (width - 200, 20), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small
     )
     draw.text(
-        (width - 240, 40),
+        (width - 200, 36),
         f"Pembeli / Bakul: {bakul}",
         fill=(0, 0, 0),
         font=font_small,
     )
     draw.text(
-        (width - 240, 58), f"Group: {group}", fill=(0, 0, 0), font=font_small
+        (width - 200, 52), f"Group: {group}", fill=(0, 0, 0), font=font_small
     )
 
+    y_tbl = 80
+    header_tbl_height = 24
+    row_height = 22
+
     draw.rectangle(
-        [25, y_tbl, width - 25, y_tbl + header_tbl_height],
+        [22, y_tbl, width - 22, y_tbl + header_tbl_height],
         fill=(240, 240, 240),
         outline=(0, 0, 0),
     )
     draw.line(
-        [(120, y_tbl), (120, y_tbl + header_tbl_height)], fill=(0, 0, 0)
+        [(100, y_tbl), (100, y_tbl + header_tbl_height)], fill=(0, 0, 0)
     )
     draw.line(
-        [(450, y_tbl), (450, y_tbl + header_tbl_height)], fill=(0, 0, 0)
+        [(330, y_tbl), (330, y_tbl + header_tbl_height)], fill=(0, 0, 0)
     )
     draw.line(
-        [(610, y_tbl), (610, y_tbl + header_tbl_height)], fill=(0, 0, 0)
+        [(440, y_tbl), (440, y_tbl + header_tbl_height)], fill=(0, 0, 0)
     )
 
-    draw.text((40, y_tbl + 5), "QTY / KG", fill=(0, 0, 0), font=font_bold)
-    draw.text((130, y_tbl + 5), "BARANG", fill=(0, 0, 0), font=font_bold)
-    draw.text((470, y_tbl + 5), "HARGA", fill=(0, 0, 0), font=font_bold)
-    draw.text((630, y_tbl + 5), "JUMLAH", fill=(0, 0, 0), font=font_bold)
+    draw.text((32, y_tbl + 4), "QTY / KG", fill=(0, 0, 0), font=font_bold)
+    draw.text((110, y_tbl + 4), "BARANG", fill=(0, 0, 0), font=font_bold)
+    draw.text((345, y_tbl + 4), "HARGA", fill=(0, 0, 0), font=font_bold)
+    draw.text((455, y_tbl + 4), "JUMLAH", fill=(0, 0, 0), font=font_bold)
 
     y_curr = y_tbl + header_tbl_height
     for item in items:
         draw.rectangle(
-            [25, y_curr, width - 25, y_curr + row_height], outline=(0, 0, 0)
+            [22, y_curr, width - 22, y_curr + row_height], outline=(0, 0, 0)
         )
-        draw.line([(120, y_curr), (120, y_curr + row_height)], fill=(0, 0, 0))
-        draw.line([(450, y_curr), (450, y_curr + row_height)], fill=(0, 0, 0))
-        draw.line([(610, y_curr), (610, y_curr + row_height)], fill=(0, 0, 0))
+        draw.line([(100, y_curr), (100, y_curr + row_height)], fill=(0, 0, 0))
+        draw.line([(330, y_curr), (330, y_curr + row_height)], fill=(0, 0, 0))
+        draw.line([(440, y_curr), (440, y_curr + row_height)], fill=(0, 0, 0))
 
         kg_val = item["KG"]
         kg_str = (
@@ -330,34 +323,34 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
-        draw.text((45, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((35, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
         draw.text(
-            (130, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
+            (110, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
         )
-        draw.text((460, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
-        draw.text((620, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((340, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((450, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
         y_curr += row_height
 
-    y_ftr = y_curr + 25
+    y_ftr = height - 110
 
-    draw.text((50, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
-    draw.text((220, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
+    draw.text((30, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
+    draw.text((160, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
     draw.text(
-        (40, y_ftr + 55),
+        (25, y_ftr + 50),
         "( ............................ )",
         fill=(0, 0, 0),
         font=font_regular,
     )
     draw.text(
-        (210, y_ftr + 55),
+        (150, y_ftr + 50),
         "( ............................ )",
         fill=(0, 0, 0),
         font=font_regular,
     )
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-    draw.text((430, y_ftr + 20), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-    draw.text((510, y_ftr + 10), tot_str, fill=(198, 40, 40), font=font_total)
+    draw.text((310, y_ftr + 20), "TOTAL :", fill=(0, 0, 0), font=font_bold)
+    draw.text((380, y_ftr + 12), tot_str, fill=(198, 40, 40), font=font_total)
 
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format="PNG")
@@ -578,7 +571,6 @@ if selected_menu == "🧾 Nota":
             )
 
         if uploaded_file is not None:
-            # Membaca seluruh sheet sekaligus untuk efisiensi performa
             all_sheets = pd.read_excel(uploaded_file, sheet_name=None, header=None)
             valid_sheets = [
                 s
@@ -1052,7 +1044,7 @@ if selected_menu == "🧾 Nota":
                                 cell_location = f"B{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
-                                row_position += 23
+                                row_position += 28
                                 total_processed += 1
 
                     if total_processed > 0:
