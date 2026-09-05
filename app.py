@@ -66,7 +66,6 @@ def set_cell_margins(cell, top=60, bottom=60, left=80, right=80):
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc = Document()
     section = doc.sections[0]
-    # KERTAS DIBAWAH PERSEGI (148mm x 105mm - ringkas & padat)
     section.page_width = Mm(148)
     section.page_height = Mm(105)
     section.top_margin = Mm(6)
@@ -204,25 +203,10 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return target_stream.getvalue()
 
 
-# --- HELPER GENERATOR GAMBAR (PNG) NOTA KOTAK PRESISI ---
+# --- HELPER GENERATOR GAMBAR (PNG) NOTA KOTAK PRESISI (1:1 / 500x500) ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
-    width = 600
-
-    header_height = 80
-    tbl_header_height = 24
-    row_height = 24
-    items_total_height = len(items) * row_height
-    footer_height = 110
-    padding = 30
-
-    calculated_height = (
-        header_height
-        + tbl_header_height
-        + items_total_height
-        + footer_height
-        + padding
-    )
-    height = max(360, calculated_height)
+    width = 500
+    height = 500
 
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
@@ -254,73 +238,62 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         except TypeError:
             return ImageFont.load_default()
 
-    font_title = load_font(bold_fonts, 18)
-    font_total = load_font(bold_fonts, 24)
-    font_bold = load_font(bold_fonts, 13)
-    font_regular = load_font(reg_fonts, 12)
-    font_small = load_font(reg_fonts, 10)
+    font_title = load_font(bold_fonts, 16)
+    font_total = load_font(bold_fonts, 20)
+    font_bold = load_font(bold_fonts, 11)
+    font_regular = load_font(reg_fonts, 11)
+    font_small = load_font(reg_fonts, 9.5)
 
     if logo_path and os.path.exists(logo_path):
         try:
             logo_img = Image.open(logo_path).convert("RGBA")
-            logo_img.thumbnail((50, 50))
-            img.paste(logo_img, (22, 20), logo_img)
+            logo_img.thumbnail((42, 42))
+            img.paste(logo_img, (22, 22), logo_img)
         except Exception:
             pass
 
+    draw.text((70, 22), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title)
     draw.text(
-        (80, 20), "AYAM SEGAR TUMPANG", fill=(198, 40, 40), font=font_title
-    )
-    draw.text(
-        (80, 48),
+        (70, 45),
         "Ds. Kambingan - Tumpang - Kab. Malang",
         fill=(90, 90, 90),
         font=font_small,
     )
 
+    draw.text((width - 170, 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
     draw.text(
-        (width - 200, 20), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small
-    )
-    draw.text(
-        (width - 200, 36),
+        (width - 170, 38),
         f"Pembeli / Bakul: {bakul}",
         fill=(0, 0, 0),
         font=font_small,
     )
-    draw.text(
-        (width - 200, 52), f"Group: {group}", fill=(0, 0, 0), font=font_small
-    )
+    draw.text((width - 170, 54), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
     y_tbl = 80
+    tbl_header_height = 24
+    row_height = 24
 
     draw.rectangle(
         [22, y_tbl, width - 22, y_tbl + tbl_header_height],
         fill=(240, 240, 240),
         outline=(0, 0, 0),
     )
-    draw.line(
-        [(100, y_tbl), (100, y_tbl + tbl_header_height)], fill=(0, 0, 0)
-    )
-    draw.line(
-        [(330, y_tbl), (330, y_tbl + tbl_header_height)], fill=(0, 0, 0)
-    )
-    draw.line(
-        [(440, y_tbl), (440, y_tbl + tbl_header_height)], fill=(0, 0, 0)
-    )
 
-    draw.text((32, y_tbl + 4), "QTY / KG", fill=(0, 0, 0), font=font_bold)
-    draw.text((110, y_tbl + 4), "BARANG", fill=(0, 0, 0), font=font_bold)
-    draw.text((345, y_tbl + 4), "HARGA", fill=(0, 0, 0), font=font_bold)
-    draw.text((455, y_tbl + 4), "JUMLAH", fill=(0, 0, 0), font=font_bold)
+    draw.line([(85, y_tbl), (85, y_tbl + tbl_header_height)], fill=(0, 0, 0))
+    draw.line([(270, y_tbl), (270, y_tbl + tbl_header_height)], fill=(0, 0, 0))
+    draw.line([(365, y_tbl), (365, y_tbl + tbl_header_height)], fill=(0, 0, 0))
+
+    draw.text((28, y_tbl + 5), "QTY / KG", fill=(0, 0, 0), font=font_bold)
+    draw.text((95, y_tbl + 5), "BARANG", fill=(0, 0, 0), font=font_bold)
+    draw.text((285, y_tbl + 5), "HARGA", fill=(0, 0, 0), font=font_bold)
+    draw.text((380, y_tbl + 5), "JUMLAH", fill=(0, 0, 0), font=font_bold)
 
     y_curr = y_tbl + tbl_header_height
     for item in items:
-        draw.rectangle(
-            [22, y_curr, width - 22, y_curr + row_height], outline=(0, 0, 0)
-        )
-        draw.line([(100, y_curr), (100, y_curr + row_height)], fill=(0, 0, 0))
-        draw.line([(330, y_curr), (330, y_curr + row_height)], fill=(0, 0, 0))
-        draw.line([(440, y_curr), (440, y_curr + row_height)], fill=(0, 0, 0))
+        draw.rectangle([22, y_curr, width - 22, y_curr + row_height], outline=(0, 0, 0))
+        draw.line([(85, y_curr), (85, y_curr + row_height)], fill=(0, 0, 0))
+        draw.line([(270, y_curr), (270, y_curr + row_height)], fill=(0, 0, 0))
+        draw.line([(365, y_curr), (365, y_curr + row_height)], fill=(0, 0, 0))
 
         kg_val = item["KG"]
         kg_str = (
@@ -335,34 +308,34 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
-        draw.text((35, y_curr + 3), kg_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((32, y_curr + 4), kg_str, fill=(0, 0, 0), font=font_regular)
         draw.text(
-            (110, y_curr + 3), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
+            (95, y_curr + 4), item["Nama Barang"], fill=(0, 0, 0), font=font_regular
         )
-        draw.text((340, y_curr + 3), h_str, fill=(0, 0, 0), font=font_regular)
-        draw.text((450, y_curr + 3), j_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((280, y_curr + 4), h_str, fill=(0, 0, 0), font=font_regular)
+        draw.text((375, y_curr + 4), j_str, fill=(0, 0, 0), font=font_regular)
         y_curr += row_height
 
-    y_ftr = y_curr + 15
+    y_ftr = height - 110
 
     draw.text((30, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
-    draw.text((160, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
+    draw.text((140, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
     draw.text(
-        (25, y_ftr + 45),
+        (25, y_ftr + 55),
         "( ............................ )",
         fill=(0, 0, 0),
-        font=font_regular,
+        font=font_small,
     )
     draw.text(
-        (150, y_ftr + 45),
+        (130, y_ftr + 55),
         "( ............................ )",
         fill=(0, 0, 0),
-        font=font_regular,
+        font=font_small,
     )
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-    draw.text((310, y_ftr + 15), "TOTAL :", fill=(0, 0, 0), font=font_bold)
-    draw.text((380, y_ftr + 8), tot_str, fill=(198, 40, 40), font=font_total)
+    draw.text((255, y_ftr + 20), "TOTAL :", fill=(0, 0, 0), font=font_bold)
+    draw.text((315, y_ftr + 14), tot_str, fill=(198, 40, 40), font=font_total)
 
     img_byte_arr = io.BytesIO()
     img.save(img_byte_arr, format="PNG")
