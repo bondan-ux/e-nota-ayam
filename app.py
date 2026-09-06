@@ -471,7 +471,7 @@ with st.sidebar:
         "💵 Finance",
         "⏱️ Absensi & Jadwal",
     ]
-    selected_menu = st.radio("Pilih Halaman:", menu_options)
+    selected_menu = st.selectbox("Pilih Halaman:", menu_options)
 
     sub_menu = None
     if selected_menu == "🧾 Nota":
