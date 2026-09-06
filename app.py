@@ -413,7 +413,7 @@ def login():
 
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         if st.button("Masuk / Login", use_container_width=True, type="primary"):
-            if username == "admin" and password == "kambingan":
+            if username == "admin" and password == "admin123":
                 st.session_state.logged_in = True
                 st.session_state.role = "Admin"
                 st.rerun()
@@ -472,7 +472,9 @@ with st.sidebar:
         "💵 Finance",
         "⏱️ Absensi & Jadwal",
     ]
-    selected_menu = st.pills("Pilih Halaman:", menu_options)
+    selected_menu = st.pills("Pilih Halaman:", menu_options, default="📊 Dashboard")
+    if not selected_menu:
+        selected_menu = "📊 Dashboard"
 
     sub_menu = None
     if selected_menu in ["📄 Nota", "🧾 Nota"]:
