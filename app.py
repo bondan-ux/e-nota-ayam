@@ -464,12 +464,13 @@ with st.sidebar:
 
     st.markdown("### 📌 MENU UTAMA")
     menu_options = [
-        "📊 Dashboard",
-        "🧾 Nota",
-        "🛍️ Penjualan",
-        "📦 Stock",
-        "💵 Finance",
-        "⏱️ Absensi & Jadwal",
+       "📊 Dashboard",
+    "📄 Nota",
+    "🛍️ Penjualan",
+    "🚚 Pengiriman",
+    "📦 Stock",
+    "💵 Finance",
+    "⏱️ Absensi & Jadwal",
     ]
     selected_menu = st.pills("Pilih Halaman:", menu_options)
 
