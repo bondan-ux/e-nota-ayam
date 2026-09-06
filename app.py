@@ -464,22 +464,22 @@ with st.sidebar:
 
     st.markdown("### 📌 MENU UTAMA")
     menu_options = [
-       "📊 Dashboard",
-    "📄 Nota",
-    "🛍️ Penjualan",
-    "🚚 Pengiriman",
-    "📦 Stock",
-    "💵 Finance",
-    "⏱️ Absensi & Jadwal",
+        "📊 Dashboard",
+        "📄 Nota",
+        "🛍️ Penjualan",
+        "🚚 Pengiriman",
+        "📦 Stock",
+        "💵 Finance",
+        "⏱️ Absensi & Jadwal",
     ]
     selected_menu = st.pills("Pilih Halaman:", menu_options)
 
     sub_menu = None
-    if selected_menu == "🧾 Nota":
+    if selected_menu in ["📄 Nota", "🧾 Nota"]:
         with st.expander("📂 Sub-Menu Nota", expanded=True):
             sub_menu = st.pills("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
 
-    if selected_menu == "🧾 Nota":
+    if selected_menu in ["📄 Nota", "🧾 Nota"]:
         st.markdown("---")
         st.markdown(
             "<h3 style='color: #C62828;'>⚙️ Master Harga</h3>",
@@ -544,7 +544,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if selected_menu == "🧾 Nota":
+if selected_menu in ["📄 Nota", "🧾 Nota"]:
     if sub_menu == "📑 Bakul" or sub_menu is None:
         col_up1, col_up2 = st.columns([2, 1])
         with col_up1:
