@@ -565,7 +565,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
             ]
 
             tab_satuan, tab_bulk = st.tabs(
-                ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota (2 Kolom Excel)"]
+                ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota"]
             )
 
             # ==========================================
