@@ -851,7 +851,7 @@ if selected_menu == "🧾 Nota":
                             )
 
             # ==========================================
-            # TAB 2: EXPORT ALL NOTA (LAYOUT GRID 2 KOLOM)
+            # TAB 2: EXPORT ALL NOTA (LAYOUT GRID 2 KOLOM PRESISI)
             # ==========================================
             with tab_bulk:
                 st.markdown("### 📄 Export All Nota ke File Excel (Layout 2 Kolom per Baris)")
@@ -927,6 +927,8 @@ if selected_menu == "🧾 Nota":
                             continue
 
                         ws = wb.create_sheet(title=sheet_name[:31])
+                        
+                        # Filter baris berdasarkan bakul terpilih
                         df_filtered = df_s[
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
@@ -943,20 +945,29 @@ if selected_menu == "🧾 Nota":
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
 
-                            def get_val(c_name):
+                            # Helper pembacaan nilai sel yang PRESISI per baris (row)
+                            def get_val_from_row(c_keyword):
                                 try:
-                                    col = next((c for c in df_filtered.columns if c_name in c), "")
-                                    val = pd.to_numeric(row[col], errors="coerce")
-                                    return 0.0 if pd.isna(val) else float(val)
+                                    col_found = next((c for c in df_s.columns if c_keyword in str(c).upper()), None)
+                                    if col_found is not None:
+                                        val = pd.to_numeric(row[col_found], errors="coerce")
+                                        return 0.0 if pd.isna(val) else float(val)
                                 except Exception:
-                                    return 0.0
+                                    pass
+                                return 0.0
 
-                            kg_tonase = get_val("TONASE")
-                            kg_jeroan = get_val("JEROAN")
-                            kg_usus = get_val("USUS")
-                            kg_telur_a = get_val("TELUR A")
-                            kg_telur_b = get_val("TELUR B")
-                            val_ket = get_val("KET")
+                            kg_tonase = get_val_from_row("TONASE")
+                            kg_jeroan = get_val_from_row("JEROAN")
+                            kg_usus = get_val_from_row("USUS")
+                            
+                            # Cek Telur A & B dengan keyword yang tepat
+                            kg_telur_a = get_val_from_row("TELUR A")
+                            if kg_telur_a == 0.0:
+                                kg_telur_a = get_val_from_row("TELUR")  # fallback jika nama kolom cuma TELUR
+
+                            kg_telur_b = get_val_from_row("TELUR B")
+                            val_ket = get_val_from_row("KET")
+                            
                             biaya_kresek = (
                                 7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
                             )
