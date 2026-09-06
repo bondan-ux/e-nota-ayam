@@ -476,7 +476,7 @@ with st.sidebar:
     sub_menu = None
     if selected_menu == "🧾 Nota":
         with st.expander("📂 Sub-Menu Nota", expanded=True):
-            sub_menu = st.radio("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
+            sub_menu = st.columns("Tipe Nota:", ["📑 Bakul", "🏬 Bedak", "🤝 Mitra"])
 
     if selected_menu == "🧾 Nota":
         st.markdown("---")
