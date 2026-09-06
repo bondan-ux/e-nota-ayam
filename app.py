@@ -433,12 +433,12 @@ if not st.session_state.logged_in:
 FILE_HARGA = "master_harga.json"
 default_harga = {
     "glondong": 28500,
-    "jeroan": 12000,
+    "jeroan": 10000,
     "usus": 16500,
     "telur_a": 269000,
-    "telur_b": 250000,
-    "peti": 2000,
-    "box": 28500,
+    "telur_b": 150000,
+    "peti": 6000,
+    "box": 160000,
 }
 
 if os.path.exists(FILE_HARGA):
