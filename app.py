@@ -413,7 +413,7 @@ def login():
 
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
         if st.button("Masuk / Login", use_container_width=True, type="primary"):
-            if username == "admin" and password == "admin123":
+            if username == "admin" and password == "kambingan":
                 st.session_state.logged_in = True
                 st.session_state.role = "Admin"
                 st.rerun()
