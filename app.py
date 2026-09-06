@@ -854,10 +854,9 @@ if selected_menu == "🧾 Nota":
             # TAB 2: EXPORT ALL NOTA (LAYOUT GRID 2 KOLOM PRESISI)
             # ==========================================
             with tab_bulk:
-                st.markdown("### 📄 Export All Nota ke File Excel (Layout 2 Kolom per Baris)")
+                st.markdown("### 📄 Export All Nota ke File Excel")
                 st.caption(
-                    "Centang nama bakul yang ingin diproses. Nota akan disusun 2 kolom"
-                    " (kiri & kanan) secara presisi agar efisien saat dicetak di kertas Letter/A4."
+                    "Centang nama bakul yang ingin diproses."
                 )
 
                 selected_bakul_by_sheet = {}
