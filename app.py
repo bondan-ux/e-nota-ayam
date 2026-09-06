@@ -564,7 +564,7 @@ if selected_menu == "🧾 Nota":
             ]
 
             tab_satuan, tab_bulk = st.tabs(
-                ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota (Excel Filter)"]
+                ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota (2 Kolom Excel)"]
             )
 
             # ==========================================
@@ -851,13 +851,13 @@ if selected_menu == "🧾 Nota":
                             )
 
             # ==========================================
-            # TAB 2: EXPORT ALL NOTA (EMBED GAMBAR KE EXCEL)
+            # TAB 2: EXPORT ALL NOTA (LAYOUT GRID 2 KOLOM)
             # ==========================================
             with tab_bulk:
-                st.markdown("### 📄 Export All Nota ke File Excel (Format Gambar Nota)")
+                st.markdown("### 📄 Export All Nota ke File Excel (Layout 2 Kolom per Baris)")
                 st.caption(
-                    "Centang nama bakul yang ingin diproses. Gambar nota JPG akan disusun"
-                    " rapi di dalam sheet Excel."
+                    "Centang nama bakul yang ingin diproses. Nota akan disusun 2 kolom"
+                    " (kiri & kanan) secara presisi agar efisien saat dicetak di kertas Letter/A4."
                 )
 
                 selected_bakul_by_sheet = {}
@@ -909,7 +909,7 @@ if selected_menu == "🧾 Nota":
                 st.markdown("---")
 
                 if st.button(
-                    "🚀 Generate & Download Excel All Nota Gambar",
+                    "🚀 Generate & Download Excel All Nota Gambar (2 Kolom)",
                     type="primary",
                     use_container_width=True,
                 ):
@@ -931,11 +931,14 @@ if selected_menu == "🧾 Nota":
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
-                        # Lebar kolom B disesuaikan untuk gambar nota
-                        ws.column_dimensions['A'].width = 3
-                        ws.column_dimensions['B'].width = 50
+                        # Lebar kolom disesuaikan untuk layout 2 kolom (B = Kiri, D = Kanan)
+                        ws.column_dimensions['A'].width = 2
+                        ws.column_dimensions['B'].width = 48  # Nota Kolom Kiri
+                        ws.column_dimensions['C'].width = 3   # Jarak Pemisah Tengah
+                        ws.column_dimensions['D'].width = 48  # Nota Kolom Kanan
 
                         row_position = 2
+                        col_toggle = 0  # 0 -> Kolom B (Kiri), 1 -> Kolom D (Kanan)
 
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
@@ -1025,29 +1028,41 @@ if selected_menu == "🧾 Nota":
                                 )
 
                                 img_obj = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                                img_obj.thumbnail((350, 350))
+                                img_obj.thumbnail((340, 340))
                                 
                                 img_jpg_stream = io.BytesIO()
                                 img_obj.save(img_jpg_stream, format="JPEG", quality=95)
                                 img_jpg_stream.seek(0)
 
                                 xl_img = OpenPyXLImage(img_jpg_stream)
-                                cell_location = f"B{row_position}"
+
+                                # Penentuan Posisi: 0 -> Kolom B (Kiri), 1 -> Kolom D (Kanan)
+                                target_col = "B" if col_toggle == 0 else "D"
+                                cell_location = f"{target_col}{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
-                                # Set tinggi baris agar gambar tidak tumpang tindih
-                                ws.row_dimensions[row_position].height = 270
+                                # Set tinggi baris tempat gambar ditempel
+                                ws.row_dimensions[row_position].height = 260
 
-                                row_position += 2
-                                ws.row_dimensions[row_position - 1].height = 20
                                 total_processed += 1
+
+                                # Jika baru mengisi kolom kanan (1), pindah ke baris berikutnya
+                                if col_toggle == 1:
+                                    row_position += 2
+                                    ws.row_dimensions[row_position - 1].height = 15
+                                    col_toggle = 0
+                                else:
+                                    col_toggle = 1
+
+                        if col_toggle == 1:
+                            row_position += 2
 
                     if total_processed > 0:
                         output_excel = io.BytesIO()
                         wb.save(output_excel)
 
                         st.success(
-                            f"✅ Berhasil menyusun {total_processed} gambar nota secara rapi ke dalam"
+                            f"✅ Berhasil menyusun {total_processed} gambar nota secara rapi (2 Kolom) ke dalam"
                             " file Excel!"
                         )
                         st.download_button(
