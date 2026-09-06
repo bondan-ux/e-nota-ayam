@@ -462,7 +462,7 @@ with st.sidebar:
     st.write(f"Logged in as: **{st.session_state.role}**")
     st.markdown("---")
 
-    st.markdown("### 📌 NAVIGASI UTAMA")
+    st.markdown("### 📌 MENU UTAMA")
     menu_options = [
         "📊 Dashboard",
         "🧾 Nota",
