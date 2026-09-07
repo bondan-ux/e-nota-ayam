@@ -40,26 +40,48 @@ def get_base64_image(image_path):
 bg_base64 = get_base64_image("back.jpg")
 
 
-# --- HELPER MASTER RUTE PENGIRIMAN ---
-def load_master_routes(file_path_or_bytes):
+# --- PARSER LAYOUT EXCEL UNTUK RUTE PENGIRIMAN (GRID MODEL EXCEL) ---
+def parse_excel_grid_layout(file_path_or_bytes):
+    """Memuat data grup dan bakul dari Excel persis sesuai posisi kolom/layout grid-nya."""
     try:
-        df = pd.read_excel(file_path_or_bytes)
-        df.columns = [str(c).strip().upper() for c in df.columns]
-        
-        col_bakul = next((c for c in df.columns if "BAKUL" in c or "NAMA" in c), None)
-        col_rute = next((c for c in df.columns if "RUTE" in c or "GROUP" in c or "TUJUAN" in c), None)
-        
-        mapping = {}
-        if col_bakul and col_rute:
-            for _, row in df.iterrows():
-                b = str(row[col_bakul]).strip().upper()
-                r = str(row[col_rute]).strip().upper()
-                if b and b != "NAN" and r and r != "NAN":
-                    mapping[b] = r
-        return mapping
+        df = pd.read_excel(file_path_or_bytes, header=None)
     except Exception as e:
-        st.error(f"Gagal membaca Master Rute: {e}")
+        st.error(f"Gagal membaca file Excel Rute: {e}")
         return {}
+
+    groups = {}
+    current_group = None
+
+    # Iterasi setiap sel di tabel Excel untuk mendeteksi Header & Nama Bakul
+    for row_idx in range(len(df)):
+        for col_idx in range(len(df.columns)):
+            val = df.iloc[row_idx, col_idx]
+            if pd.isna(val):
+                continue
+
+            val_str = str(val).strip()
+            if not val_str or val_str.upper() == "NAN":
+                continue
+
+            # Deteksi Header Nama Grup (Teks kapital tanpa titik dua di kolom utama)
+            if val_str.isupper() and len(val_str) > 2 and not val_str.isdigit():
+                next_val = (
+                    df.iloc[row_idx, col_idx + 1]
+                    if col_idx + 1 < len(df.columns)
+                    else None
+                )
+                if pd.isna(next_val) or str(next_val).strip() not in [":", "1", "2"]:
+                    current_group = val_str
+                    if current_group not in groups:
+                        groups[current_group] = []
+                    continue
+
+            # Jika saat ini berada di bawah suatu Grup, masukkan bakulnya
+            if current_group and val_str not in [":", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
+                if not val_str.isdigit() and val_str not in groups[current_group]:
+                    groups[current_group].append(val_str)
+
+    return groups
 
 
 # --- HELPER GENERATOR WORD (.DOCX) NOTA KOTAK PRESISI ---
@@ -233,6 +255,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
+    # Frame Pinggir Outer
     draw.rectangle([12, 12, width - 12, height - 12], outline=(0, 0, 0), width=2)
 
     bold_fonts = [
@@ -567,6 +590,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ==========================================
+# HALAMAN: NOTA
+# ==========================================
 if selected_menu in ["📄 Nota", "🧾 Nota"]:
     if sub_menu == "📑 Bakul" or sub_menu is None:
         col_up1, col_up2 = st.columns([2, 1])
@@ -591,6 +617,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                 ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota"]
             )
 
+            # --- TAB 1: NOTA SATUAN ---
             with tab_satuan:
                 selected_sheet = st.selectbox("Pilih Group / Sheet", valid_sheets)
                 df_raw = all_sheets[selected_sheet]
@@ -874,6 +901,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 use_container_width=True,
                             )
 
+            # --- TAB 2: EXPORT ALL NOTA ---
             with tab_bulk:
                 st.markdown("### 📄 Export All Nota ke File Excel")
                 st.caption("Centang nama bakul yang ingin diproses.")
@@ -1108,133 +1136,70 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
         st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
 
 # ==========================================
-# HALAMAN: PENGIRIMAN (GRID / KOTAK-KOTAK RUTE)
+# HALAMAN: PENGIRIMAN (LAYOUT PRESISI EXCEL)
 # ==========================================
 elif selected_menu == "🚚 Pengiriman":
     st.markdown("### 🚚 Operasional Rute Pengiriman Supir")
-    st.caption("Khusus pengerjaan rekap Box dan Kresek bawaan supir per rute pengiriman (Tampilan Grid Excel).")
+    st.caption("Tampilan susunan Rute dan Bakul dibuat presisi seperti file Master Excel Group Pengiriman.")
 
     col_p1, col_p2 = st.columns([2, 1])
     with col_p1:
-        rekap_file = st.file_uploader(
-            "1. Upload File Rekap Excel Harian (.xlsx)", type=["xlsx"], key="ship_rekap"
-        )
+        rekap_file = st.file_uploader("1. Upload Rekap Excel Harian (.xlsx)", type=["xlsx"], key="ship_rekap")
     with col_p2:
-        master_route_file = st.file_uploader(
-            "2. Master Group Pengiriman (Opsional)", type=["xlsx"], key="ship_master"
-        )
+        master_route_file = st.file_uploader("2. Master Group Pengiriman (.xlsx)", type=["xlsx"], key="ship_master")
 
-    # Cek ketersediaan Master Mapping Rute
-    routes_mapping = {}
+    # Ambil struktur grup Excel
+    parsed_excel_groups = {}
     if master_route_file is not None:
-        routes_mapping = load_master_routes(master_route_file)
+        parsed_excel_groups = parse_excel_grid_layout(master_route_file)
     elif os.path.exists("GROUP PENGIRIMAN.xlsx"):
-        routes_mapping = load_master_routes("GROUP PENGIRIMAN.xlsx")
+        parsed_excel_groups = parse_excel_grid_layout("GROUP PENGIRIMAN.xlsx")
 
-    if rekap_file is not None:
-        all_sheets = pd.read_excel(rekap_file, sheet_name=None, header=None)
-        valid_sheets = [
-            s for s in all_sheets.keys()
-            if s not in ["TOTAL TONASE", "NOTA FR", "Sheet1", "ploting"]
-        ]
-
-        active_bakuls = []
-        for s_name in valid_sheets:
-            df_s = all_sheets[s_name]
-            h_idx = 0
-            for idx, r in df_s.iterrows():
-                if r.astype(str).str.upper().str.contains("NAMA").any():
-                    h_idx = idx
-                    break
-            df_clean = df_s.iloc[h_idx + 1:].copy()
-            df_clean.columns = [str(c).strip().upper() for c in df_s.iloc[h_idx].values]
-            n_col = next((c for c in df_clean.columns if "NAMA" in c), df_clean.columns[1])
-            
-            for b_val in df_clean[n_col].dropna().tolist():
-                clean_b = str(b_val).strip()
-                if clean_b and clean_b not in active_bakuls and clean_b.upper() != "NAN":
-                    active_bakuls.append(clean_b)
-
-        route_groups = {}
-        for b in active_bakuls:
-            r_name = routes_mapping.get(b.upper(), "LAIN-LAIN")
-            if r_name not in route_groups:
-                route_groups[r_name] = []
-            route_groups[r_name].append(b)
-
+    if parsed_excel_groups:
         st.markdown("---")
-
-        all_routes = sorted(route_groups.keys())
         
-        # Grid 2 Kolom Kotak Menyamping
-        num_cols = 2
-        cols = st.columns(num_cols)
+        # Buat Grid 2 Kolom Kiri-Kanan persis tata letak lembar Excel
+        group_names = list(parsed_excel_groups.keys())
+        
+        col_left, col_right = st.columns(2)
 
-        for route_idx, route_name in enumerate(all_routes):
-            target_col = cols[route_idx % num_cols]
-            bakul_list = route_groups[route_name]
+        for i, g_name in enumerate(group_names):
+            # Bagi posisi Kiri dan Kanan sesuai urutan grup
+            target_col = col_left if i % 2 == 0 else col_right
+            bakul_list = parsed_excel_groups[g_name]
 
             with target_col:
                 with st.container(border=True):
                     st.markdown(
-                        f"<div style='background-color:#C62828; padding:8px 12px; border-radius:6px; margin-bottom:12px;'>"
-                        f"<h4 style='color:white; margin:0; text-align:center;'>📌 GRUP {route_name.upper()} ({len(bakul_list)} Bakul)</h4>"
+                        f"<div style='background-color:#C62828; padding:6px 12px; border-radius:4px; margin-bottom:8px;'>"
+                        f"<h4 style='color:white; margin:0; text-align:center;'>📌 {g_name.upper()} ({len(bakul_list)} Bakul)</h4>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
 
-                    tot_box_grup = 0
-                    tot_kresek_grup = 0
-                    grup_records = []
+                    tot_box = 0
+                    tot_kresek = 0
 
                     for b_idx, bakul_name in enumerate(bakul_list, start=1):
-                        k_box = f"box_grid_{route_name}_{bakul_name}"
-                        k_kresek = f"kresek_grid_{route_name}_{bakul_name}"
+                        c_nama, c_b, c_k = st.columns([2, 1, 1])
+                        with c_nama:
+                            st.markdown(f"<p style='margin-top:8px; font-size:13px;'><b>{b_idx}. {bakul_name}</b></p>", unsafe_allow_html=True)
+                        with c_b:
+                            v_box = st.number_input("Box", min_value=0, step=1, key=f"bx_{g_name}_{bakul_name}_{i}", label_visibility="collapsed")
+                        with c_k:
+                            v_krsek = st.number_input("Kresek", min_value=0, step=1, key=f"kr_{g_name}_{bakul_name}_{i}", label_visibility="collapsed")
 
-                        st.markdown(f"**{b_idx}. {bakul_name}**")
-                        c_in1, c_in2 = st.columns(2)
-                        with c_in1:
-                            val_box = st.number_input("Box", min_value=0, step=1, key=k_box)
-                        with c_in2:
-                            val_kresek = st.number_input("Kresek", min_value=0, step=1, key=k_kresek)
-
-                        tot_box_grup += val_box
-                        tot_kresek_grup += val_kresek
-                        grup_records.append({
-                            "Bakul": bakul_name,
-                            "Box": val_box,
-                            "Kresek": val_kresek
-                        })
-                        st.markdown("<hr style='margin: 8px 0; border:0; border-top: 1px dashed #DDD;'>", unsafe_allow_html=True)
+                        tot_box += v_box
+                        tot_kresek += v_krsek
 
                     st.markdown(
-                        f"<div style='background-color:#FFF3E0; padding:10px; border-radius:6px; text-align:center; border: 1px solid #FFE0B2; margin-bottom: 10px;'>"
-                        f"<span style='font-size:13px; color:#555;'>TOTAL MUATAN {route_name.upper()}</span><br>"
-                        f"<span style='color:#C62828; font-weight:bold; font-size:18px;'>{tot_box_grup} BOX | {tot_kresek_grup} KRESEK</span>"
+                        f"<div style='background-color:#FFF8E1; padding:6px; border-radius:4px; text-align:right; font-weight:bold; font-size:13px; color:#C62828; border:1px solid #FFE082; margin-top:6px;'>"
+                        f"TOTAL {g_name.upper()}: {tot_box} BOX | {tot_kresek} KRESEK"
                         f"</div>",
                         unsafe_allow_html=True
                     )
-
-                    txt_manifest = f"=== SURAT JALAN / MANIFEST SUPIR ===\n"
-                    txt_manifest += f"RUTE / GRUP : {route_name.upper()}\n"
-                    txt_manifest += f"TANGGAL     : {datetime.now().strftime('%d-%m-%Y %H:%M')}\n"
-                    txt_manifest += "="*38 + "\n"
-                    for r in grup_records:
-                        txt_manifest += f"- {r['Bakul']:<20} : {r['Box']} Box, {r['Kresek']} Kresek\n"
-                    txt_manifest += "="*38 + "\n"
-                    txt_manifest += f"TOTAL MUATAN : {tot_box_grup} Box, {tot_kresek_grup} Kresek\n"
-
-                    st.download_button(
-                        label=f"📄 Cetak Manifest {route_name}",
-                        data=txt_manifest,
-                        file_name=f"MANIFEST_{route_name}_{datetime.now().strftime('%Y%m%d')}.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                        key=f"dl_grid_{route_name}"
-                    )
-
     else:
-        st.info("💡 Upload file Rekap Excel Harian untuk memproses rekap pengiriman supir.")
+        st.info("💡 Silakan upload file Master Group Pengiriman (.xlsx) untuk menampilkan tata letak Rute persis Excel.")
 
 else:
     st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
