@@ -631,6 +631,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         or st.session_state["last_bakul"] != selected_bakul_label
                     ):
                         st.session_state["last_bakul"] = selected_bakul_label
+                        st.session_state["qty_peti_val"] = 0.0
                         st.session_state["qty_box_val"] = 0.0
                         st.session_state["qty_telur_b_val"] = 0.0
 
