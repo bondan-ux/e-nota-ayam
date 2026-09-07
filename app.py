@@ -648,14 +648,16 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                     col_in1, col_in2, col_in3 = st.columns(3)
                     with col_in1:
-                        qty_peti = st.number_input("Jumlah Peti", value=0, step=1)
+                        qty_peti = st.number_input(
+                            "Jumlah Peti", key="qty_peti_val", step=1
+                        )
                     with col_in2:
                         qty_box = st.number_input(
-                            "Jumlah Box (Manual)", key="qty_box_val", step=1
+                            "Jumlah Box", key="qty_box_val", step=1
                         )
                     with col_in3:
                         qty_telur_b_manual = st.number_input(
-                            "Jumlah Telur B (Manual)", key="qty_telur_b_val", step=1
+                            "Jumlah Telur B", key="qty_telur_b_val", step=1
                         )
 
                     qty_tonase = get_valid_float(
