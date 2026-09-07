@@ -854,13 +854,11 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             )
 
             # ==========================================
-            # TAB 2: EXPORT ALL NOTA (LAYOUT GRID 2 KOLOM PRESISI)
+            # TAB 2: EXPORT ALL NOTA (1 KOLOM BERURUTAN KE BAWAH)
             # ==========================================
             with tab_bulk:
                 st.markdown("### 📄 Export All Nota ke File Excel")
-                st.caption(
-                    "Centang nama bakul yang ingin diproses."
-                )
+                st.caption("Centang nama bakul yang ingin diproses.")
 
                 selected_bakul_by_sheet = {}
 
@@ -896,7 +894,9 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             col_a, col_b = st.columns([1, 4])
                             with col_a:
                                 select_all = st.checkbox(
-                                    "Pilih Semua", value=True, key=f"all_xl_img_{sheet_name}"
+                                    "Pilih Semua",
+                                    value=True,
+                                    key=f"all_xl_img_{sheet_name}",
                                 )
 
                             default_selected = list_bakul if select_all else []
@@ -911,7 +911,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                 st.markdown("---")
 
                 if st.button(
-                    "🚀 Generate & Download Excel All Nota Gambar (2 Kolom)",
+                    "🚀 Generate & Download Excel All Nota Gambar (1 Kolom)",
                     type="primary",
                     use_container_width=True,
                 ):
@@ -929,30 +929,35 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             continue
 
                         ws = wb.create_sheet(title=sheet_name[:31])
-                        
+
                         # Filter baris berdasarkan bakul terpilih
                         df_filtered = df_s[
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
-                        # Lebar kolom disesuaikan untuk layout 2 kolom (B = Kiri, D = Kanan)
-                        ws.column_dimensions['A'].width = 2
-                        ws.column_dimensions['B'].width = 48  # Nota Kolom Kiri
-                        ws.column_dimensions['C'].width = 3   # Jarak Pemisah Tengah
-                        ws.column_dimensions['D'].width = 48  # Nota Kolom Kanan
+                        # Lebar kolom A disesuaikan untuk 1 kolom nota yang rapi
+                        ws.column_dimensions["A"].width = 45
 
                         row_position = 2
-                        col_toggle = 0  # 0 -> Kolom B (Kiri), 1 -> Kolom D (Kanan)
 
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
 
-                            # Helper pembacaan nilai sel yang PRESISI per baris (row)
+                            # Helper pembacaan nilai sel per baris
                             def get_val_from_row(c_keyword):
                                 try:
-                                    col_found = next((c for c in df_s.columns if c_keyword in str(c).upper()), None)
+                                    col_found = next(
+                                        (
+                                            c
+                                            for c in df_s.columns
+                                            if c_keyword in str(c).upper()
+                                        ),
+                                        None,
+                                    )
                                     if col_found is not None:
-                                        val = pd.to_numeric(row[col_found], errors="coerce")
+                                        val = pd.to_numeric(
+                                            row[col_found], errors="coerce"
+                                        )
                                         return 0.0 if pd.isna(val) else float(val)
                                 except Exception:
                                     pass
@@ -961,17 +966,18 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             kg_tonase = get_val_from_row("TONASE")
                             kg_jeroan = get_val_from_row("JEROAN")
                             kg_usus = get_val_from_row("USUS")
-                            
-                            # Cek Telur A & B dengan keyword yang tepat
+
                             kg_telur_a = get_val_from_row("TELUR A")
                             if kg_telur_a == 0.0:
-                                kg_telur_a = get_val_from_row("TELUR")  # fallback jika nama kolom cuma TELUR
+                                kg_telur_a = get_val_from_row("TELUR")
 
                             kg_telur_b = get_val_from_row("TELUR B")
                             val_ket = get_val_from_row("KET")
-                            
+
                             biaya_kresek = (
-                                7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
+                                7000
+                                if (val_ket > 0 and not float(val_ket).is_integer())
+                                else 0
                             )
 
                             tot_glondong = kg_tonase * h_glondong
@@ -1041,42 +1047,33 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 )
 
                                 img_obj = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                                img_obj.thumbnail((340, 340))
-                                
+                                img_obj.thumbnail((320, 320))
+
                                 img_jpg_stream = io.BytesIO()
                                 img_obj.save(img_jpg_stream, format="JPEG", quality=95)
                                 img_jpg_stream.seek(0)
 
                                 xl_img = OpenPyXLImage(img_jpg_stream)
 
-                                # Penentuan Posisi: 0 -> Kolom B (Kiri), 1 -> Kolom D (Kanan)
-                                target_col = "B" if col_toggle == 0 else "D"
-                                cell_location = f"{target_col}{row_position}"
+                                # Menempelkan gambar 1 per 1 di Kolom A secara berurutan ke bawah
+                                cell_location = f"A{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
-                                # Set tinggi baris tempat gambar ditempel
-                                ws.row_dimensions[row_position].height = 260
+                                # Mengatur tinggi baris tempat gambar berada
+                                ws.row_dimensions[row_position].height = 245
 
+                                # Beri jarak 1 baris kosong kecil antar nota
+                                ws.row_dimensions[row_position + 1].height = 15
+
+                                row_position += 2
                                 total_processed += 1
-
-                                # Jika baru mengisi kolom kanan (1), pindah ke baris berikutnya
-                                if col_toggle == 1:
-                                    row_position += 2
-                                    ws.row_dimensions[row_position - 1].height = 15
-                                    col_toggle = 0
-                                else:
-                                    col_toggle = 1
-
-                        if col_toggle == 1:
-                            row_position += 2
 
                     if total_processed > 0:
                         output_excel = io.BytesIO()
                         wb.save(output_excel)
 
                         st.success(
-                            f"✅ Berhasil menyusun {total_processed} gambar nota secara rapi (2 Kolom) ke dalam"
-                            " file Excel!"
+                            f"✅ Berhasil menyusun {total_processed} gambar nota berurutan ke bawah (1 Kolom) di Excel!"
                         )
                         st.download_button(
                             label="📥 Download File Excel All Nota Gambar (.xlsx)",
