@@ -15,9 +15,7 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
 
-# ==========================================
-# 1. KONFIGURASI HALAMAN & UTILS
-# ==========================================
+# 1. KONFIGURASI HALAMAN
 st.set_page_config(
     page_title="Sistem Manajemen Ayam Segar",
     layout="wide",
@@ -31,6 +29,7 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         break
 
 
+# --- HELPER BASE64 UNTUK BACKGROUND GAMBAR LOKAL ---
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -41,49 +40,7 @@ def get_base64_image(image_path):
 bg_base64 = get_base64_image("back.jpg")
 
 
-def parse_excel_grid_layout(file_path_or_bytes):
-    """Memuat data grup dan bakul dari Excel sesuai posisi kolom/layout grid-nya."""
-    try:
-        df = pd.read_excel(file_path_or_bytes, header=None)
-    except Exception as e:
-        st.error(f"Gagal membaca file Excel Rute: {e}")
-        return {}
-
-    groups = {}
-    current_group = None
-
-    for row_idx in range(len(df)):
-        for col_idx in range(len(df.columns)):
-            val = df.iloc[row_idx, col_idx]
-            if pd.isna(val):
-                continue
-
-            val_str = str(val).strip()
-            if not val_str or val_str.upper() == "NAN":
-                continue
-
-            if val_str.isupper() and len(val_str) > 2 and not val_str.isdigit():
-                next_val = (
-                    df.iloc[row_idx, col_idx + 1]
-                    if col_idx + 1 < len(df.columns)
-                    else None
-                )
-                if pd.isna(next_val) or str(next_val).strip() not in [":", "1", "2"]:
-                    current_group = val_str
-                    if current_group not in groups:
-                        groups[current_group] = []
-                    continue
-
-            if current_group and val_str not in [":", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
-                if not val_str.isdigit() and val_str not in groups[current_group]:
-                    groups[current_group].append(val_str)
-
-    return groups
-
-
-# ==========================================
-# 2. HELPER GENERATOR DOCX & PNG
-# ==========================================
+# --- HELPER GENERATOR WORD (.DOCX) NOTA KOTAK PRESISI ---
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
@@ -93,7 +50,12 @@ def set_cell_background(cell, fill_hex):
 def set_cell_margins(cell, top=60, bottom=60, left=80, right=80):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement("w:tcMar")
-    for m, val in [("top", top), ("bottom", bottom), ("left", left), ("right", right)]:
+    for m, val in [
+        ("top", top),
+        ("bottom", bottom),
+        ("left", left),
+        ("right", right),
+    ]:
         node = OxmlElement(f"w:{m}")
         node.set(qn("w:w"), str(val))
         node.set(qn("w:type"), "dxa")
@@ -143,7 +105,9 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     p_r.paragraph_format.space_before = Pt(0)
     p_r.paragraph_format.space_after = Pt(0)
 
-    r_info = p_r.add_run(f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}")
+    r_info = p_r.add_run(
+        f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
+    )
     r_info.font.size = Pt(8)
 
     p_spacer = doc.add_paragraph()
@@ -182,7 +146,11 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         kg_str = (
             f"{int(kg_val)}"
             if isinstance(kg_val, float) and kg_val.is_integer()
-            else (f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val))
+            else (
+                f"{kg_val:.2f}"
+                if isinstance(kg_val, float)
+                else str(kg_val)
+            )
         )
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
@@ -235,6 +203,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return target_stream.getvalue()
 
 
+# --- HELPER GENERATOR GAMBAR (PNG) NOTA KOTAK PRESISI (1:1 / 500x500) ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 500
     height = 500
@@ -242,6 +211,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
+    # Frame Pinggir Outer
     draw.rectangle([12, 12, width - 12, height - 12], outline=(0, 0, 0), width=2)
 
     bold_fonts = [
@@ -329,7 +299,11 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         kg_str = (
             f"{int(kg_val)}"
             if isinstance(kg_val, float) and kg_val.is_integer()
-            else (f"{kg_val:.2f}" if isinstance(kg_val, float) else str(kg_val))
+            else (
+                f"{kg_val:.2f}"
+                if isinstance(kg_val, float)
+                else str(kg_val)
+            )
         )
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
@@ -368,9 +342,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return img_byte_arr.getvalue()
 
 
-# ==========================================
-# 3. CSS STYLING
-# ==========================================
+# --- CSS STYLING UTAMA ---
 bg_css = ""
 if bg_base64:
     bg_css = f"""
@@ -409,9 +381,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ==========================================
-# 4. LOGIN SYSTEM
-# ==========================================
+# --- 2. LOGIN ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.role = ""
@@ -419,11 +389,11 @@ if "logged_in" not in st.session_state:
 
 def login():
     st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-    _, col2, _ = st.columns([1, 1.8, 1])
+    col1, col2, col3 = st.columns([1, 1.8, 1])
 
     with col2:
         if logo_filename:
-            _, c_img, _ = st.columns([1, 2, 1])
+            c_l, c_img, c_r = st.columns([1, 2, 1])
             with c_img:
                 st.image(logo_filename, use_container_width=True)
 
@@ -459,9 +429,7 @@ if not st.session_state.logged_in:
     login()
     st.stop()
 
-# ==========================================
-# 5. MASTER HARGA DATA
-# ==========================================
+# --- 3. MASTER HARGA JSON ---
 FILE_HARGA = "master_harga.json"
 default_harga = {
     "glondong": 28500,
@@ -482,9 +450,7 @@ if os.path.exists(FILE_HARGA):
 else:
     saved_harga = default_harga
 
-# ==========================================
-# 6. SIDEBAR MENU
-# ==========================================
+# --- 4. SIDEBAR ---
 with st.sidebar:
     if logo_filename:
         st.image(logo_filename, width=90)
@@ -559,9 +525,7 @@ with st.sidebar:
         st.session_state.role = ""
         st.rerun()
 
-# ==========================================
-# 7. MAIN CONTENT AREA
-# ==========================================
+# --- 5. AREA KONTEN UTAMA ---
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
     st.markdown(
@@ -582,9 +546,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ------------------------------------------
-# HALAMAN: NOTA
-# ------------------------------------------
 if selected_menu in ["📄 Nota", "🧾 Nota"]:
     if sub_menu == "📑 Bakul" or sub_menu is None:
         col_up1, col_up2 = st.columns([2, 1])
@@ -609,7 +570,9 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                 ["📄 Nota Satuan (Word/PNG)", "📦 Export All Nota"]
             )
 
-            # TAB 1: NOTA SATUAN
+            # ==========================================
+            # TAB 1: NOTA SATUAN (PILIH 1 BAKUL)
+            # ==========================================
             with tab_satuan:
                 selected_sheet = st.selectbox("Pilih Group / Sheet", valid_sheets)
                 df_raw = all_sheets[selected_sheet]
@@ -709,8 +672,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     )
                     qty_telur_a = get_valid_float(
                         next(
-                            (c for c in df.columns if "TELUR A" in c or "TELUR" in c),
-                            "",
+                            (c for c in df.columns if "TELUR A" in c or "TELUR" in c), ""
                         )
                     )
 
@@ -894,7 +856,9 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 use_container_width=True,
                             )
 
-            # TAB 2: EXPORT ALL NOTA
+            # ==========================================
+            # TAB 2: EXPORT ALL NOTA (1 KOLOM BERURUTAN KE BAWAH)
+            # ==========================================
             with tab_bulk:
                 st.markdown("### 📄 Export All Nota ke File Excel")
                 st.caption("Centang nama bakul yang ingin diproses.")
@@ -930,7 +894,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             f"📋 Sheet: {sheet_name} ({len(list_bakul)} Bakul)",
                             expanded=True,
                         ):
-                            col_a, _ = st.columns([1, 4])
+                            col_a, col_b = st.columns([1, 4])
                             with col_a:
                                 select_all = st.checkbox(
                                     "Pilih Semua",
@@ -968,16 +932,21 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             continue
 
                         ws = wb.create_sheet(title=sheet_name[:31])
+
+                        # Filter baris berdasarkan bakul terpilih
                         df_filtered = df_s[
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
+                        # Lebar kolom A disesuaikan untuk 1 kolom nota yang rapi
                         ws.column_dimensions["A"].width = 45
+
                         row_position = 2
 
-                        for _, row in df_filtered.iterrows():
+                        for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
 
+                            # Helper pembacaan nilai sel per baris
                             def get_val_from_row(c_keyword):
                                 try:
                                     col_found = next(
@@ -1089,10 +1058,14 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                                 xl_img = OpenPyXLImage(img_jpg_stream)
 
+                                # Menempelkan gambar 1 per 1 di Kolom A secara berurutan ke bawah
                                 cell_location = f"A{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
+                                # Mengatur tinggi baris tempat gambar berada
                                 ws.row_dimensions[row_position].height = 245
+
+                                # Beri jarak 1 baris kosong kecil antar nota
                                 ws.row_dimensions[row_position + 1].height = 15
 
                                 row_position += 2
@@ -1103,7 +1076,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         wb.save(output_excel)
 
                         st.success(
-                            f"✅ Berhasil menyusun {total_processed} gambar nota berurutan ke bawah di Excel!"
+                            f"✅ Berhasil menyusun {total_processed} gambar nota berurutan ke bawah (1 Kolom) di Excel!"
                         )
                         st.download_button(
                             label="📥 Download File Excel All Nota Gambar (.xlsx)",
@@ -1127,68 +1100,5 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
             st.info("💡 Silakan upload file Rekap Excel untuk memproses nota.")
     else:
         st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
-
-# ------------------------------------------
-# HALAMAN: PENGIRIMAN
-# ------------------------------------------
-elif selected_menu == "🚚 Pengiriman":
-    st.markdown("### 🚚 Operasional Rute Pengiriman Supir")
-    st.caption("Tampilan susunan Rute dan Bakul dibuat presisi seperti file Master Excel Group Pengiriman.")
-
-    col_p1, col_p2 = st.columns([2, 1])
-    with col_p1:
-        rekap_file = st.file_uploader("1. Upload Rekap Excel Harian (.xlsx)", type=["xlsx"], key="ship_rekap")
-    with col_p2:
-        master_route_file = st.file_uploader("2. Master Group Pengiriman (.xlsx)", type=["xlsx"], key="ship_master")
-
-    parsed_excel_groups = {}
-    if master_route_file is not None:
-        parsed_excel_groups = parse_excel_grid_layout(master_route_file)
-    elif os.path.exists("GROUP PENGIRIMAN.xlsx"):
-        parsed_excel_groups = parse_excel_grid_layout("GROUP PENGIRIMAN.xlsx")
-
-    if parsed_excel_groups:
-        st.markdown("---")
-        
-        group_names = list(parsed_excel_groups.keys())
-        col_left, col_right = st.columns(2)
-
-        for i, g_name in enumerate(group_names):
-            target_col = col_left if i % 2 == 0 else col_right
-            bakul_list = parsed_excel_groups[g_name]
-
-            with target_col:
-                with st.container(border=True):
-                    st.markdown(
-                        f"<div style='background-color:#C62828; padding:6px 12px; border-radius:4px; margin-bottom:8px;'>"
-                        f"<h4 style='color:white; margin:0; text-align:center;'>📌 {g_name.upper()} ({len(bakul_list)} Bakul)</h4>"
-                        f"</div>",
-                        unsafe_allow_html=True
-                    )
-
-                    tot_box = 0
-                    tot_kresek = 0
-
-                    for b_idx, bakul_name in enumerate(bakul_list, start=1):
-                        c_nama, c_b, c_k = st.columns([2, 1, 1])
-                        with c_nama:
-                            st.markdown(f"<p style='margin-top:8px; font-size:13px;'><b>{b_idx}. {bakul_name}</b></p>", unsafe_allow_html=True)
-                        with c_b:
-                            v_box = st.number_input("Box", min_value=0, step=1, key=f"bx_{g_name}_{bakul_name}_{i}_{b_idx}", label_visibility="collapsed")
-                        with c_k:
-                            v_krsek = st.number_input("Kresek", min_value=0, step=1, key=f"kr_{g_name}_{bakul_name}_{i}_{b_idx}", label_visibility="collapsed")
-
-                        tot_box += v_box
-                        tot_kresek += v_krsek
-
-                    st.markdown(
-                        f"<div style='background-color:#FFF8E1; padding:6px; border-radius:4px; text-align:right; font-weight:bold; font-size:13px; color:#C62828; border:1px solid #FFE082; margin-top:6px;'>"
-                        f"TOTAL {g_name.upper()}: {tot_box} BOX | {tot_kresek} KRESEK"
-                        f"</div>",
-                        unsafe_allow_html=True
-                    )
-    else:
-        st.info("💡 Silakan upload file Master Group Pengiriman (.xlsx) untuk menampilkan tata letak Rute persis Excel.")
-
 else:
     st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
