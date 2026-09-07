@@ -40,6 +40,37 @@ def get_base64_image(image_path):
 bg_base64 = get_base64_image("back.jpg")
 
 
+# --- HELPER MASTER ROUTE PENGIRIMAN ---
+def load_master_routes(file_path_or_bytes):
+    """Membaca file GROUP PENGIRIMAN.xlsx dan mengembalikan mapping {Bakul: Route}"""
+    try:
+        wb = openpyxl.load_workbook(file_path_or_bytes, data_only=True)
+        ws = wb.active
+        
+        routes = {}
+        # Kolom 3 (PAKIS/KMBN) & Kolom 8 (WATES/TUMPANGANS/dll)
+        col_indices = [3, 8]
+        
+        for col_idx in col_indices:
+            current_route = "LAIN-LAIN"
+            for row in range(1, ws.max_row + 1):
+                val_c = ws.cell(row=row, column=col_idx).value
+                val_colon = ws.cell(row=row, column=col_idx + 1).value
+                
+                # Jika sel berisi nama rute (huruf kapital tanpa titik dua)
+                if val_c and isinstance(val_c, str):
+                    clean_c = val_c.strip()
+                    if clean_c and str(val_colon).strip() != ":" and not clean_c.isdigit():
+                        # Merupakan nama header rute
+                        current_route = clean_c
+                    elif clean_c:
+                        routes[clean_c.upper()] = current_route
+        return routes
+    except Exception as e:
+        st.error(f"Gagal membaca file master pengiriman: {e}")
+        return {}
+
+
 # --- HELPER GENERATOR WORD (.DOCX) NOTA KOTAK PRESISI ---
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
@@ -546,6 +577,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ==========================================
+# HALAMAN 1: NOTA
+# ==========================================
 if selected_menu in ["📄 Nota", "🧾 Nota"]:
     if sub_menu == "📑 Bakul" or sub_menu is None:
         col_up1, col_up2 = st.columns([2, 1])
@@ -1100,5 +1134,140 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
             st.info("💡 Silakan upload file Rekap Excel untuk memproses nota.")
     else:
         st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
+
+# ==========================================
+# HALAMAN 2: PENGIRIMAN (OPERASIONAL SUPIR)
+# ==========================================
+elif selected_menu == "🚚 Pengiriman":
+    st.markdown("### 🚚 Operasional Rute Pengiriman Supir")
+    st.caption("Khusus pengerjaan rekap **Box** dan **Kresek** bawaan supir per rute pengiriman.")
+
+    col_p1, col_p2 = st.columns([2, 1])
+    with col_p1:
+        rekap_file = st.file_uploader(
+            "1. Upload File Rekap Excel Harian (.xlsx)", type=["xlsx"], key="ship_rekap"
+        )
+    with col_p2:
+        master_route_file = st.file_uploader(
+            "2. Master Group Pengiriman (Opsional)", type=["xlsx"], key="ship_master"
+        )
+
+    # Cek ketersediaan Master Mapping Rute
+    routes_mapping = {}
+    if master_route_file is not None:
+        routes_mapping = load_master_routes(master_route_file)
+    elif os.path.exists("GROUP PENGIRIMAN.xlsx"):
+        routes_mapping = load_master_routes("GROUP PENGIRIMAN.xlsx")
+
+    if rekap_file is not None:
+        all_sheets = pd.read_excel(rekap_file, sheet_name=None, header=None)
+        valid_sheets = [
+            s for s in all_sheets.keys()
+            if s not in ["TOTAL TONASE", "NOTA FR", "Sheet1", "ploting"]
+        ]
+
+        # Kumpulkan seluruh daftar bakul dari rekap harian
+        active_bakuls = []
+        for s_name in valid_sheets:
+            df_s = all_sheets[s_name]
+            h_idx = 0
+            for idx, r in df_s.iterrows():
+                if r.astype(str).str.upper().str.contains("NAMA").any():
+                    h_idx = idx
+                    break
+            df_clean = df_s.iloc[h_idx + 1:].copy()
+            df_clean.columns = [str(c).strip().upper() for c in df_s.iloc[h_idx].values]
+            n_col = next((c for c in df_clean.columns if "NAMA" in c), df_clean.columns[1])
+            
+            for b_val in df_clean[n_col].dropna().tolist():
+                clean_b = str(b_val).strip()
+                if clean_b and clean_b not in active_bakuls:
+                    active_bakuls.append(clean_b)
+
+        # Kelompokkan bakul per Rute Pengiriman
+        route_groups = {}
+        for b in active_bakuls:
+            r_name = routes_mapping.get(b.upper(), "LAIN-LAIN")
+            if r_name not in route_groups:
+                route_groups[r_name] = []
+            route_groups[r_name].append(b)
+
+        st.markdown("---")
+        selected_route = st.selectbox("📦 Pilih Rute Tujuan Pengiriman:", sorted(route_groups.keys()))
+
+        if selected_route:
+            bakul_list_in_route = route_groups[selected_route]
+            st.success(f"Daftar Bakul di Rute **{selected_route}** ({len(bakul_list_in_route)} Bakul)")
+
+            if "shipment_data" not in st.session_state:
+                st.session_state.shipment_data = {}
+
+            # Tabel Form Input Box & Kresek
+            st.markdown("##### 📝 Input Jumlah Box & Kresek per Bakul")
+            
+            delivery_records = []
+            total_box_route = 0
+            total_kresek_route = 0
+
+            for idx, bakul_name in enumerate(bakul_list_in_route, start=1):
+                key_box = f"box_{selected_route}_{bakul_name}"
+                key_kresek = f"kresek_{selected_route}_{bakul_name}"
+
+                col_b1, col_b2, col_b3 = st.columns([3, 2, 2])
+                with col_b1:
+                    st.write(f"**{idx}. {bakul_name}**")
+                with col_b2:
+                    qty_box = st.number_input("Jumlah Box", min_value=0, step=1, key=key_box)
+                with col_b3:
+                    qty_kresek = st.number_input("Jumlah Kresek", min_value=0, step=1, key=key_kresek)
+
+                delivery_records.append({
+                    "Nama Bakul": bakul_name,
+                    "Jumlah Box": qty_box,
+                    "Jumlah Kresek": qty_kresek
+                })
+                total_box_route += qty_box
+                total_kresek_route += qty_kresek
+
+            st.markdown("---")
+            # Dynamic Summary Table Operasional
+            df_delivery = pd.DataFrame(delivery_records)
+            
+            col_sum1, col_sum2 = st.columns([2, 1])
+            with col_sum1:
+                st.markdown(f"#### 🚚 Rekap Bawaan Supir - Rute {selected_route}")
+                st.dataframe(df_delivery, use_container_width=True, hide_index=True)
+
+            with col_sum2:
+                st.markdown("#### 📊 Total Muatan Rute")
+                st.metric("Total Box (Rute Ini)", f"{total_box_route} Box")
+                st.metric("Total Kresek (Rute Ini)", f"{total_kresek_route} Kresek")
+
+            # Format Teks Cetak Jalan Supir
+            manifest_text = f"========================================\n"
+            manifest_text += f"       SURAT JALAN / MANIFEST SUPIR     \n"
+            manifest_text += f"========================================\n"
+            manifest_text += f"RUTE TUJUAN : {selected_route}\n"
+            manifest_text += f"TANGGAL     : {datetime.now().strftime('%d-%m-%Y')}\n"
+            manifest_text += f"----------------------------------------\n"
+            manifest_text += f"{'NO':<4}{'NAMA BAKUL':<20}{'BOX':<8}{'KRESEK':<8}\n"
+            manifest_text += f"----------------------------------------\n"
+            for idx, r in enumerate(delivery_records, start=1):
+                manifest_text += f"{idx:<4}{r['Nama Bakul']:<20}{r['Jumlah Box']:<8}{r['Jumlah Kresek']:<8}\n"
+            manifest_text += f"----------------------------------------\n"
+            manifest_text += f"TOTAL MUATAN : {total_box_route} BOX | {total_kresek_route} KRESEK\n"
+            manifest_text += f"========================================\n"
+
+            st.download_button(
+                label=f"📄 Download Ringkasan Jalan Supir ({selected_route})",
+                data=manifest_text,
+                file_name=f"MANIFEST_SUPIR_{selected_route}_{datetime.now().strftime('%Y%m%d')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+    else:
+        st.info("💡 Upload file Rekap Excel Harian untuk memproses daftar rute pengiriman supir.")
+
 else:
     st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
