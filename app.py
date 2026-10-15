@@ -15,7 +15,9 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
 
-# 1. KONFIGURASI HALAMAN
+# ==========================================
+# 1. KONFIGURASI HALAMAN & UTILS
+# ==========================================
 st.set_page_config(
     page_title="Sistem Manajemen Ayam Segar",
     layout="wide",
@@ -29,7 +31,6 @@ for fname in ["ASTremove.PNG", "ASTremove.png", "AST.jpeg"]:
         break
 
 
-# --- HELPER BASE64 UNTUK BACKGROUND GAMBAR LOKAL ---
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -40,13 +41,36 @@ def get_base64_image(image_path):
 bg_base64 = get_base64_image("back.jpg")
 
 
-# --- HELPER GENERATOR WORD (.DOCX) NOTA RINGKAS PRESISI ---
+# ==========================================
+# 2. HELPER GENERATOR WORD & GAMBAR NOTA (PRESISI & RINGKAS)
+# ==========================================
+def set_cell_background(cell, fill_hex):
+    tcPr = cell._tc.get_or_add_tcPr()
+    shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
+    tcPr.append(shd)
+
+
+def set_cell_margins(cell, top=40, bottom=40, left=50, right=50):
+    tcPr = cell._tc.get_or_add_tcPr()
+    tcMar = OxmlElement("w:tcMar")
+    for m, val in [
+        ("top", top),
+        ("bottom", bottom),
+        ("left", left),
+        ("right", right),
+    ]:
+        node = OxmlElement(f"w:{m}")
+        node.set(qn("w:w"), str(val))
+        node.set(qn("w:type"), "dxa")
+        tcMar.append(node)
+    tcPr.append(tcMar)
+
+
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc = Document()
     section = doc.sections[0]
     section.page_width = Mm(148)
     section.page_height = Mm(105)
-    # Margin diperbesar sedikit agar konten tidak terlalu rapat/lebar ke tepi
     section.top_margin = Mm(8)
     section.bottom_margin = Mm(8)
     section.left_margin = Mm(8)
@@ -97,7 +121,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    # Lebar total tabel dipersempit dari 136mm menjadi 126mm
     col_widths = [Mm(18), Mm(52), Mm(28), Mm(28)]
     headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
     alignments = [
@@ -183,7 +206,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return target_stream.getvalue()
 
 
-# --- HELPER GENERATOR GAMBAR (PNG) NOTA KOTAK PRESISI RINGKAS ---
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 500
     height = 500
@@ -191,7 +213,6 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    # Frame Outer dibuat lebih rapat ke dalam (padding 22px dari tepi)
     pad = 22
     draw.rectangle([pad, pad, width - pad, height - pad], outline=(0, 0, 0), width=2)
 
@@ -257,7 +278,6 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     tbl_header_height = 22
     row_height = 22
 
-    # Tabel Barang dibuat lebih rapat
     draw.rectangle(
         [x_start, y_tbl, x_end, y_tbl + tbl_header_height],
         fill=(240, 240, 240),
@@ -331,7 +351,9 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     return img_byte_arr.getvalue()
 
 
-# --- CSS STYLING UTAMA ---
+# ==========================================
+# 3. CSS STYLING UTAMA
+# ==========================================
 bg_css = ""
 if bg_base64:
     bg_css = f"""
@@ -370,7 +392,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- 2. LOGIN ---
+# ==========================================
+# 4. LOGIN SYSTEM
+# ==========================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.role = ""
@@ -378,11 +402,11 @@ if "logged_in" not in st.session_state:
 
 def login():
     st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1.8, 1])
+    _, col2, _ = st.columns([1, 1.8, 1])
 
     with col2:
         if logo_filename:
-            c_l, c_img, c_r = st.columns([1, 2, 1])
+            _, c_img, _ = st.columns([1, 2, 1])
             with c_img:
                 st.image(logo_filename, use_container_width=True)
 
@@ -418,7 +442,9 @@ if not st.session_state.logged_in:
     login()
     st.stop()
 
-# --- 3. MASTER HARGA JSON ---
+# ==========================================
+# 5. MASTER HARGA JSON
+# ==========================================
 FILE_HARGA = "master_harga.json"
 default_harga = {
     "glondong": 28500,
@@ -439,7 +465,9 @@ if os.path.exists(FILE_HARGA):
 else:
     saved_harga = default_harga
 
-# --- 4. SIDEBAR ---
+# ==========================================
+# 6. SIDEBAR MENU
+# ==========================================
 with st.sidebar:
     if logo_filename:
         st.image(logo_filename, width=90)
@@ -514,7 +542,9 @@ with st.sidebar:
         st.session_state.role = ""
         st.rerun()
 
-# --- 5. AREA KONTEN UTAMA ---
+# ==========================================
+# 7. AREA KONTEN UTAMA
+# ==========================================
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
     st.markdown(
@@ -922,12 +952,10 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                         ws = wb.create_sheet(title=sheet_name[:31])
 
-                        # Filter baris berdasarkan bakul terpilih
                         df_filtered = df_s[
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
-                        # Lebar kolom A disesuaikan untuk 1 kolom nota yang rapi
                         ws.column_dimensions["A"].width = 45
 
                         row_position = 2
@@ -935,7 +963,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
 
-                            # Helper pembacaan nilai sel per baris
                             def get_val_from_row(c_keyword):
                                 try:
                                     col_found = next(
@@ -1047,14 +1074,10 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                                 xl_img = OpenPyXLImage(img_jpg_stream)
 
-                                # Menempelkan gambar 1 per 1 di Kolom A secara berurutan ke bawah
                                 cell_location = f"A{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
-                                # Mengatur tinggi baris tempat gambar berada
                                 ws.row_dimensions[row_position].height = 245
-
-                                # Beri jarak 1 baris kosong kecil antar nota
                                 ws.row_dimensions[row_position + 1].height = 15
 
                                 row_position += 2
