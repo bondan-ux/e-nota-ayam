@@ -42,7 +42,7 @@ bg_base64 = get_base64_image("back.jpg")
 
 
 # ==========================================
-# 2. HELPER GENERATOR WORD & GAMBAR NOTA (PRESISI & RINGKAS)
+# 2. HELPER GENERATOR WORD & GAMBAR NOTA (DINAMIS & PRESISI)
 # ==========================================
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
@@ -208,12 +208,28 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 500
-    height = 500
+    pad = 22
+    header_h = 65
+    tbl_header_h = 22
+    row_h = 22
+    num_items = len(items)
+    footer_h = 80
+
+    # Tinggi gambar dihitung otomatis secara proporsional berdasarkan jumlah item
+    height = (
+        pad
+        + header_h
+        + 10
+        + tbl_header_h
+        + (num_items * row_h)
+        + 20
+        + footer_h
+        + pad
+    )
 
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    pad = 22
     draw.rectangle([pad, pad, width - pad, height - pad], outline=(0, 0, 0), width=2)
 
     bold_fonts = [
@@ -274,9 +290,9 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     )
     draw.text((x_end - 150, pad + 40), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
-    y_tbl = pad + 62
-    tbl_header_height = 22
-    row_height = 22
+    y_tbl = pad + header_h + 10
+    tbl_header_height = tbl_header_h
+    row_height = row_h
 
     draw.rectangle(
         [x_start, y_tbl, x_end, y_tbl + tbl_header_height],
@@ -325,7 +341,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         draw.text((col3_w + 8, y_curr + 4), j_str, fill=(0, 0, 0), font=font_regular)
         y_curr += row_height
 
-    y_ftr = height - pad - 90
+    y_ftr = y_curr + 15
 
     draw.text((x_start + 8, y_ftr), "Penerima,", fill=(0, 0, 0), font=font_regular)
     draw.text((x_start + 110, y_ftr), "Hormat Kami,", fill=(0, 0, 0), font=font_regular)
@@ -1066,7 +1082,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 )
 
                                 img_obj = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                                img_obj.thumbnail((320, 320))
+                                img_h = img_obj.size[1]
+                                excel_row_height = max(100, int(img_h * 0.75))
 
                                 img_jpg_stream = io.BytesIO()
                                 img_obj.save(img_jpg_stream, format="JPEG", quality=95)
@@ -1077,7 +1094,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 cell_location = f"A{row_position}"
                                 ws.add_image(xl_img, cell_location)
 
-                                ws.row_dimensions[row_position].height = 245
+                                ws.row_dimensions[row_position].height = excel_row_height
                                 ws.row_dimensions[row_position + 1].height = 15
 
                                 row_position += 2
