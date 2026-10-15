@@ -215,7 +215,6 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     num_items = len(items)
     footer_h = 80
 
-    # Tinggi gambar dihitung otomatis secara proporsional berdasarkan jumlah item
     height = (
         pad
         + header_h
@@ -720,13 +719,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         else qty_telur_b_manual
                     )
 
-                    val_ket = get_valid_float(
-                        next((c for c in df.columns if "KET" in c), "")
-                    )
-                    biaya_kresek = (
-                        7000 if (val_ket > 0 and not float(val_ket).is_integer()) else 0
-                    )
-
                     tot_glondong = qty_tonase * h_glondong
                     tot_jeroan = qty_jeroan * h_jeroan
                     tot_usus = qty_usus * h_usus
@@ -743,7 +735,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         + tot_telur_b
                         + tot_peti
                         + tot_box
-                        + biaya_kresek
                     )
 
                     items = [
@@ -788,12 +779,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             "KG": qty_box,
                             "Harga": h_box,
                             "Jumlah": tot_box,
-                        },
-                        {
-                            "Nama Barang": "BIAYA KRESEK",
-                            "KG": 1 if biaya_kresek > 0 else 0,
-                            "Harga": 7000,
-                            "Jumlah": biaya_kresek,
                         },
                     ]
 
@@ -1007,13 +992,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 kg_telur_a = get_val_from_row("TELUR")
 
                             kg_telur_b = get_val_from_row("TELUR B")
-                            val_ket = get_val_from_row("KET")
-
-                            biaya_kresek = (
-                                7000
-                                if (val_ket > 0 and not float(val_ket).is_integer())
-                                else 0
-                            )
 
                             tot_glondong = kg_tonase * h_glondong
                             tot_jeroan = kg_jeroan * h_jeroan
@@ -1027,7 +1005,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 + tot_usus
                                 + tot_telur_a
                                 + tot_telur_b
-                                + biaya_kresek
                             )
 
                             items = [
@@ -1060,12 +1037,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     "KG": kg_telur_b,
                                     "Harga": h_telur_b,
                                     "Jumlah": tot_telur_b,
-                                },
-                                {
-                                    "Nama Barang": "BIAYA KRESEK",
-                                    "KG": 1 if biaya_kresek > 0 else 0,
-                                    "Harga": 7000,
-                                    "Jumlah": biaya_kresek,
                                 },
                             ]
 
