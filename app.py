@@ -91,49 +91,37 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     section.left_margin = Mm(5)
     section.right_margin = Mm(5)
 
-    # 1. HEADER NOTA (Logo & Toko Sejajar Vertikal Sempurna)
+    # 1. HEADER NOTA (Logo, Toko, & Tanggal Sejajar Rata Atas)
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(62)
-    cell_r.width = Mm(58)
+    cell_l.width = Mm(65)
+    cell_r.width = Mm(55)
     
-    # Set alignment vertikal di tengah agar logo dan teks sejajar
-    cell_l.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    # Ratakan sel ke paling atas agar posisinya lurus presisi
+    cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.TOP
 
-    # Sub-tabel untuk mensejajarkan Logo dan Teks secara Horizontal di dalam cell kiri
-    tbl_brand = cell_l.add_table(rows=1, cols=2)
-    tbl_brand.autofit = False
-    brand_c1, brand_c2 = tbl_brand.rows[0].cells
-    brand_c1.width = Mm(11) # Ukuran kolom logo (diperbesar sedikit)
-    brand_c2.width = Mm(51) # Ukuran kolom teks toko
-    brand_c1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-    brand_c2.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    p_l = cell_l.paragraphs[0]
+    p_l.paragraph_format.space_before = Pt(0)
+    p_l.paragraph_format.space_after = Pt(0)
+    p_l.paragraph_format.line_spacing = 1.05
 
-    # Masukkan Logo
-    p_logo = brand_c1.paragraphs[0]
-    p_logo.paragraph_format.space_before = Pt(0)
-    p_logo.paragraph_format.space_after = Pt(0)
+    # Masukkan Logo langsung di baris pertama paragraf
     if logo_path and os.path.exists(logo_path):
-        run_img = p_logo.add_run()
-        run_img.add_picture(logo_path, width=Mm(9.5)) # Logo diperbesar proporsional
+        run_img = p_l.add_run()
+        run_img.add_picture(logo_path, width=Mm(9.5))
+        p_l.add_run(" ")
 
-    # Masukkan Teks Toko
-    p_brand = brand_c2.paragraphs[0]
-    p_brand.paragraph_format.space_before = Pt(0)
-    p_brand.paragraph_format.space_after = Pt(0)
-    p_brand.paragraph_format.line_spacing = 1.0
-
-    run_title = p_brand.add_run("AYAM SEGAR TUMPANG\n")
+    run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
     run_title.font.size = Pt(8.5)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
-    run_sub = p_brand.add_run("Ds. Kambingan - Tumpang - Malang")
+    run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
