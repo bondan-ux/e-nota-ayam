@@ -50,7 +50,7 @@ def set_cell_background(cell, fill_hex):
     tcPr.append(shd)
 
 
-def set_cell_margins(cell, top=15, bottom=15, left=25, right=25):
+def set_cell_margins(cell, top=15, bottom=15, left=20, right=20):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement("w:tcMar")
     for m, val in [
@@ -64,6 +64,21 @@ def set_cell_margins(cell, top=15, bottom=15, left=25, right=25):
         node.set(qn("w:type"), "dxa")
         tcMar.append(node)
     tcPr.append(tcMar)
+
+
+def set_table_borders(table):
+    tblPr = table._tbl.tblPr
+    borders = parse_xml(
+        f'<w:tblBorders {nsdecls("w")}>\n'
+        '  <w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        '  <w:left w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        '  <w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        '  <w:right w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        '  <w:insideH w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        '  <w:insideV w:val="single" w:sz="6" w:space="0" w:color="000000"/>\n'
+        "</w:tblBorders>"
+    )
+    tblPr.append(borders)
 
 
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
@@ -96,10 +111,12 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
+    run_title.font.name = "Courier New"
     run_title.font.size = Pt(9)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Kab. Malang")
+    run_sub.font.name = "Courier New"
     run_sub.font.size = Pt(6)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
@@ -111,6 +128,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_info = p_r.add_run(
         f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     )
+    r_info.font.name = "Courier New"
     r_info.font.size = Pt(6.5)
 
     p_spacer = doc.add_paragraph()
@@ -130,17 +148,20 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         WD_ALIGN_PARAGRAPH.RIGHT,
     ]
 
+    set_table_borders(tbl_items)
+
     hdr_cells = tbl_items.rows[0].cells
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
-        set_cell_background(hdr_cells[i], "F0F0F0")
-        set_cell_margins(hdr_cells[i], top=15, bottom=15, left=25, right=25)
+        set_cell_background(hdr_cells[i], "EAEAEA")
+        set_cell_margins(hdr_cells[i], top=15, bottom=15, left=20, right=20)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
         r = p.add_run(h_text)
         r.bold = True
+        r.font.name = "Courier New"
         r.font.size = Pt(7)
 
     for item in items:
@@ -161,12 +182,13 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=15, bottom=15, left=25, right=25)
+            set_cell_margins(row_cells[i], top=15, bottom=15, left=20, right=20)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
+            r.font.name = "Courier New"
             r.font.size = Pt(7)
 
     tbl_ftr = doc.add_table(rows=1, cols=2)
@@ -184,6 +206,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         "Penerima,                       Hormat Kami,\n\n\n( ............................ )   ("
         " ............................ )"
     )
+    r_sig.font.name = "Courier New"
     r_sig.font.size = Pt(6)
 
     p_fr = f_right.paragraphs[0]
@@ -193,11 +216,13 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     r_lbl = p_fr.add_run("TOTAL : ")
     r_lbl.bold = True
+    r_lbl.font.name = "Courier New"
     r_lbl.font.size = Pt(8)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_fr.add_run(tot_str)
     r_tot.bold = True
+    r_tot.font.name = "Courier New"
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
