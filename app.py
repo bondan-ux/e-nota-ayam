@@ -91,6 +91,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     section.left_margin = Mm(5)
     section.right_margin = Mm(5)
 
+    # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
@@ -135,6 +136,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     p_spacer.paragraph_format.space_before = Pt(1)
     p_spacer.paragraph_format.space_after = Pt(1)
 
+    # 2. TABEL BARANG
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
@@ -154,7 +156,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "EAEAEA")
-        set_cell_margins(hdr_cells[i], top=15, bottom=15, left=20, right=20)
+        set_cell_margins(hdr_cells[i], top=12, bottom=12, left=15, right=15)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
@@ -182,7 +184,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=15, bottom=15, left=20, right=20)
+            set_cell_margins(row_cells[i], top=12, bottom=12, left=15, right=15)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
@@ -191,40 +193,68 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    tbl_ftr = doc.add_table(rows=1, cols=2)
-    tbl_ftr.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl_ftr.autofit = False
+    # 3. FOOTER / TOTAL & TANDA TANGAN (DIRAPIKAN)
+    p_tot = doc.add_paragraph()
+    p_tot.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_tot.paragraph_format.space_before = Pt(4)
+    p_tot.paragraph_format.space_after = Pt(4)
 
-    f_left, f_right = tbl_ftr.rows[0].cells
-    f_left.width = Mm(58)
-    f_right.width = Mm(62)
-
-    p_fl = f_left.paragraphs[0]
-    p_fl.paragraph_format.space_before = Pt(4)
-    p_fl.paragraph_format.space_after = Pt(0)
-    r_sig = p_fl.add_run(
-        "Penerima,                       Hormat Kami,\n\n\n( ............................ )   ("
-        " ............................ )"
-    )
-    r_sig.font.name = "Courier New"
-    r_sig.font.size = Pt(6)
-
-    p_fr = f_right.paragraphs[0]
-    p_fr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_fr.paragraph_format.space_before = Pt(4)
-    p_fr.paragraph_format.space_after = Pt(0)
-
-    r_lbl = p_fr.add_run("TOTAL : ")
+    r_lbl = p_tot.add_run("TOTAL : ")
     r_lbl.bold = True
     r_lbl.font.name = "Courier New"
-    r_lbl.font.size = Pt(8)
+    r_lbl.font.size = Pt(8.5)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-    r_tot = p_fr.add_run(tot_str)
+    r_tot = p_tot.add_run(tot_str)
     r_tot.bold = True
     r_tot.font.name = "Courier New"
-    r_tot.font.size = Pt(10)
+    r_tot.font.size = Pt(10.5)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
+
+    # Tabel Tanda Tangan Terpisah agar Posisi Sejajar Sempurna
+    tbl_sig = doc.add_table(rows=2, cols=2)
+    tbl_sig.alignment = WD_TABLE_ALIGNMENT.CENTER
+    tbl_sig.autofit = False
+
+    sig_widths = [Mm(60), Mm(60)]
+    for row in tbl_sig.rows:
+        for i, cell in enumerate(row.cells):
+            cell.width = sig_widths[i]
+            set_cell_margins(cell, top=2, bottom=2, left=5, right=5)
+
+    # Baris 0: Label Tanda Tangan
+    cell_s0_l, cell_s0_r = tbl_sig.rows[0].cells
+    p_s0_l = cell_s0_l.paragraphs[0]
+    p_s0_l.paragraph_format.space_before = Pt(0)
+    p_s0_l.paragraph_format.space_after = Pt(0)
+    r_sl = p_s0_l.add_run("Penerima,")
+    r_sl.font.name = "Courier New"
+    r_sl.font.size = Pt(6.5)
+
+    p_s0_r = cell_s0_r.paragraphs[0]
+    p_s0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_s0_r.paragraph_format.space_before = Pt(0)
+    p_s0_r.paragraph_format.space_after = Pt(0)
+    r_sr = p_s0_r.add_run("Hormat Kami,")
+    r_sr.font.name = "Courier New"
+    r_sr.font.size = Pt(6.5)
+
+    # Baris 1: Kolom Tanda Tangan (Kurung Buka/Tutup)
+    cell_s1_l, cell_s1_r = tbl_sig.rows[1].cells
+    p_s1_l = cell_s1_l.paragraphs[0]
+    p_s1_l.paragraph_format.space_before = Pt(18)
+    p_s1_l.paragraph_format.space_after = Pt(0)
+    r_tl = p_s1_l.add_run("( ........................ )")
+    r_tl.font.name = "Courier New"
+    r_tl.font.size = Pt(6.5)
+
+    p_s1_r = cell_s1_r.paragraphs[0]
+    p_s1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_s1_r.paragraph_format.space_before = Pt(18)
+    p_s1_r.paragraph_format.space_after = Pt(0)
+    r_tr = p_s1_r.add_run("( ........................ )")
+    r_tr.font.name = "Courier New"
+    r_tr.font.size = Pt(6.5)
 
     target_stream = io.BytesIO()
     doc.save(target_stream)
@@ -1079,7 +1109,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             f"✅ Berhasil menyusun {total_processed} gambar nota berurutan ke bawah (1 Kolom) di Excel!"
                         )
                         st.download_button(
-                            label="📥 Download File Excel All Nota Gambar (.xlsx)",
+                            label="📥 Download Excel All Nota Gambar (.xlsx)",
                             data=output_excel.getvalue(),
                             file_name=(
                                 "EXCEL_NOTA_GAMBAR_"
