@@ -193,66 +193,68 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    # 3. FOOTER / TOTAL & TANDA TANGAN (DIRAPIKAN)
-    p_tot = doc.add_paragraph()
-    p_tot.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_tot.paragraph_format.space_before = Pt(4)
-    p_tot.paragraph_format.space_after = Pt(4)
+    # 3. TOTAL & TANDA TANGAN (1 TABEL PENUTUP AGAR SEJAJAR PRESISI)
+    p_space_btm = doc.add_paragraph()
+    p_space_btm.paragraph_format.space_before = Pt(2)
+    p_space_btm.paragraph_format.space_after = Pt(2)
 
-    r_lbl = p_tot.add_run("TOTAL : ")
-    r_lbl.bold = True
-    r_lbl.font.name = "Courier New"
-    r_lbl.font.size = Pt(8.5)
+    tbl_footer = doc.add_table(rows=2, cols=2)
+    tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
+    tbl_footer.autofit = False
 
-    tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-    r_tot = p_tot.add_run(tot_str)
-    r_tot.bold = True
-    r_tot.font.name = "Courier New"
-    r_tot.font.size = Pt(10.5)
-    r_tot.font.color.rgb = RGBColor(198, 40, 40)
-
-    # Tabel Tanda Tangan Terpisah agar Posisi Sejajar Sempurna
-    tbl_sig = doc.add_table(rows=2, cols=2)
-    tbl_sig.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl_sig.autofit = False
-
-    sig_widths = [Mm(60), Mm(60)]
-    for row in tbl_sig.rows:
+    f_widths = [Mm(65), Mm(55)]
+    for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
-            cell.width = sig_widths[i]
-            set_cell_margins(cell, top=2, bottom=2, left=5, right=5)
+            cell.width = f_widths[i]
+            set_cell_margins(cell, top=2, bottom=2, left=2, right=2)
 
-    # Baris 0: Label Tanda Tangan
-    cell_s0_l, cell_s0_r = tbl_sig.rows[0].cells
-    p_s0_l = cell_s0_l.paragraphs[0]
-    p_s0_l.paragraph_format.space_before = Pt(0)
-    p_s0_l.paragraph_format.space_after = Pt(0)
-    r_sl = p_s0_l.add_run("Penerima,")
+    # Baris 0: Penerima (Kiri) & TOTAL (Kanan, sejajar tepat di bawah kolom Jumlah)
+    cell_f0_l, cell_f0_r = tbl_footer.rows[0].cells
+    
+    p_f0_l = cell_f0_l.paragraphs[0]
+    p_f0_l.paragraph_format.space_before = Pt(0)
+    p_f0_l.paragraph_format.space_after = Pt(0)
+    r_sl = p_f0_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
     r_sl.font.size = Pt(6.5)
 
-    p_s0_r = cell_s0_r.paragraphs[0]
-    p_s0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_s0_r.paragraph_format.space_before = Pt(0)
-    p_s0_r.paragraph_format.space_after = Pt(0)
-    r_sr = p_s0_r.add_run("Hormat Kami,")
-    r_sr.font.name = "Courier New"
-    r_sr.font.size = Pt(6.5)
+    p_f0_r = cell_f0_r.paragraphs[0]
+    p_f0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f0_r.paragraph_format.space_before = Pt(0)
+    p_f0_r.paragraph_format.space_after = Pt(0)
+    
+    r_lbl = p_f0_r.add_run("TOTAL : ")
+    r_lbl.bold = True
+    r_lbl.font.name = "Courier New"
+    r_lbl.font.size = Pt(8)
 
-    # Baris 1: Kolom Tanda Tangan (Kurung Buka/Tutup)
-    cell_s1_l, cell_s1_r = tbl_sig.rows[1].cells
-    p_s1_l = cell_s1_l.paragraphs[0]
-    p_s1_l.paragraph_format.space_before = Pt(18)
-    p_s1_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_s1_l.add_run("( ........................ )")
+    tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
+    r_tot = p_f0_r.add_run(tot_str)
+    r_tot.bold = True
+    r_tot.font.name = "Courier New"
+    r_tot.font.size = Pt(10)
+    r_tot.font.color.rgb = RGBColor(198, 40, 40)
+
+    # Baris 1: Tanda Tangan Kiri & Kanan (beserta label Hormat Kami di atasnya)
+    cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
+
+    p_f1_l = cell_f1_l.paragraphs[0]
+    p_f1_l.paragraph_format.space_before = Pt(14)
+    p_f1_l.paragraph_format.space_after = Pt(0)
+    r_tl = p_f1_l.add_run("( ........................ )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
-    p_s1_r = cell_s1_r.paragraphs[0]
-    p_s1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_s1_r.paragraph_format.space_before = Pt(18)
-    p_s1_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_s1_r.add_run("( ........................ )")
+    p_f1_r = cell_f1_r.paragraphs[0]
+    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f1_r.paragraph_format.space_before = Pt(4)
+    p_f1_r.paragraph_format.space_after = Pt(0)
+    
+    r_sr = p_f1_r.add_run("Hormat Kami,\n")
+    r_sr.font.name = "Courier New"
+    r_sr.font.size = Pt(6.5)
+
+    r_tr = p_f1_r.add_run("( ........................ )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
