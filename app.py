@@ -42,7 +42,7 @@ bg_base64 = get_base64_image("back.jpg")
 
 
 # ==========================================
-# 2. HELPER GENERATOR WORD & GAMBAR NOTA (LANDSCAPE & PRESISI)
+# 2. HELPER GENERATOR WORD & GAMBAR NOTA
 # ==========================================
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
@@ -50,7 +50,7 @@ def set_cell_background(cell, fill_hex):
     tcPr.append(shd)
 
 
-def set_cell_margins(cell, top=30, bottom=30, left=40, right=40):
+def set_cell_margins(cell, top=15, bottom=15, left=25, right=25):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement("w:tcMar")
     for m, val in [
@@ -69,20 +69,20 @@ def set_cell_margins(cell, top=30, bottom=30, left=40, right=40):
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Mm(148)
+    section.page_width = Mm(130)
     section.page_height = Mm(105)
-    section.top_margin = Mm(6)
-    section.bottom_margin = Mm(6)
-    section.left_margin = Mm(6)
-    section.right_margin = Mm(6)
+    section.top_margin = Mm(5)
+    section.bottom_margin = Mm(5)
+    section.left_margin = Mm(5)
+    section.right_margin = Mm(5)
 
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(68)
-    cell_r.width = Mm(68)
+    cell_l.width = Mm(58)
+    cell_r.width = Mm(62)
 
     p_l = cell_l.paragraphs[0]
     p_l.paragraph_format.space_before = Pt(0)
@@ -91,16 +91,16 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     if logo_path and os.path.exists(logo_path):
         run_img = p_l.add_run()
-        run_img.add_picture(logo_path, width=Mm(10))
-        p_l.add_run("  ")
+        run_img.add_picture(logo_path, width=Mm(8))
+        p_l.add_run(" ")
 
     run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
-    run_title.font.size = Pt(10)
+    run_title.font.size = Pt(9)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Kab. Malang")
-    run_sub.font.size = Pt(7)
+    run_sub.font.size = Pt(6)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     p_r = cell_r.paragraphs[0]
@@ -111,7 +111,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_info = p_r.add_run(
         f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     )
-    r_info.font.size = Pt(7.5)
+    r_info.font.size = Pt(6.5)
 
     p_spacer = doc.add_paragraph()
     p_spacer.paragraph_format.space_before = Pt(1)
@@ -121,7 +121,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(20), Mm(56), Mm(30), Mm(30)]
+    col_widths = [Mm(18), Mm(48), Mm(27), Mm(27)]
     headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.CENTER,
@@ -134,14 +134,14 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "F0F0F0")
-        set_cell_margins(hdr_cells[i], top=30, bottom=30, left=50, right=50)
+        set_cell_margins(hdr_cells[i], top=15, bottom=15, left=25, right=25)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
         r = p.add_run(h_text)
         r.bold = True
-        r.font.size = Pt(7.5)
+        r.font.size = Pt(7)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -161,21 +161,21 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=30, bottom=30, left=50, right=50)
+            set_cell_margins(row_cells[i], top=15, bottom=15, left=25, right=25)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
-            r.font.size = Pt(7.5)
+            r.font.size = Pt(7)
 
     tbl_ftr = doc.add_table(rows=1, cols=2)
     tbl_ftr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_ftr.autofit = False
 
     f_left, f_right = tbl_ftr.rows[0].cells
-    f_left.width = Mm(68)
-    f_right.width = Mm(68)
+    f_left.width = Mm(58)
+    f_right.width = Mm(62)
 
     p_fl = f_left.paragraphs[0]
     p_fl.paragraph_format.space_before = Pt(4)
@@ -184,21 +184,21 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         "Penerima,                       Hormat Kami,\n\n\n( ............................ )   ("
         " ............................ )"
     )
-    r_sig.font.size = Pt(7)
+    r_sig.font.size = Pt(6)
 
     p_fr = f_right.paragraphs[0]
     p_fr.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_fr.paragraph_format.space_before = Pt(6)
+    p_fr.paragraph_format.space_before = Pt(4)
     p_fr.paragraph_format.space_after = Pt(0)
 
     r_lbl = p_fr.add_run("TOTAL : ")
     r_lbl.bold = True
-    r_lbl.font.size = Pt(9)
+    r_lbl.font.size = Pt(8)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_fr.add_run(tot_str)
     r_tot.bold = True
-    r_tot.font.size = Pt(12)
+    r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
     target_stream = io.BytesIO()
@@ -211,8 +211,8 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     pad = 20
     
     header_h = 95
-    tbl_header_h = 32
-    row_h = 32
+    tbl_header_h = 34
+    row_h = 34
     num_items = len(items)
     
     height = pad + header_h + 10 + tbl_header_h + (num_items * row_h) + 15 + 50 + pad
