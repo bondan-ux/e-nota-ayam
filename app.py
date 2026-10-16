@@ -50,7 +50,7 @@ def set_cell_background(cell, fill_hex):
     tcPr.append(shd)
 
 
-def set_cell_margins(cell, top=15, bottom=15, left=20, right=20):
+def set_cell_margins(cell, top=10, bottom=10, left=15, right=15):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement("w:tcMar")
     for m, val in [
@@ -91,7 +91,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     section.left_margin = Mm(5)
     section.right_margin = Mm(5)
 
-    # 1. HEADER NOTA (Logo, Toko, & Tanggal Sejajar Rata Atas)
+    # 1. HEADER NOTA (Struktur Terpisah Agar Sejajar Presisi)
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
@@ -99,29 +99,43 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     cell_l, cell_r = tbl_hdr.rows[0].cells
     cell_l.width = Mm(65)
     cell_r.width = Mm(55)
-    
-    # Ratakan sel ke paling atas agar posisinya lurus presisi
-    cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.TOP
 
-    p_l = cell_l.paragraphs[0]
-    p_l.paragraph_format.space_before = Pt(0)
-    p_l.paragraph_format.space_after = Pt(0)
-    p_l.paragraph_format.line_spacing = 1.05
+    cell_l.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
 
-    # Masukkan Logo langsung di baris pertama paragraf
+    # Sub-tabel untuk menyejajarkan LOGO dan NAMA TOKO secara horizontal
+    tbl_brand = cell_l.add_table(rows=1, cols=2)
+    tbl_brand.autofit = False
+    brand_c1, brand_c2 = tbl_brand.rows[0].cells
+    brand_c1.width = Mm(11)
+    brand_c2.width = Mm(54)
+    brand_c1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    brand_c2.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+    set_cell_margins(brand_c1, top=0, bottom=0, left=0, right=0)
+    set_cell_margins(brand_c2, top=0, bottom=0, left=0, right=0)
+
+    # Logo
+    p_logo = brand_c1.paragraphs[0]
+    p_logo.paragraph_format.space_before = Pt(0)
+    p_logo.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
-        run_img = p_l.add_run()
+        run_img = p_logo.add_run()
         run_img.add_picture(logo_path, width=Mm(9.5))
-        p_l.add_run(" ")
 
-    run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
+    # Nama Toko & Alamat
+    p_brand = brand_c2.paragraphs[0]
+    p_brand.paragraph_format.space_before = Pt(0)
+    p_brand.paragraph_format.space_after = Pt(0)
+    p_brand.paragraph_format.line_spacing = 1.0
+
+    run_title = p_brand.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
     run_title.font.size = Pt(8.5)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
-    run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Malang")
+    run_sub = p_brand.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
@@ -131,6 +145,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_r.paragraph_format.space_before = Pt(0)
     p_r.paragraph_format.space_after = Pt(0)
+    p_r.paragraph_format.line_spacing = 1.05
 
     r_info = p_r.add_run(
         f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
@@ -139,8 +154,8 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_info.font.size = Pt(6)
 
     p_spacer = doc.add_paragraph()
-    p_spacer.paragraph_format.space_before = Pt(1)
-    p_spacer.paragraph_format.space_after = Pt(1)
+    p_spacer.paragraph_format.space_before = Pt(2)
+    p_spacer.paragraph_format.space_after = Pt(2)
 
     # 2. TABEL BARANG
     tbl_items = doc.add_table(rows=1, cols=4)
@@ -214,7 +229,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             cell.width = f_widths[i]
             set_cell_margins(cell, top=2, bottom=2, left=2, right=2)
 
-    # Baris 0: Penerima (Kiri) & TOTAL (Kanan, sejajar tepat di bawah kolom Jumlah)
+    # Baris 0: Penerima (Kiri) & TOTAL (Kanan)
     cell_f0_l, cell_f0_r = tbl_footer.rows[0].cells
     
     p_f0_l = cell_f0_l.paragraphs[0]
@@ -241,7 +256,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
-    # Baris 1: Tanda Tangan Kiri & Kanan (beserta label Hormat Kami di atasnya)
+    # Baris 1: Tanda Tangan Kiri & Kanan
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
