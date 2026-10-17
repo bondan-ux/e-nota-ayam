@@ -271,7 +271,7 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.paragraph_format.space_before = Pt(26)
     p_f2_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_f2_l.add_run("( ............................ )")
+    r_tl = p_f2_l.add_run("( .................... )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
@@ -279,7 +279,7 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_f2_r.paragraph_format.space_before = Pt(26)
     p_f2_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_f2_r.add_run("( ............................ )")
+    r_tr = p_f2_r.add_run("( .................... )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
