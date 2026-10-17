@@ -251,6 +251,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
+    p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← digeser ke kanan (ke tengah)
     p_f1_l.paragraph_format.space_before = Pt(4)
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
@@ -258,17 +259,18 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_sl.font.size = Pt(7.5)
 
     p_f1_r = cell_f1_r.paragraphs[0]
-    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← digeser ke kiri sedikit (ke tengah)
     p_f1_r.paragraph_format.space_before = Pt(4)
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(7.5)
 
-    # BARIS 2: TANDA TANGAN (SPASI DIPELEBAR DARI Pt(12) KE Pt(26))
+    # BARIS 2: TANDA TANGAN
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
+    p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← ikut ke tengah
     p_f2_l.paragraph_format.space_before = Pt(26)
     p_f2_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f2_l.add_run("( ........... )")
@@ -276,7 +278,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_tl.font.size = Pt(7.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
-    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← ikut ke tengah
     p_f2_r.paragraph_format.space_before = Pt(26)
     p_f2_r.paragraph_format.space_after = Pt(0)
     r_tr = p_f2_r.add_run("( ........... )")
@@ -286,7 +288,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     target_stream = io.BytesIO()
     doc.save(target_stream)
     return target_stream.getvalue()
-
 
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 720
