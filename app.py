@@ -85,13 +85,13 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     doc = Document()
     section = doc.sections[0]
     
-    # Ukuran kertas 4.13" x 5.83" (105mm x 148mm)
-    section.page_width = Mm(105)
-    section.page_height = Mm(148)
+    # Landscape: 5.83" x 4.13" (148mm x 105mm)
+    section.page_width = Mm(148)
+    section.page_height = Mm(105)
     section.top_margin = Mm(5)
     section.bottom_margin = Mm(5)
-    section.left_margin = Mm(3)
-    section.right_margin = Mm(3)
+    section.left_margin = Mm(4)
+    section.right_margin = Mm(4)
 
     # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
@@ -99,8 +99,8 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(52)
-    cell_r.width = Mm(44)
+    cell_l.width = Mm(75)
+    cell_r.width = Mm(60)
 
     set_cell_margins(cell_l, top=0, bottom=0, left=0, right=0)
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
@@ -113,8 +113,8 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     tbl_brand.autofit = False
 
     b_cell_img, b_cell_txt = tbl_brand.rows[0].cells
-    b_cell_img.width = Mm(11)
-    b_cell_txt.width = Mm(41)
+    b_cell_img.width = Mm(12)
+    b_cell_txt.width = Mm(63)
 
     set_cell_margins(b_cell_img, top=0, bottom=0, left=0, right=0)
     set_cell_margins(b_cell_txt, top=0, bottom=0, left=0, right=0)
@@ -127,7 +127,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_img.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
         run_img = p_img.add_run()
-        run_img.add_picture(logo_path, width=Mm(9.5))
+        run_img.add_picture(logo_path, width=Mm(10.5))
 
     p_txt = b_cell_txt.paragraphs[0]
     p_txt.paragraph_format.space_before = Pt(0)
@@ -137,25 +137,25 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     run_title = p_txt.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
-    run_title.font.size = Pt(9)
+    run_title.font.size = Pt(10)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_txt.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
-    run_sub.font.size = Pt(6)
+    run_sub.font.size = Pt(6.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     # Info No, Tanggal, Bakul, Group di Kanan
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(14)
+    p_r.paragraph_format.space_before = Pt(18)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
     info_text = f"No: {no_bakul}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     r_info = p_r.add_run(info_text)
     r_info.font.name = "Courier New"
-    r_info.font.size = Pt(6.5)
+    r_info.font.size = Pt(7)
 
     p_spacer = doc.add_paragraph()
     p_spacer.paragraph_format.space_before = Pt(1)
@@ -166,8 +166,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    # Disesuaikan agar muat di kertas 105mm
-    col_widths = [Mm(38), Mm(17), Mm(22), Mm(22)]
+    col_widths = [Mm(50), Mm(22), Mm(30), Mm(30)]
     headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.LEFT,
@@ -182,7 +181,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "EAEAEA")
-        set_cell_margins(hdr_cells[i], top=10, bottom=10, left=12, right=12)
+        set_cell_margins(hdr_cells[i], top=11, bottom=11, left=14, right=14)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
@@ -190,7 +189,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
         r = p.add_run(h_text)
         r.bold = True
         r.font.name = "Courier New"
-        r.font.size = Pt(7.5)
+        r.font.size = Pt(8)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -210,21 +209,21 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
         vals = [f" {item['Nama Barang']}", kg_str, h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=10, bottom=10, left=12, right=12)
+            set_cell_margins(row_cells[i], top=11, bottom=11, left=14, right=14)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
             r.font.name = "Courier New"
-            r.font.size = Pt(7.5)
+            r.font.size = Pt(8)
 
     # 3. TOTAL & TANDA TANGAN
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
 
-    f_widths = [Mm(52), Mm(44)]
+    f_widths = [Mm(75), Mm(60)]
     for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
             cell.width = f_widths[i]
@@ -240,13 +239,13 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     r_lbl = p_f0_r.add_run("TOTAL : ")
     r_lbl.bold = True
     r_lbl.font.name = "Courier New"
-    r_lbl.font.size = Pt(8.5)
+    r_lbl.font.size = Pt(9)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_f0_r.add_run(tot_str)
     r_tot.bold = True
     r_tot.font.name = "Courier New"
-    r_tot.font.size = Pt(11)
+    r_tot.font.size = Pt(12)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
     # BARIS 1: PENERIMA & HORMAT KAMI
@@ -258,7 +257,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
-    r_sl.font.size = Pt(7)
+    r_sl.font.size = Pt(7.5)
 
     p_f1_r = cell_f1_r.paragraphs[0]
     p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -266,31 +265,31 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
-    r_sr.font.size = Pt(7)
+    r_sr.font.size = Pt(7.5)
 
     # BARIS 2: TANDA TANGAN
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_l.paragraph_format.space_before = Pt(22)
+    p_f2_l.paragraph_format.space_before = Pt(24)
     p_f2_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f2_l.add_run("( ........... )")
     r_tl.font.name = "Courier New"
-    r_tl.font.size = Pt(7)
+    r_tl.font.size = Pt(7.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_r.paragraph_format.space_before = Pt(22)
+    p_f2_r.paragraph_format.space_before = Pt(24)
     p_f2_r.paragraph_format.space_after = Pt(0)
     r_tr = p_f2_r.add_run("( ........... )")
     r_tr.font.name = "Courier New"
-    r_tr.font.size = Pt(7)
+    r_tr.font.size = Pt(7.5)
 
     target_stream = io.BytesIO()
     doc.save(target_stream)
     return target_stream.getvalue()
-
+    
 def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     width = 720
     pad = 20
