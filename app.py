@@ -83,12 +83,12 @@ def set_table_borders(table):
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Mm(140)
-    section.page_height = Mm(100)
-    section.top_margin = Mm(5)
-    section.bottom_margin = Mm(5)
-    section.left_margin = Mm(5)
-    section.right_margin = Mm(5)
+    section.page_width = Mm(130)
+    section.page_height = Mm(105)
+    section.top_margin = Mm(3)
+    section.bottom_margin = Mm(3)
+    section.left_margin = Mm(1)
+    section.right_margin = Mm(8)
 
     # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
