@@ -527,6 +527,7 @@ default_harga = {
     "usus": 16500,
     "telur_a": 269000,
     "telur_b": 150000,
+    "telur_bt": 150000,
     "peti": 6000,
     "box": 160000,
 }
@@ -595,6 +596,7 @@ with st.sidebar:
         h_usus = input_harga("Harga Usus", "usus", 16500, 500)
         h_telur_a = input_harga("Harga Telur A", "telur_a", 269000, 1000)
         h_telur_b = input_harga("Harga Telur B", "telur_b", 250000, 1000)
+        h_telur_bt = input_harga("Harga Telur BT", "telur_bt", 150000, 1000)
         h_peti = input_harga("Harga Peti", "peti", 2000, 100)
         h_box = input_harga("Harga Box", "box", 28500, 500)
 
@@ -604,6 +606,7 @@ with st.sidebar:
             "usus": h_usus,
             "telur_a": h_telur_a,
             "telur_b": h_telur_b,
+            "telur_bt": h_telur_bt,
             "peti": h_peti,
             "box": h_box,
         }
@@ -729,6 +732,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         st.session_state["qty_peti_val"] = 0.0
                         st.session_state["qty_box_val"] = 0.0
                         st.session_state["qty_telur_b_val"] = 0.0
+                        st.session_state["qty_telur_bt_val"] = 0.0
 
                     row_bakul = df.loc[real_idx]
 
@@ -742,7 +746,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         except Exception:
                             return 0.0
 
-                    col_in1, col_in2, col_in3 = st.columns(3)
+                    col_in1, col_in2, col_in3, col_in4 = st.columns(4)
                     with col_in1:
                         qty_peti = st.number_input(
                             "Jumlah Peti", key="qty_peti_val", step=1
@@ -754,6 +758,10 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     with col_in3:
                         qty_telur_b_manual = st.number_input(
                             "Jumlah Telur B", key="qty_telur_b_val", step=1
+                        )
+                    with col_in4:
+                        qty_telur_bt_manual = st.number_input(
+                            "Jumlah Telur BT", key="qty_telur_bt_val", step=1
                         )
 
                     qty_tonase = get_valid_float(
@@ -780,11 +788,21 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         else qty_telur_b_manual
                     )
 
+                    qty_telur_bt_excel = get_valid_float(
+                        next((c for c in df.columns if "TELUR BT" in c), "")
+                    )
+                    qty_telur_bt = (
+                        qty_telur_bt_excel
+                        if qty_telur_bt_excel > 0
+                        else qty_telur_bt_manual
+                    )
+
                     tot_glondong = qty_tonase * h_glondong
                     tot_jeroan = qty_jeroan * h_jeroan
                     tot_usus = qty_usus * h_usus
                     tot_telur_a = qty_telur_a * h_telur_a
                     tot_telur_b = qty_telur_b * h_telur_b
+                    tot_telur_bt = qty_telur_bt * h_telur_bt
                     tot_peti = qty_peti * h_peti
                     tot_box = qty_box * h_box
 
@@ -794,6 +812,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         + tot_usus
                         + tot_telur_a
                         + tot_telur_b
+                        + tot_telur_bt
                         + tot_peti
                         + tot_box
                     )
@@ -828,6 +847,12 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             "KG": qty_telur_b,
                             "Harga": h_telur_b,
                             "Jumlah": tot_telur_b,
+                        },
+                        {
+                            "Nama Barang": "TELUR BT",
+                            "KG": qty_telur_bt,
+                            "Harga": h_telur_bt,
+                            "Jumlah": tot_telur_bt,
                         },
                         {
                             "Nama Barang": "PETI",
@@ -1072,12 +1097,14 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 kg_telur_a = get_val_from_row("TELUR")
 
                             kg_telur_b = get_val_from_row("TELUR B")
+                            kg_telur_bt = get_val_from_row("TELUR BT")
 
                             tot_glondong = kg_tonase * h_glondong
                             tot_jeroan = kg_jeroan * h_jeroan
                             tot_usus = kg_usus * h_usus
                             tot_telur_a = kg_telur_a * h_telur_a
                             tot_telur_b = kg_telur_b * h_telur_b
+                            tot_telur_bt = kg_telur_bt * h_telur_bt
 
                             tot_bayar = (
                                 tot_glondong
@@ -1085,6 +1112,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 + tot_usus
                                 + tot_telur_a
                                 + tot_telur_b
+                                + tot_telur_bt
                             )
 
                             items = [
@@ -1117,6 +1145,12 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     "KG": kg_telur_b,
                                     "Harga": h_telur_b,
                                     "Jumlah": tot_telur_b,
+                                },
+                                {
+                                    "Nama Barang": "TELUR BT",
+                                    "KG": kg_telur_bt,
+                                    "Harga": h_telur_bt,
+                                    "Jumlah": tot_telur_bt,
                                 },
                             ]
 
