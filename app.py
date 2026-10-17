@@ -104,7 +104,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
 
     cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM  # Disejajarkan ke bawah agar rata dengan teks nama toko/alamat
 
     tbl_brand = cell_l.add_table(rows=1, cols=2)
     tbl_brand.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -143,10 +143,10 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
-    # Info Tanggal, Bakul, Group di Kanan (Diturunkan lebih pas sejajar judul AYAM SEGAR TUMPANG)
+    # Info Tanggal, Bakul, Group di Kanan (Diturunkan pas sejajar judul & alamat)
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(16)  # Ditambah dari Pt(6) ke Pt(16) agar lebih turun sejajar
+    p_r.paragraph_format.space_before = Pt(26)  # Ditambah menjadi Pt(26) agar turun pas sejajar
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
@@ -353,9 +353,9 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         font=font_small,
     )
 
-    draw.text((x_end - 200, pad + 10), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 200, pad + 25), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 200, pad + 40), f"Group: {group}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 37), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 52), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
     y_tbl = pad + header_h
     tbl_header_height = tbl_header_h
