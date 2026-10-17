@@ -5,6 +5,7 @@ import json
 import os
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.worksheet.pagebreak import Break
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -289,7 +290,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul="", start_row=1):
-    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape 14x10cm (Tanpa paksa 1 halaman penuh)"""
+    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape 14x10cm"""
     font_family = "Courier New"
     f_title = Font(name=font_family, size=11, bold=True, color="C62828")
     f_sub = Font(name=font_family, size=8, color="5A5A5A")
@@ -411,7 +412,7 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
     cTR.font = f_sig
     cTR.alignment = a_center
 
-    # Print Setup (Landscape, No Force Fit to 1 Page agar per nota tampil normal per halaman)
+    # Print Setup
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.paperSize = ws.PAPERSIZE_A5
     ws.page_setup.fitToPage = False
@@ -1177,7 +1178,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     start_row=current_start_row,
                                 )
                                 
-                                ws_bulk.row_breaks.append(openpyxl.worksheet.pagebreak.RowBreak(r=next_row - 1))
+                                # TAMBAHKAN PAGE BREAK DENGAN SINTAKS HAFALAN OPENPYXL YANG BENAR
+                                ws_bulk.row_breaks.append(Break(id=next_row - 1))
                                 
                                 current_start_row = next_row + 2
                                 total_processed += 1
