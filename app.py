@@ -86,12 +86,12 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     section = doc.sections[0]
     
     # Landscape: 5.83" x 4.13" (148mm x 105mm)
-    section.page_width = Mm(130)
+    section.page_width = Mm(148)
     section.page_height = Mm(105)
     section.top_margin = Mm(5)
     section.bottom_margin = Mm(5)
     section.left_margin = Mm(1)
-    section.right_margin = Mm(5)
+    section.right_margin = Mm(4)
 
     # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
