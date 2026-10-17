@@ -289,7 +289,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul="", start_row=1):
-    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape 14x10cm"""
+    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape 14x10cm (Tanpa paksa 1 halaman penuh)"""
     font_family = "Courier New"
     f_title = Font(name=font_family, size=11, bold=True, color="C62828")
     f_sub = Font(name=font_family, size=8, color="5A5A5A")
@@ -411,12 +411,10 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
     cTR.font = f_sig
     cTR.alignment = a_center
 
-    # Print Setup
+    # Print Setup (Landscape, No Force Fit to 1 Page agar per nota tampil normal per halaman)
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.paperSize = ws.PAPERSIZE_A5
-    ws.page_setup.fitToPage = True
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 1
+    ws.page_setup.fitToPage = False
     ws.sheet_view.showGridLines = True
 
     return r + 3
@@ -1178,6 +1176,10 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     no_bakul=no_val,
                                     start_row=current_start_row,
                                 )
+                                
+                                # TAMBAHKAN PAGE BREAK AGAR 1 NOTA TAMPIL PER HALAMAN SAAT DIPRINT
+                                ws_bulk.page_breaks.append(openpyxl.worksheet.pagebreak.Break(id=next_row - 1))
+                                
                                 current_start_row = next_row + 2
                                 total_processed += 1
 
@@ -1209,6 +1211,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
         else:
             st.info("💡 Silakan upload file Rekap Excel untuk memproses nota.")
     else:
-        st.info(f"Fitur untuk Nota {sub_menu} siap dikembangkan.")
+        st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
 else:
     st.info(f"Halaman {selected_menu} sedang dalam pengembangan.")
