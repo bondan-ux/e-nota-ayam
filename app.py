@@ -290,7 +290,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul="", start_row=1):
-    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape 14x10cm"""
+    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape (Tanpa set paperSize yang memaksa ganti halaman printer)"""
     font_family = "Courier New"
     f_title = Font(name=font_family, size=11, bold=True, color="C62828")
     f_sub = Font(name=font_family, size=8, color="5A5A5A")
@@ -412,9 +412,8 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
     cTR.font = f_sig
     cTR.alignment = a_center
 
-    # Print Setup
+    # Print Setup (Landscape, bebas dari ukuran A5 bawaan agar mengikuti form printer)
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
-    ws.page_setup.paperSize = ws.PAPERSIZE_A5
     ws.page_setup.fitToPage = False
     ws.sheet_view.showGridLines = True
 
@@ -539,8 +538,8 @@ if not st.session_state.logged_in:
 FILE_HARGA = "master_harga.json"
 default_harga = {
     "glondong": 28500,
-    "jeroan": 8000,
-    "usus": 17500,
+    "jeroan": 10000,
+    "usus": 16500,
     "telur_a": 269000,
     "telur_b": 150000,
     "telur_bt": 150000,
@@ -1178,7 +1177,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     start_row=current_start_row,
                                 )
                                 
-                                # TAMBAHKAN PAGE BREAK DENGAN SINTAKS HAFALAN OPENPYXL YANG BENAR
+                                # TAMBAHKAN PAGE BREAK AGAR MASING-MASING NOTA TERPISAH HALAMAN DENGAN PAS
                                 ws_bulk.row_breaks.append(Break(id=next_row - 1))
                                 
                                 current_start_row = next_row + 2
