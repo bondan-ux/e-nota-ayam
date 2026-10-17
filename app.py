@@ -163,7 +163,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(50), Mm(22), Mm(29), Mm(29)]
+    col_widths = [Mm(42), Mm(22), Mm(29), Mm(29)]
     headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.LEFT,
