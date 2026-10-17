@@ -143,9 +143,10 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
+    # Info Tanggal, Bakul, Group di Kanan (DITURUNKAN DENGAN SPASI ATAS AGAR SEJAJAR NAMA TOKO)
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(0)
+    p_r.paragraph_format.space_before = Pt(6)  # Diturunkan sedikit agar sejajar tulisan AYAM SEGAR TUMPANG
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
@@ -216,7 +217,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    # 3. TOTAL & TANDA TANGAN (STRUKTUR 3 BARIS UTK SEJAJAR PRESISI)
+    # 3. TOTAL & TANDA TANGAN (SEJAJAR PERSIS)
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
@@ -246,7 +247,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
-    # BARIS 1: PENERIMA (KIRI) & HORMAT KAMI (KANAN) - SEJAJAR PERSIS!
+    # BARIS 1: PENERIMA (KIRI) & HORMAT KAMI (KANAN) - SEJAJAR PERSIS
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
@@ -264,7 +265,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(6.5)
 
-    # BARIS 2: TANDA TANGAN (KIRI & KANAN) - SEJAJAR PERSIS!
+    # BARIS 2: TANDA TANGAN (KIRI & KANAN) - SEJAJAR PERSIS
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
