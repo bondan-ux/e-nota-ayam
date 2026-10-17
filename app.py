@@ -1177,8 +1177,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     start_row=current_start_row,
                                 )
                                 
-                                # TAMBAHKAN PAGE BREAK AGAR 1 NOTA TAMPIL PER HALAMAN SAAT DIPRINT
-ws_bulk.row_breaks.append(openpyxl.worksheet.pagebreak.RowBreak(id=next_row - 1))
+                                ws_bulk.row_breaks.append(openpyxl.worksheet.pagebreak.RowBreak(r=next_row - 1))
                                 
                                 current_start_row = next_row + 2
                                 total_processed += 1
