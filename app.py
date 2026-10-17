@@ -104,7 +104,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
 
     cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM  # Disejajarkan ke bawah agar rata dengan teks nama toko/alamat
+    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
 
     tbl_brand = cell_l.add_table(rows=1, cols=2)
     tbl_brand.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -143,10 +143,10 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
-    # Info Tanggal, Bakul, Group di Kanan (Diturunkan pas sejajar judul & alamat)
+    # Info Tanggal, Bakul, Group di Kanan
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(26)  # Ditambah menjadi Pt(26) agar turun pas sejajar
+    p_r.paragraph_format.space_before = Pt(26)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
@@ -251,7 +251,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
-    p_f1_l.paragraph_format.space_before = Pt(0)
+    p_f1_l.paragraph_format.space_before = Pt(4)
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
@@ -259,27 +259,27 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     p_f1_r = cell_f1_r.paragraphs[0]
     p_f1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_f1_r.paragraph_format.space_before = Pt(0)
+    p_f1_r.paragraph_format.space_before = Pt(4)
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(6.5)
 
-    # BARIS 2: TANDA TANGAN (KIRI & KANAN) - SEJAJAR PERSIS
+    # BARIS 2: TANDA TANGAN (SPASI DIPELEBAR DARI Pt(12) KE Pt(26))
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
-    p_f2_l.paragraph_format.space_before = Pt(12)
+    p_f2_l.paragraph_format.space_before = Pt(26)  # Jarak spasi lebih lebar
     p_f2_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_f2_l.add_run("( .................. )")
+    r_tl = p_f2_l.add_run("( ................ )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_f2_r.paragraph_format.space_before = Pt(12)
+    p_f2_r.paragraph_format.space_before = Pt(26)  # Jarak spasi lebih lebar
     p_f2_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_f2_r.add_run("( .................. )")
+    r_tr = p_f2_r.add_run("( ................ )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
@@ -297,7 +297,7 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     row_h = 34
     num_items = len(items)
 
-    height = pad + header_h + 10 + tbl_header_h + (num_items * row_h) + 15 + 50 + pad
+    height = pad + header_h + 10 + tbl_header_h + (num_items * row_h) + 15 + 65 + pad
 
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
@@ -411,8 +411,8 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     draw.text((x_start + 10, y_ftr_sig), "Penerima,", fill=(0, 0, 0), font=font_small)
     draw.text((x_start + 220, y_ftr_sig), "Hormat Kami,", fill=(0, 0, 0), font=font_small)
-    draw.text((x_start, y_ftr_sig + 32), "( ............................ )", fill=(0, 0, 0), font=font_small)
-    draw.text((x_start + 200, y_ftr_sig + 32), "( ............................ )", fill=(0, 0, 0), font=font_small)
+    draw.text((x_start, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
+    draw.text((x_start + 200, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     draw.text((x_end - 260, y_ftr_sig + 4), "TOTAL :", fill=(0, 0, 0), font=font_bold)
