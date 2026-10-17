@@ -5,7 +5,6 @@ import json
 import os
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.worksheet.pagebreak import Break
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -290,7 +289,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul="", start_row=1):
-    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape (Tanpa set paperSize yang memaksa ganti halaman printer)"""
+    """Menyusun 1 Nota Data Asli lengkap dengan rumus Excel & Layout Landscape Presisi"""
     font_family = "Courier New"
     f_title = Font(name=font_family, size=11, bold=True, color="C62828")
     f_sub = Font(name=font_family, size=8, color="5A5A5A")
@@ -412,12 +411,12 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
     cTR.font = f_sig
     cTR.alignment = a_center
 
-    # Print Setup (Landscape, bebas dari ukuran A5 bawaan agar mengikuti form printer)
+    # Print Setup (Landscape, hilangkan paksaan paperSize agar tidak bikin double page break)
     ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
     ws.page_setup.fitToPage = False
     ws.sheet_view.showGridLines = True
 
-    return r + 3
+    return r + 2
 
 
 def generate_excel_nota_satuan(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
@@ -1166,7 +1165,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             filtered_items = [i for i in items if i["KG"] > 0]
 
                             if filtered_items:
-                                next_row = write_single_excel_nota(
+                                write_single_excel_nota(
                                     ws=ws_bulk,
                                     tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                                     bakul=nama_bakul,
@@ -1177,10 +1176,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     start_row=current_start_row,
                                 )
                                 
-                                # TAMBAHKAN PAGE BREAK AGAR MASING-MASING NOTA TERPISAH HALAMAN DENGAN PAS
-                                ws_bulk.row_breaks.append(Break(id=next_row - 1))
-                                
-                                current_start_row = next_row + 2
+                                # RENTANG JARAK FIXED SETIAP 18 BARIS PER NOTA
+                                current_start_row += 18
                                 total_processed += 1
 
                     if total_processed > 0:
