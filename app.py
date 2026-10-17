@@ -159,16 +159,16 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_spacer.paragraph_format.space_before = Pt(1)
     p_spacer.paragraph_format.space_after = Pt(1)
 
-    # 2. TABEL BARANG
+    # 2. TABEL BARANG (BARANG di kolom 1, QTY di kolom 2)
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(20), Mm(46), Mm(27), Mm(27)]
-    headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
+    col_widths = [Mm(46), Mm(20), Mm(27), Mm(27)]
+    headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     alignments = [
-        WD_ALIGN_PARAGRAPH.CENTER,
         WD_ALIGN_PARAGRAPH.LEFT,
+        WD_ALIGN_PARAGRAPH.CENTER,
         WD_ALIGN_PARAGRAPH.RIGHT,
         WD_ALIGN_PARAGRAPH.RIGHT,
     ]
@@ -204,7 +204,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
-        vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
+        vals = [f" {item['Nama Barang']}", kg_str, h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
             set_cell_margins(row_cells[i], top=12, bottom=12, left=15, right=15)
@@ -371,16 +371,17 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
         width=2
     )
 
-    col1_w = x_start + 105
-    col2_w = x_start + 330
+    # Kolom: BARANG | QTY / KG | HARGA | JUMLAH
+    col1_w = x_start + 220
+    col2_w = x_start + 320
     col3_w = x_start + 500
 
     draw.line([(col1_w, y_tbl), (col1_w, y_tbl + tbl_header_height)], fill=(0, 0, 0), width=2)
     draw.line([(col2_w, y_tbl), (col2_w, y_tbl + tbl_header_height)], fill=(0, 0, 0), width=2)
     draw.line([(col3_w, y_tbl), (col3_w, y_tbl + tbl_header_height)], fill=(0, 0, 0), width=2)
 
-    draw.text((x_start + 10, y_tbl + 10), "QTY / KG", fill=(0, 0, 0), font=font_bold)
-    draw.text((col1_w + 12, y_tbl + 10), "BARANG", fill=(0, 0, 0), font=font_bold)
+    draw.text((x_start + 12, y_tbl + 10), "BARANG", fill=(0, 0, 0), font=font_bold)
+    draw.text((col1_w + 12, y_tbl + 10), "QTY / KG", fill=(0, 0, 0), font=font_bold)
     draw.text((col2_w + 12, y_tbl + 10), "HARGA", fill=(0, 0, 0), font=font_bold)
     draw.text((col3_w + 12, y_tbl + 10), "JUMLAH", fill=(0, 0, 0), font=font_bold)
 
@@ -404,8 +405,8 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
 
-        draw.text((x_start + 12, y_curr + 10), kg_str, fill=(0, 0, 0), font=font_regular)
-        draw.text((col1_w + 12, y_curr + 10), item["Nama Barang"], fill=(0, 0, 0), font=font_regular)
+        draw.text((x_start + 12, y_curr + 10), item["Nama Barang"], fill=(0, 0, 0), font=font_regular)
+        draw.text((col1_w + 12, y_curr + 10), kg_str, fill=(0, 0, 0), font=font_regular)
         draw.text((col2_w + 12, y_curr + 10), h_str, fill=(0, 0, 0), font=font_regular)
         draw.text((col3_w + 12, y_curr + 10), j_str, fill=(0, 0, 0), font=font_regular)
         y_curr += row_height
@@ -903,14 +904,19 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                         else str(item["KG"])
                                     )
                                 )
-                                rows_html += f"<tr><td style='text-align: center;'>{kg_str}</td><td>{item['Nama Barang']}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(
+                                rows_html += f"<tr><td>{item['Nama Barang']}</td><td style='text-align: center;'>{kg_str}</td><td style='text-align: right;'>Rp {item['Harga']:,.0f}</td><td style='text-align: right;'>Rp {item['Jumlah']:,.0f}</td></tr>".replace(
                                     ",", "."
                                 )
 
                             st.markdown(
                                 f"""
                                 <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-                                    <thead><tr><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th><th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th></tr></thead>
+                                    <thead><tr>
+                                        <th style="border:1px solid #000; padding:6px; background:#f2f2f2;">BARANG</th>
+                                        <th style="border:1px solid #000; padding:6px; background:#f2f2f2;">QTY / KG</th>
+                                        <th style="border:1px solid #000; padding:6px; background:#f2f2f2;">HARGA</th>
+                                        <th style="border:1px solid #000; padding:6px; background:#f2f2f2;">JUMLAH</th>
+                                    </tr></thead>
                                     <tbody>{rows_html}</tbody>
                                 </table>
                                 <div style="text-align:right; margin-top:10px; font-weight:bold;">
