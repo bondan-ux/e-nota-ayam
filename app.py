@@ -81,7 +81,7 @@ def set_table_borders(table):
     tblPr.append(borders)
 
 
-def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
+def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     doc = Document()
     section = doc.sections[0]
     section.page_width = Mm(130)
@@ -143,16 +143,15 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     run_sub.font.size = Pt(6.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
-    # Info Tanggal, Bakul, Group di Kanan
+    # Info No, Tanggal, Bakul, Group di Kanan
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(26)
+    p_r.paragraph_format.space_before = Pt(18)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
-    r_info = p_r.add_run(
-        f"Tanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
-    )
+    info_text = f"No: {no_bakul}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
+    r_info = p_r.add_run(info_text)
     r_info.font.name = "Courier New"
     r_info.font.size = Pt(7)
 
@@ -251,7 +250,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
-    p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← digeser ke kanan (ke tengah)
+    p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f1_l.paragraph_format.space_before = Pt(4)
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
@@ -259,7 +258,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_sl.font.size = Pt(7.5)
 
     p_f1_r = cell_f1_r.paragraphs[0]
-    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← digeser ke kiri sedikit (ke tengah)
+    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f1_r.paragraph_format.space_before = Pt(4)
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
@@ -270,7 +269,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
-    p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← ikut ke tengah
+    p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f2_l.paragraph_format.space_before = Pt(26)
     p_f2_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f2_l.add_run("( ........... )")
@@ -278,7 +277,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_tl.font.size = Pt(7.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
-    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER          # ← ikut ke tengah
+    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f2_r.paragraph_format.space_before = Pt(26)
     p_f2_r.paragraph_format.space_after = Pt(0)
     r_tr = p_f2_r.add_run("( ........... )")
@@ -289,11 +288,12 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     doc.save(target_stream)
     return target_stream.getvalue()
 
-def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
+
+def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     width = 720
     pad = 20
 
-    header_h = 100
+    header_h = 110
     tbl_header_h = 38
     row_h = 38
     num_items = len(items)
@@ -354,9 +354,11 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
         font=font_small,
     )
 
-    draw.text((x_end - 210, pad + 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 210, pad + 38), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 210, pad + 54), f"Group: {group}", fill=(0, 0, 0), font=font_small)
+    # No di atas Tanggal
+    draw.text((x_end - 210, pad + 16), f"No: {no_bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 210, pad + 32), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 210, pad + 48), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 210, pad + 64), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
     y_tbl = pad + header_h
     tbl_header_height = tbl_header_h
@@ -707,16 +709,17 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             no_val = no_val[:-2]
                         label = f"{no_val}. {nama_bakul}"
                     else:
+                        no_val = str(idx)
                         label = f"{idx}. {nama_bakul}"
 
                     bakul_options.append(label)
-                    bakul_map[label] = (nama_bakul, real_idx)
+                    bakul_map[label] = (nama_bakul, real_idx, no_val)
 
                 selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
                 selected_bakul_info = bakul_map.get(selected_bakul_label, None)
 
                 if selected_bakul_info:
-                    selected_bakul, real_idx = selected_bakul_info
+                    selected_bakul, real_idx, no_bakul = selected_bakul_info
 
                     if (
                         "last_bakul" not in st.session_state
@@ -857,10 +860,10 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 )
                             with col_r:
                                 st.markdown(
-                                    f"<div style='text-align:right;'><small><b>Tanggal:</b>"
-                                    f" {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b>"
-                                    f" {selected_bakul}<br><b>Group:</b>"
-                                    f" {selected_sheet}</small></div>",
+                                    f"<div style='text-align:right;'><small><b>No:</b> {no_bakul}<br>"
+                                    f"<b>Tanggal:</b> {tanggal_transaksi.strftime('%d-%m-%Y')}<br>"
+                                    f"<b>Bakul:</b> {selected_bakul}<br>"
+                                    f"<b>Group:</b> {selected_sheet}</small></div>",
                                     unsafe_allow_html=True,
                                 )
 
@@ -902,6 +905,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 items=filtered_items,
                                 total_bayar=total_bayar,
                                 logo_path=logo_filename,
+                                no_bakul=no_bakul,
                             )
                             st.download_button(
                                 label="📝 Download Nota Word (.docx)",
@@ -923,6 +927,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 items=filtered_items,
                                 total_bayar=total_bayar,
                                 logo_path=logo_filename,
+                                no_bakul=no_bakul,
                             )
                             st.download_button(
                                 label="🖼️ Download Nota Gambar (.png)",
@@ -1015,12 +1020,29 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
+                        # Cari kolom NO di sheet ini
+                        no_col_sheet = next(
+                            (c for c in df_s.columns if c in ["NO", "NO.", "NOMOR"]), None
+                        )
+
                         ws.column_dimensions["A"].width = 50
 
                         row_position = 2
 
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
+
+                            # Ambil nomor urut dari Excel
+                            if (
+                                no_col_sheet
+                                and pd.notna(row[no_col_sheet])
+                                and str(row[no_col_sheet]).strip() != ""
+                            ):
+                                no_val = str(row[no_col_sheet]).strip()
+                                if no_val.endswith(".0"):
+                                    no_val = no_val[:-2]
+                            else:
+                                no_val = ""
 
                             def get_val_from_row(c_keyword):
                                 try:
@@ -1108,6 +1130,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     items=filtered_items,
                                     total_bayar=tot_bayar,
                                     logo_path=logo_filename,
+                                    no_bakul=no_val,
                                 )
 
                                 img_obj = Image.open(io.BytesIO(img_bytes)).convert("RGB")
