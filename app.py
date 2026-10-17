@@ -217,12 +217,12 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    # 3. TOTAL & TANDA TANGAN (3 BARIS UTK SEJAJAR PRESISI)
+    # 3. TOTAL & TANDA TANGAN (POSISI TEKS DITENGAHKAN SAMA BESAR DENGAN TITIK-TITIK)
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
 
-    f_widths = [Mm(65), Mm(55)]
+    f_widths = [Mm(60), Mm(60)]
     for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
             cell.width = f_widths[i]
@@ -247,10 +247,11 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
-    # BARIS 1: PENERIMA (KIRI) & HORMAT KAMI (KANAN) - SEJAJAR PERSIS
+    # BARIS 1: PENERIMA & HORMAT KAMI (DITENGAHKAN / CENTER)
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
     p_f1_l = cell_f1_l.paragraphs[0]
+    p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
     p_f1_l.paragraph_format.space_before = Pt(4)
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
@@ -258,28 +259,29 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     r_sl.font.size = Pt(6.5)
 
     p_f1_r = cell_f1_r.paragraphs[0]
-    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
     p_f1_r.paragraph_format.space_before = Pt(4)
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(6.5)
 
-    # BARIS 2: TANDA TANGAN
+    # BARIS 2: TANDA TANGAN (DITENGAHKAN / CENTER)
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
+    p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
     p_f2_l.paragraph_format.space_before = Pt(26)
     p_f2_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_f2_l.add_run("( .................... )")
+    r_tl = p_f2_l.add_run("( ............................ )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
-    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
     p_f2_r.paragraph_format.space_before = Pt(26)
     p_f2_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_f2_r.add_run("( .................... )")
+    r_tr = p_f2_r.add_run("( ............................ )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
@@ -410,10 +412,14 @@ def generate_image_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_pat
 
     y_ftr_sig = y_curr + 15
 
-    draw.text((x_start + 10, y_ftr_sig), "Penerima,", fill=(0, 0, 0), font=font_small)
-    draw.text((x_start + 220, y_ftr_sig), "Hormat Kami,", fill=(0, 0, 0), font=font_small)
-    draw.text((x_start, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
-    draw.text((x_start + 200, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
+    # DITENGAHKAN TERHADAP AREA TANDA TANGAN (KIRI & KANAN)
+    x_center_left = x_start + 100
+    x_center_right = x_start + 320
+
+    draw.text((x_center_left, y_ftr_sig), "Penerima,", fill=(0, 0, 0), font=font_small, anchor="mm")
+    draw.text((x_center_right, y_ftr_sig), "Hormat Kami,", fill=(0, 0, 0), font=font_small, anchor="mm")
+    draw.text((x_center_left, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small, anchor="mm")
+    draw.text((x_center_right, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small, anchor="mm")
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     draw.text((x_end - 260, y_ftr_sig + 4), "TOTAL :", fill=(0, 0, 0), font=font_bold)
@@ -697,7 +703,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     if not nama_bakul:
                         continue
 
-                    # Ambil nomor urut dari kolom Excel jika ada, jika tidak pakai index loop (idx)
                     no_urut_val = idx
                     if (
                         no_col
