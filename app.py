@@ -44,6 +44,61 @@ bg_base64 = get_base64_image("back.jpg")
 # ==========================================
 # 2. HELPER GENERATOR WORD & GAMBAR NOTA
 # ==========================================
+def add_image_in_front_of_text(run, image_path, width_mm, height_mm):
+    """Menambahkan gambar ke dalam Run dengan layout 'In Front of Text' (Floating Anchor)."""
+    inline = run.add_picture(image_path, width=Mm(width_mm))._r.xpath('.//a:blip')[0]
+    embed_id = inline.attrib[f'{{{nsdecls("r")}}}embed']
+
+    cx = int(width_mm * 360000)
+    cy = int(height_mm * 360000)
+
+    anchor_xml = f"""
+    <wp:anchor {nsdecls('wp', 'r', 'a', 'pic')} distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251658240" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">
+        <wp:simplePos x="0" y="0"/>
+        <wp:positionH relativeFrom="column">
+            <wp:posOffset>0</wp:posOffset>
+        </wp:positionH>
+        <wp:positionV relativeFrom="paragraph">
+            <wp:posOffset>0</wp:posOffset>
+        </wp:positionV>
+        <wp:extent cx="{cx}" cy="{cy}"/>
+        <wp:effectExtent l="0" t="0" r="0" b="0"/>
+        <wp:wrapNone/>
+        <wp:docPr id="1" name="LogoAST"/>
+        <wp:cNvGraphicFramePr>
+            <a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+        </wp:cNvGraphicFramePr>
+        <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                    <pic:nvPicPr>
+                        <pic:cNvPr id="0" name="LogoAST"/>
+                        <pic:cNvPicPr/>
+                    </pic:nvPicPr>
+                    <pic:blipFill>
+                        <a:blip r:embed="{embed_id}"/>
+                        <a:stretch>
+                            <a:fillRect/>
+                        </a:stretch>
+                    </pic:blipFill>
+                    <pic:spPr>
+                        <a:xfrm>
+                            <a:off x="0" y="0"/>
+                            <a:ext cx="{cx}" cy="{cy}"/>
+                        </a:xfrm>
+                        <a:prstGeom prst="rect">
+                            <a:avLst/>
+                        </a:prstGeom>
+                    </pic:spPr>
+                </pic:pic>
+            </a:graphicData>
+        </a:graphic>
+    </wp:anchor>
+    """
+    drawing = parse_xml(anchor_xml)
+    run._r.append(drawing)
+
+
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
@@ -91,61 +146,45 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     section.left_margin = Mm(5)
     section.right_margin = Mm(5)
 
-    # ==========================================
-    # 1. HEADER (Logo + Nama | Tanggal/Bakul/Group) - SEJAJAR
-    # ==========================================
+    # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(70)
-    cell_r.width = Mm(50)
+    cell_l.width = Mm(65)
+    cell_r.width = Mm(55)
 
-    # Nol-kan margin
     set_cell_margins(cell_l, top=0, bottom=0, left=0, right=0)
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
+
     cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
     cell_r.vertical_alignment = WD_ALIGN_VERTICAL.TOP
 
-    # --- KIRI: Logo + Nama Toko (sejajar horizontal) ---
-    tbl_brand = cell_l.add_table(rows=1, cols=2)
-    tbl_brand.autofit = False
-    brand_c1, brand_c2 = tbl_brand.rows[0].cells
-    brand_c1.width = Mm(11)
-    brand_c2.width = Mm(59)
+    # Header Kiri: Teks ditarik dengan tab/indent agar menyisakan ruang untuk Logo (In Front of Text)
+    p_l = cell_l.paragraphs[0]
+    p_l.paragraph_format.space_before = Pt(0)
+    p_l.paragraph_format.space_after = Pt(0)
+    p_l.paragraph_format.line_spacing = 1.05
+    p_l.paragraph_format.left_indent = Mm(11)  # Geser teks ke kanan sejauh 11mm untuk tempat logo
 
-    set_cell_margins(brand_c1, top=0, bottom=0, left=0, right=0)
-    set_cell_margins(brand_c2, top=0, bottom=0, left=0, right=0)
-    brand_c1.vertical_alignment = WD_ALIGN_VERTICAL.CENTER   # Logo center vertikal
-    brand_c2.vertical_alignment = WD_ALIGN_VERTICAL.CENTER   # Teks center vertikal
-
-    # Logo
-    p_logo = brand_c1.paragraphs[0]
-    p_logo.paragraph_format.space_before = Pt(0)
-    p_logo.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
-        run_img = p_logo.add_run()
-        run_img.add_picture(logo_path, width=Mm(9.5))
+        run_logo = p_l.add_run()
+        # Sisipkan gambar secara Floating / In Front of Text
+        add_image_in_front_of_text(run_logo, logo_path, width_mm=9.5, height_mm=9.5)
 
-    # Nama Toko + Alamat
-    p_brand = brand_c2.paragraphs[0]
-    p_brand.paragraph_format.space_before = Pt(0)
-    p_brand.paragraph_format.space_after = Pt(0)
-    p_brand.paragraph_format.line_spacing = 1.0
-
-    run_title = p_brand.add_run("AYAM SEGAR TUMPANG\n")
+    run_title = p_l.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
     run_title.font.size = Pt(8.5)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
-    run_sub = p_brand.add_run("Ds. Kambingan - Tumpang - Malang")
+    run_sub = p_l.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
-    # --- KANAN: Info Tanggal, Bakul, Group ---
+    # Header Kanan: Info Tanggal, Bakul, Group
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_r.paragraph_format.space_before = Pt(0)
@@ -158,14 +197,11 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_info.font.name = "Courier New"
     r_info.font.size = Pt(6)
 
-    # Spacer kecil
     p_spacer = doc.add_paragraph()
-    p_spacer.paragraph_format.space_before = Pt(2)
-    p_spacer.paragraph_format.space_after = Pt(2)
+    p_spacer.paragraph_format.space_before = Pt(1)
+    p_spacer.paragraph_format.space_after = Pt(1)
 
-    # ==========================================
     # 2. TABEL BARANG
-    # ==========================================
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
@@ -209,8 +245,8 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
         )
         h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
         j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
-        vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
 
+        vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
             set_cell_margins(row_cells[i], top=10, bottom=10, left=15, right=15)
@@ -222,29 +258,22 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    # ==========================================
-    # 3. FOOTER (TOTAL + TANDA TANGAN) - SUDAH DISEJAJARKAN
-    # ==========================================
-    # Spacer kecil biar tidak terlalu nempel
-    p_gap = doc.add_paragraph()
-    p_gap.paragraph_format.space_before = Pt(4)
-    p_gap.paragraph_format.space_after = Pt(0)
-
+    # 3. TOTAL & TANDA TANGAN
     tbl_footer = doc.add_table(rows=2, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
 
-    f_widths = [Mm(60), Mm(60)]
+    f_widths = [Mm(65), Mm(55)]
     for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
             cell.width = f_widths[i]
-            set_cell_margins(cell, top=0, bottom=0, left=2, right=2)
+            set_cell_margins(cell, top=2, bottom=0, left=2, right=2)
 
-    # --- Baris 0: Label "Penerima,"  |  TOTAL ---
+    # Baris 0: Penerima (Kiri) & TOTAL (Kanan)
     cell_f0_l, cell_f0_r = tbl_footer.rows[0].cells
 
     p_f0_l = cell_f0_l.paragraphs[0]
-    p_f0_l.paragraph_format.space_before = Pt(0)
+    p_f0_l.paragraph_format.space_before = Pt(2)
     p_f0_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f0_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
@@ -252,7 +281,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
 
     p_f0_r = cell_f0_r.paragraphs[0]
     p_f0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_f0_r.paragraph_format.space_before = Pt(0)
+    p_f0_r.paragraph_format.space_before = Pt(2)
     p_f0_r.paragraph_format.space_after = Pt(0)
 
     r_lbl = p_f0_r.add_run("TOTAL : ")
@@ -267,57 +296,26 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path):
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
-    # --- Baris 1: Garis Tanda Tangan (kiri & kanan sejajar) ---
+    # Baris 1: Tanda Tangan Kiri & Kanan
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
 
-    # KIRI
     p_f1_l = cell_f1_l.paragraphs[0]
-    p_f1_l.paragraph_format.space_before = Pt(18)   # Space untuk tanda tangan
+    p_f1_l.paragraph_format.space_before = Pt(12)
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f1_l.add_run("( ........................ )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
-    # KANAN
     p_f1_r = cell_f1_r.paragraphs[0]
     p_f1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_f1_r.paragraph_format.space_before = Pt(0)
+    p_f1_r.paragraph_format.space_before = Pt(2)
     p_f1_r.paragraph_format.space_after = Pt(0)
 
     r_sr = p_f1_r.add_run("Hormat Kami,\n")
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(6.5)
 
-    # Space yang sama dengan kiri
     r_tr = p_f1_r.add_run("( ........................ )")
-    r_tr.font.name = "Courier New"
-    r_tr.font.size = Pt(6.5)
-
-    # Biar space_before di kanan juga sama, kita pakai paragraph baru
-    # (karena "Hormat Kami," sudah ada di atas)
-    # → Kita atur space setelah "Hormat Kami,"
-    p_f1_r.paragraph_format.space_before = Pt(0)
-    # Tambahkan space setelah "Hormat Kami," dengan cara menambah paragraph kosong
-    # Solusi lebih bersih: buat 2 paragraph di kanan
-
-    # --- Versi lebih rapi untuk kanan (ganti bagian kanan di atas) ---
-    # Hapus isi cell_f1_r yang lama, buat ulang:
-
-    # Clear dulu
-    cell_f1_r._element.clear_content()
-    p_hormat = cell_f1_r.add_paragraph()
-    p_hormat.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_hormat.paragraph_format.space_before = Pt(0)
-    p_hormat.paragraph_format.space_after = Pt(0)
-    r_sr = p_hormat.add_run("Hormat Kami,")
-    r_sr.font.name = "Courier New"
-    r_sr.font.size = Pt(6.5)
-
-    p_ttd_r = cell_f1_r.add_paragraph()
-    p_ttd_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_ttd_r.paragraph_format.space_before = Pt(12)  # Space tanda tangan (sedikit lebih kecil dari kiri biar visual balance)
-    p_ttd_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_ttd_r.add_run("( ........................ )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
