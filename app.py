@@ -81,38 +81,41 @@ def set_table_borders(table):
     tblPr.append(borders)
 
 
-def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path):
+def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_urut=None):
     doc = Document()
     section = doc.sections[0]
     section.page_width = Mm(130)
     section.page_height = Mm(105)
-    section.top_margin = Mm(5)
-    section.bottom_margin = Mm(5)
+    section.top_margin = Mm(4)
+    section.bottom_margin = Mm(4)
     section.left_margin = Mm(5)
     section.right_margin = Mm(5)
 
-    # 1. HEADER NOTA
+    # ==========================================
+    # 1. HEADER (Logo + Nama Perusahaan | Info Transaksi)
+    # ==========================================
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(65)
-    cell_r.width = Mm(55)
+    cell_l.width = Mm(68)
+    cell_r.width = Mm(52)
 
     set_cell_margins(cell_l, top=0, bottom=0, left=0, right=0)
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
 
     cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
-    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
+    cell_r.vertical_alignment = WD_ALIGN_VERTICAL.TOP
 
+    # --- Kiri: Logo + Nama Perusahaan ---
     tbl_brand = cell_l.add_table(rows=1, cols=2)
     tbl_brand.alignment = WD_TABLE_ALIGNMENT.LEFT
     tbl_brand.autofit = False
 
     b_cell_img, b_cell_txt = tbl_brand.rows[0].cells
     b_cell_img.width = Mm(11)
-    b_cell_txt.width = Mm(54)
+    b_cell_txt.width = Mm(57)
 
     set_cell_margins(b_cell_img, top=0, bottom=0, left=0, right=0)
     set_cell_margins(b_cell_txt, top=0, bottom=0, left=0, right=0)
@@ -130,7 +133,7 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     p_txt = b_cell_txt.paragraphs[0]
     p_txt.paragraph_format.space_before = Pt(0)
     p_txt.paragraph_format.space_after = Pt(0)
-    p_txt.paragraph_format.line_spacing = 1.05
+    p_txt.paragraph_format.line_spacing = 1.0
 
     run_title = p_txt.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
@@ -143,28 +146,37 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
-    # Info Tanggal, No. Urut, Bakul, Group di Kanan
+    # --- Kanan: Info Transaksi (sejajar dengan tabel) ---
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(20)
+    p_r.paragraph_format.space_before = Pt(2)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.05
 
-    r_info = p_r.add_run(
-        f"No. Urut: {no_urut}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
-    )
+    info_lines = []
+    if no_urut is not None:
+        info_lines.append(f"No. Urut: {no_urut}")
+    info_lines.append(f"Tanggal: {tgl}")
+    info_lines.append(f"Pembeli / Bakul: {bakul}")
+    info_lines.append(f"Group: {group}")
+
+    r_info = p_r.add_run("\n".join(info_lines))
     r_info.font.name = "Courier New"
     r_info.font.size = Pt(6)
 
+    # Spacer tipis
     p_spacer = doc.add_paragraph()
-    p_spacer.paragraph_format.space_before = Pt(1)
+    p_spacer.paragraph_format.space_before = Pt(2)
     p_spacer.paragraph_format.space_after = Pt(1)
 
-    # 2. TABEL BARANG
+    # ==========================================
+    # 2. TABEL BARANG (lebar penuh, proporsional)
+    # ==========================================
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
+    # Total lebar ~120mm (sesuai margin)
     col_widths = [Mm(18), Mm(48), Mm(27), Mm(27)]
     headers = ["QTY / KG", "BARANG", "HARGA", "JUMLAH"]
     alignments = [
@@ -180,7 +192,7 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "EAEAEA")
-        set_cell_margins(hdr_cells[i], top=10, bottom=10, left=15, right=15)
+        set_cell_margins(hdr_cells[i], top=8, bottom=8, left=12, right=12)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
@@ -208,7 +220,7 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
         vals = [kg_str, f" {item['Nama Barang']}", h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=10, bottom=10, left=15, right=15)
+            set_cell_margins(row_cells[i], top=6, bottom=6, left=12, right=12)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
@@ -217,71 +229,72 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
             r.font.name = "Courier New"
             r.font.size = Pt(7)
 
-    # 3. TOTAL & TANDA TANGAN (POSISI TEKS DITENGAHKAN SAMA BESAR DENGAN TITIK-TITIK)
-    tbl_footer = doc.add_table(rows=3, cols=2)
-    tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl_footer.autofit = False
+    # ==========================================
+    # 3. TOTAL (langsung di bawah tabel, rata kanan sejajar kolom JUMLAH)
+    # ==========================================
+    p_total = doc.add_paragraph()
+    p_total.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_total.paragraph_format.space_before = Pt(4)
+    p_total.paragraph_format.space_after = Pt(2)
 
-    f_widths = [Mm(60), Mm(60)]
-    for row in tbl_footer.rows:
-        for i, cell in enumerate(row.cells):
-            cell.width = f_widths[i]
-            set_cell_margins(cell, top=1, bottom=1, left=2, right=2)
-
-    # BARIS 0: KHUSUS TOTAL (Di Kanan)
-    cell_f0_l, cell_f0_r = tbl_footer.rows[0].cells
-    p_f0_r = cell_f0_r.paragraphs[0]
-    p_f0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_f0_r.paragraph_format.space_before = Pt(2)
-    p_f0_r.paragraph_format.space_after = Pt(2)
-
-    r_lbl = p_f0_r.add_run("TOTAL : ")
+    r_lbl = p_total.add_run("TOTAL : ")
     r_lbl.bold = True
     r_lbl.font.name = "Courier New"
     r_lbl.font.size = Pt(8)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
-    r_tot = p_f0_r.add_run(tot_str)
+    r_tot = p_total.add_run(tot_str)
     r_tot.bold = True
     r_tot.font.name = "Courier New"
     r_tot.font.size = Pt(10)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
-    # BARIS 1: PENERIMA & HORMAT KAMI (DITENGAHKAN / CENTER)
-    cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
+    # ==========================================
+    # 4. TANDA TANGAN (2 kolom, proporsional)
+    # ==========================================
+    tbl_sig = doc.add_table(rows=2, cols=2)
+    tbl_sig.alignment = WD_TABLE_ALIGNMENT.CENTER
+    tbl_sig.autofit = False
 
-    p_f1_l = cell_f1_l.paragraphs[0]
-    p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
-    p_f1_l.paragraph_format.space_before = Pt(4)
-    p_f1_l.paragraph_format.space_after = Pt(0)
-    r_sl = p_f1_l.add_run("Penerima,")
+    sig_widths = [Mm(60), Mm(60)]
+    for row in tbl_sig.rows:
+        for i, cell in enumerate(row.cells):
+            cell.width = sig_widths[i]
+            set_cell_margins(cell, top=0, bottom=0, left=2, right=2)
+
+    # Baris 1: Label
+    cell_s0_l, cell_s0_r = tbl_sig.rows[0].cells
+
+    p_s0_l = cell_s0_l.paragraphs[0]
+    p_s0_l.paragraph_format.space_before = Pt(6)
+    p_s0_l.paragraph_format.space_after = Pt(0)
+    r_sl = p_s0_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
     r_sl.font.size = Pt(6.5)
 
-    p_f1_r = cell_f1_r.paragraphs[0]
-    p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
-    p_f1_r.paragraph_format.space_before = Pt(4)
-    p_f1_r.paragraph_format.space_after = Pt(0)
-    r_sr = p_f1_r.add_run("Hormat Kami,")
+    p_s0_r = cell_s0_r.paragraphs[0]
+    p_s0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_s0_r.paragraph_format.space_before = Pt(6)
+    p_s0_r.paragraph_format.space_after = Pt(0)
+    r_sr = p_s0_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(6.5)
 
-    # BARIS 2: TANDA TANGAN (DITENGAHKAN / CENTER)
-    cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
+    # Baris 2: Garis tanda tangan
+    cell_s1_l, cell_s1_r = tbl_sig.rows[1].cells
 
-    p_f2_l = cell_f2_l.paragraphs[0]
-    p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
-    p_f2_l.paragraph_format.space_before = Pt(26)
-    p_f2_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_f2_l.add_run("( ............................ )")
+    p_s1_l = cell_s1_l.paragraphs[0]
+    p_s1_l.paragraph_format.space_before = Pt(22)
+    p_s1_l.paragraph_format.space_after = Pt(0)
+    r_tl = p_s1_l.add_run("( ........................ )")
     r_tl.font.name = "Courier New"
     r_tl.font.size = Pt(6.5)
 
-    p_f2_r = cell_f2_r.paragraphs[0]
-    p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Ditengahkan
-    p_f2_r.paragraph_format.space_before = Pt(26)
-    p_f2_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_f2_r.add_run("( ............................ )")
+    p_s1_r = cell_s1_r.paragraphs[0]
+    p_s1_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    p_s1_r.paragraph_format.space_before = Pt(22)
+    p_s1_r.paragraph_format.space_after = Pt(0)
+    r_tr = p_s1_r.add_run("( ........................ )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(6.5)
 
@@ -290,11 +303,11 @@ def generate_word_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path
     return target_stream.getvalue()
 
 
-def generate_image_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_path):
+def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path):
     width = 700
     pad = 20
 
-    header_h = 105
+    header_h = 95
     tbl_header_h = 34
     row_h = 34
     num_items = len(items)
@@ -355,10 +368,9 @@ def generate_image_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_pat
         font=font_small,
     )
 
-    draw.text((x_end - 200, pad + 10), f"No. Urut: {no_urut}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 200, pad + 25), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 200, pad + 40), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
-    draw.text((x_end - 200, pad + 55), f"Group: {group}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 22), f"Tanggal: {tgl}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 37), f"Pembeli / Bakul: {bakul}", fill=(0, 0, 0), font=font_small)
+    draw.text((x_end - 200, pad + 52), f"Group: {group}", fill=(0, 0, 0), font=font_small)
 
     y_tbl = pad + header_h
     tbl_header_height = tbl_header_h
@@ -412,14 +424,10 @@ def generate_image_nota(tgl, bakul, group, no_urut, items, total_bayar, logo_pat
 
     y_ftr_sig = y_curr + 15
 
-    # DITENGAHKAN TERHADAP AREA TANDA TANGAN (KIRI & KANAN)
-    x_center_left = x_start + 100
-    x_center_right = x_start + 320
-
-    draw.text((x_center_left, y_ftr_sig), "Penerima,", fill=(0, 0, 0), font=font_small, anchor="mm")
-    draw.text((x_center_right, y_ftr_sig), "Hormat Kami,", fill=(0, 0, 0), font=font_small, anchor="mm")
-    draw.text((x_center_left, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small, anchor="mm")
-    draw.text((x_center_right, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small, anchor="mm")
+    draw.text((x_start + 10, y_ftr_sig), "Penerima,", fill=(0, 0, 0), font=font_small)
+    draw.text((x_start + 220, y_ftr_sig), "Hormat Kami,", fill=(0, 0, 0), font=font_small)
+    draw.text((x_start, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
+    draw.text((x_start + 200, y_ftr_sig + 48), "( ............................ )", fill=(0, 0, 0), font=font_small)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     draw.text((x_end - 260, y_ftr_sig + 4), "TOTAL :", fill=(0, 0, 0), font=font_bold)
@@ -703,7 +711,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     if not nama_bakul:
                         continue
 
-                    no_urut_val = idx
                     if (
                         no_col
                         and pd.notna(row[no_col])
@@ -712,19 +719,18 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         no_val = str(row[no_col]).strip()
                         if no_val.endswith(".0"):
                             no_val = no_val[:-2]
-                        no_urut_val = no_val
                         label = f"{no_val}. {nama_bakul}"
                     else:
                         label = f"{idx}. {nama_bakul}"
 
                     bakul_options.append(label)
-                    bakul_map[label] = (nama_bakul, real_idx, no_urut_val)
+                    bakul_map[label] = (nama_bakul, real_idx)
 
                 selected_bakul_label = st.selectbox("Pilih Nama Bakul", bakul_options)
                 selected_bakul_info = bakul_map.get(selected_bakul_label, None)
 
                 if selected_bakul_info:
-                    selected_bakul, real_idx, current_no_urut = selected_bakul_info
+                    selected_bakul, real_idx = selected_bakul_info
 
                     if (
                         "last_bakul" not in st.session_state
@@ -865,7 +871,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 )
                             with col_r:
                                 st.markdown(
-                                    f"<div style='text-align:right;'><small><b>No. Urut:</b> {current_no_urut}<br><b>Tanggal:</b>"
+                                    f"<div style='text-align:right;'><small><b>Tanggal:</b>"
                                     f" {tanggal_transaksi.strftime('%d-%m-%Y')}<br><b>Bakul:</b>"
                                     f" {selected_bakul}<br><b>Group:</b>"
                                     f" {selected_sheet}</small></div>",
@@ -903,20 +909,28 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         col_btn1, col_btn2 = st.columns(2)
 
                         with col_btn1:
+                            # Ambil no urut dari label jika ada
+                            no_urut_val = None
+                            if selected_bakul_label and "." in selected_bakul_label:
+                                try:
+                                    no_urut_val = selected_bakul_label.split(".")[0].strip()
+                                except Exception:
+                                    pass
+
                             word_data = generate_word_nota(
                                 tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                                 bakul=selected_bakul,
                                 group=selected_sheet,
-                                no_urut=current_no_urut,
                                 items=filtered_items,
                                 total_bayar=total_bayar,
                                 logo_path=logo_filename,
+                                no_urut=no_urut_val,
                             )
                             st.download_button(
                                 label="📝 Download Nota Word (.docx)",
                                 data=word_data,
                                 file_name=(
-                                    f"Nota_{current_no_urut}_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.docx"
+                                    f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.docx"
                                 ),
                                 mime=(
                                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -929,7 +943,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                                 bakul=selected_bakul,
                                 group=selected_sheet,
-                                no_urut=current_no_urut,
                                 items=filtered_items,
                                 total_bayar=total_bayar,
                                 logo_path=logo_filename,
@@ -938,7 +951,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 label="🖼️ Download Nota Gambar (.png)",
                                 data=img_data,
                                 file_name=(
-                                    f"Nota_{current_no_urut}_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.png"
+                                    f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.png"
                                 ),
                                 mime="image/png",
                                 use_container_width=True,
@@ -1029,19 +1042,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                         row_position = 2
 
-                        no_col_bulk = next(
-                            (c for c in df_s.columns if c in ["NO", "NO.", "NOMOR"]), None
-                        )
-
-                        for idx_b, (idx, row) in enumerate(df_filtered.iterrows(), start=1):
+                        for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
-
-                            no_urut_val = idx_b
-                            if no_col_bulk and pd.notna(row[no_col_bulk]) and str(row[no_col_bulk]).strip() != "":
-                                val_no = str(row[no_col_bulk]).strip()
-                                if val_no.endswith(".0"):
-                                    val_no = val_no[:-2]
-                                no_urut_val = val_no
 
                             def get_val_from_row(c_keyword):
                                 try:
@@ -1126,7 +1128,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                     tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
                                     bakul=nama_bakul,
                                     group=sheet_name,
-                                    no_urut=no_urut_val,
                                     items=filtered_items,
                                     total_bayar=tot_bayar,
                                     logo_path=logo_filename,
