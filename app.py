@@ -41,7 +41,7 @@ bg_base64 = get_base64_image("back.jpg")
 
 
 # ==========================================
-# 2. HELPER GENERATOR WORD & EXCEL NOTA
+# 2. HELPER GENERATOR WORD & EXCEL NOTA (PORTRAIT)
 # ==========================================
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
@@ -81,14 +81,16 @@ def set_table_borders(table):
 
 
 def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
-    """Menambahkan 1 Nota ke dalam dokumen Word"""
+    """Menambahkan 1 Nota ke Word dengan Format PORTRAIT (Tegak)"""
+    
+    # Header Nota (Dibikin 2 Kolom menyamping dalam portrait lebar ~95mm)
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(65)
-    cell_r.width = Mm(55)
+    cell_l.width = Mm(50)
+    cell_r.width = Mm(45)
 
     set_cell_margins(cell_l, top=0, bottom=0, left=0, right=0)
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
@@ -96,13 +98,14 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     cell_l.vertical_alignment = WD_ALIGN_VERTICAL.TOP
     cell_r.vertical_alignment = WD_ALIGN_VERTICAL.BOTTOM
 
+    # Brand / Logo Kiri
     tbl_brand = cell_l.add_table(rows=1, cols=2)
     tbl_brand.alignment = WD_TABLE_ALIGNMENT.LEFT
     tbl_brand.autofit = False
 
     b_cell_img, b_cell_txt = tbl_brand.rows[0].cells
-    b_cell_img.width = Mm(12)
-    b_cell_txt.width = Mm(53)
+    b_cell_img.width = Mm(10)
+    b_cell_txt.width = Mm(40)
 
     set_cell_margins(b_cell_img, top=0, bottom=0, left=0, right=0)
     set_cell_margins(b_cell_txt, top=0, bottom=0, left=0, right=0)
@@ -115,7 +118,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     p_img.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
         run_img = p_img.add_run()
-        run_img.add_picture(logo_path, width=Mm(10.5))
+        run_img.add_picture(logo_path, width=Mm(8.5))
 
     p_txt = b_cell_txt.paragraphs[0]
     p_txt.paragraph_format.space_before = Pt(0)
@@ -125,32 +128,33 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     run_title = p_txt.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
-    run_title.font.size = Pt(9)
+    run_title.font.size = Pt(8)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
-    run_sub = p_txt.add_run("Ds. Kambingan - Tumpang - Malang")
+    run_sub = p_txt.add_run("Ds. Kambingan - Tumpang")
     run_sub.font.name = "Courier New"
-    run_sub.font.size = Pt(6)
+    run_sub.font.size = Pt(5.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
+    # Info Kanan
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(4)
+    p_r.paragraph_format.space_before = Pt(0)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.0
 
-    info_text = f"No: {no_bakul}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
+    info_text = f"No: {no_bakul}\nTgl: {tgl}\nBakul: {bakul}\nGrp: {group}"
     r_info = p_r.add_run(info_text)
     r_info.font.name = "Courier New"
-    r_info.font.size = Pt(6.5)
+    r_info.font.size = Pt(6)
 
-    # Tabel Barang
+    # Tabel Barang (Portrait: Lebar Total ~95mm)
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(46), Mm(20), Mm(27), Mm(27)]
-    headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
+    col_widths = [Mm(36), Mm(16), Mm(21), Mm(22)]
+    headers = ["BARANG", "QTY", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.LEFT,
         WD_ALIGN_PARAGRAPH.CENTER,
@@ -164,7 +168,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "EAEAEA")
-        set_cell_margins(hdr_cells[i], top=6, bottom=6, left=10, right=10)
+        set_cell_margins(hdr_cells[i], top=4, bottom=4, left=4, right=4)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
@@ -172,7 +176,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
         r = p.add_run(h_text)
         r.bold = True
         r.font.name = "Courier New"
-        r.font.size = Pt(7.5)
+        r.font.size = Pt(7)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -186,27 +190,27 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
                 else str(kg_val)
             )
         )
-        h_str = f"Rp {item['Harga']:,.0f}".replace(",", ".")
-        j_str = f"Rp {item['Jumlah']:,.0f}".replace(",", ".")
+        h_str = f"{item['Harga']:,.0f}".replace(",", ".")
+        j_str = f"{item['Jumlah']:,.0f}".replace(",", ".")
 
         vals = [f" {item['Nama Barang']}", kg_str, h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=6, bottom=6, left=10, right=10)
+            set_cell_margins(row_cells[i], top=4, bottom=4, left=4, right=4)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
             r.font.name = "Courier New"
-            r.font.size = Pt(7.5)
+            r.font.size = Pt(7)
 
-    # Footer & Tanda Tangan
+    # Footer & Tanda Tangan (Portrait)
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
 
-    f_widths = [Mm(65), Mm(55)]
+    f_widths = [Mm(50), Mm(45)]
     for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
             cell.width = f_widths[i]
@@ -218,16 +222,16 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     p_f0_r.paragraph_format.space_before = Pt(2)
     p_f0_r.paragraph_format.space_after = Pt(2)
 
-    r_lbl = p_f0_r.add_run("TOTAL : ")
+    r_lbl = p_f0_r.add_run("TOTAL: ")
     r_lbl.bold = True
     r_lbl.font.name = "Courier New"
-    r_lbl.font.size = Pt(8.5)
+    r_lbl.font.size = Pt(7.5)
 
     tot_str = f"Rp {total_bayar:,.0f}".replace(",", ".")
     r_tot = p_f0_r.add_run(tot_str)
     r_tot.bold = True
     r_tot.font.name = "Courier New"
-    r_tot.font.size = Pt(11)
+    r_tot.font.size = Pt(9.5)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
@@ -238,7 +242,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     p_f1_l.paragraph_format.space_after = Pt(0)
     r_sl = p_f1_l.add_run("Penerima,")
     r_sl.font.name = "Courier New"
-    r_sl.font.size = Pt(7)
+    r_sl.font.size = Pt(6.5)
 
     p_f1_r = cell_f1_r.paragraphs[0]
     p_f1_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -246,36 +250,37 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     p_f1_r.paragraph_format.space_after = Pt(0)
     r_sr = p_f1_r.add_run("Hormat Kami,")
     r_sr.font.name = "Courier New"
-    r_sr.font.size = Pt(7)
+    r_sr.font.size = Pt(6.5)
 
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
 
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_l.paragraph_format.space_before = Pt(14)
+    p_f2_l.paragraph_format.space_before = Pt(10)
     p_f2_l.paragraph_format.space_after = Pt(0)
-    r_tl = p_f2_l.add_run("( ........... )")
+    r_tl = p_f2_l.add_run("( ....... )")
     r_tl.font.name = "Courier New"
-    r_tl.font.size = Pt(7)
+    r_tl.font.size = Pt(6.5)
 
     p_f2_r = cell_f2_r.paragraphs[0]
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_r.paragraph_format.space_before = Pt(14)
+    p_f2_r.paragraph_format.space_before = Pt(10)
     p_f2_r.paragraph_format.space_after = Pt(0)
-    r_tr = p_f2_r.add_run("( ........... )")
+    r_tr = p_f2_r.add_run("( ....... )")
     r_tr.font.name = "Courier New"
-    r_tr.font.size = Pt(7)
+    r_tr.font.size = Pt(6.5)
 
 
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Mm(130)
-    section.page_height = Mm(100)
-    section.top_margin = Mm(4)
+    # Ukuran Kertas Portrait Lebar 100mm, Tinggi 130mm (Pas untuk setengah halaman portrait)
+    section.page_width = Mm(100)
+    section.page_height = Mm(130)
+    section.top_margin = Mm(3)
     section.bottom_margin = Mm(2)
-    section.left_margin = Mm(1)
-    section.right_margin = Mm(6)
+    section.left_margin = Mm(2)
+    section.right_margin = Mm(3)
 
     append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul)
 
@@ -285,16 +290,16 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul="", start_row=1):
-    """Menyusun 1 Nota Data Asli di Excel dengan Rumus Aktif & Layout Landscape Presisi"""
+    """Menyusun 1 Nota Data Asli di Excel dengan Format PORTRAIT"""
     font_family = "Courier New"
-    f_title = Font(name=font_family, size=11, bold=True, color="C62828")
-    f_sub = Font(name=font_family, size=8, color="5A5A5A")
-    f_info = Font(name=font_family, size=9)
-    f_hdr = Font(name=font_family, size=9, bold=True)
-    f_data = Font(name=font_family, size=9)
-    f_tot_lbl = Font(name=font_family, size=10, bold=True)
-    f_tot_val = Font(name=font_family, size=12, bold=True, color="C62828")
-    f_sig = Font(name=font_family, size=9)
+    f_title = Font(name=font_family, size=10, bold=True, color="C62828")
+    f_sub = Font(name=font_family, size=7.5, color="5A5A5A")
+    f_info = Font(name=font_family, size=8)
+    f_hdr = Font(name=font_family, size=8, bold=True)
+    f_data = Font(name=font_family, size=8)
+    f_tot_lbl = Font(name=font_family, size=9, bold=True)
+    f_tot_val = Font(name=font_family, size=11, bold=True, color="C62828")
+    f_sig = Font(name=font_family, size=8)
 
     a_left = Alignment(horizontal="left", vertical="center")
     a_right = Alignment(horizontal="right", vertical="center")
@@ -304,30 +309,30 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
     border_cell = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
     fill_hdr = PatternFill(start_color="EAEAEA", end_color="EAEAEA", fill_type="solid")
 
-    ws.column_dimensions["A"].width = 24
-    ws.column_dimensions["B"].width = 12
-    ws.column_dimensions["C"].width = 16
-    ws.column_dimensions["D"].width = 18
+    ws.column_dimensions["A"].width = 16
+    ws.column_dimensions["B"].width = 8
+    ws.column_dimensions["C"].width = 11
+    ws.column_dimensions["D"].width = 12
 
     r = start_row
 
     ws.cell(row=r, column=1, value="AYAM SEGAR TUMPANG").font = f_title
     ws.cell(row=r, column=1).alignment = a_left
-    ws.cell(row=r + 1, column=1, value="Ds. Kambingan - Tumpang - Malang").font = f_sub
+    ws.cell(row=r + 1, column=1, value="Ds. Kambingan - Tumpang").font = f_sub
     ws.cell(row=r + 1, column=1).alignment = a_left
 
     ws.cell(row=r, column=4, value=f"No: {no_bakul}").font = f_info
     ws.cell(row=r, column=4).alignment = a_right
-    ws.cell(row=r + 1, column=4, value=f"Tanggal: {tgl}").font = f_info
+    ws.cell(row=r + 1, column=4, value=f"Tgl: {tgl}").font = f_info
     ws.cell(row=r + 1, column=4).alignment = a_right
-    ws.cell(row=r + 2, column=4, value=f"Pembeli / Bakul: {bakul}").font = f_info
+    ws.cell(row=r + 2, column=4, value=f"Bakul: {bakul}").font = f_info
     ws.cell(row=r + 2, column=4).alignment = a_right
-    ws.cell(row=r + 3, column=4, value=f"Group: {group}").font = f_info
+    ws.cell(row=r + 3, column=4, value=f"Grp: {group}").font = f_info
     ws.cell(row=r + 3, column=4).alignment = a_right
 
     r += 5
 
-    headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
+    headers = ["BARANG", "QTY", "HARGA", "JUMLAH"]
     aligns = [a_left, a_center, a_right, a_right]
     for col_i, h_text in enumerate(headers, start=1):
         c = ws.cell(row=r, column=col_i, value=h_text)
@@ -355,26 +360,26 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
         cC.font = f_data
         cC.alignment = a_right
         cC.border = border_cell
-        cC.number_format = '"Rp "#,##0'
+        cC.number_format = '#,##0'
 
         cD = ws.cell(row=r, column=4, value=f"=B{r}*C{r}")
         cD.font = f_data
         cD.alignment = a_right
         cD.border = border_cell
-        cD.number_format = '"Rp "#,##0'
+        cD.number_format = '#,##0'
 
         r += 1
 
     end_item_row = r - 1
 
-    c_tot_lbl = ws.cell(row=r, column=3, value="TOTAL :")
+    c_tot_lbl = ws.cell(row=r, column=3, value="TOTAL:")
     c_tot_lbl.font = f_tot_lbl
     c_tot_lbl.alignment = a_right
 
     c_tot_val = ws.cell(row=r, column=4, value=f"=SUM(D{start_item_row}:D{end_item_row})")
     c_tot_val.font = f_tot_val
     c_tot_val.alignment = a_right
-    c_tot_val.number_format = '"Rp "#,##0'
+    c_tot_val.number_format = '#,##0'
 
     r += 2
 
@@ -392,15 +397,16 @@ def write_single_excel_nota(ws, tgl, bakul, group, items, logo_path, no_bakul=""
 
     ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
     ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
-    cTL = ws.cell(row=r, column=1, value="( ........... )")
+    cTL = ws.cell(row=r, column=1, value="( ....... )")
     cTL.font = f_sig
     cTL.alignment = a_center
 
-    cTR = ws.cell(row=r, column=3, value="( ........... )")
+    cTR = ws.cell(row=r, column=3, value="( ....... )")
     cTR.font = f_sig
     cTR.alignment = a_center
 
-    ws.page_setup.orientation = ws.ORIENTATION_LANDSCAPE
+    # Ubah setup halaman Excel ke PORTRAIT
+    ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
     ws.page_setup.fitToPage = False
     ws.sheet_view.showGridLines = True
 
@@ -977,7 +983,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
             # TAB 2: EXPORT ALL NOTA (KE 1 FILE EXCEL ATAU 1 FILE WORD)
             # ==========================================
             with tab_bulk:
-                st.markdown("### 📄 Export All Nota (Excel / Word)")
+                st.markdown("### 📄 Export All Nota (Excel / Word - Portrait)")
                 st.caption("Centang nama bakul yang ingin diproses ke dalam 1 file utuh.")
 
                 selected_bakul_by_sheet = {}
@@ -1179,7 +1185,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 label="📥 Download File Excel All Nota",
                                 data=output_excel_bulk.getvalue(),
                                 file_name=(
-                                    "EXCEL_ALL_NOTA_"
+                                    "EXCEL_ALL_NOTA_PORTRAIT_"
                                     f"{tanggal_transaksi.strftime('%Y%m%d')}.xlsx"
                                 ),
                                 mime=(
@@ -1199,15 +1205,14 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     ):
                         doc_bulk = Document()
                         section = doc_bulk.sections[0]
-                        section.page_width = Mm(130)
-                        section.page_height = Mm(100)
-                        section.top_margin = Mm(4)
+                        section.page_width = Mm(100)
+                        section.page_height = Mm(130)
+                        section.top_margin = Mm(3)
                         section.bottom_margin = Mm(2)
-                        section.left_margin = Mm(1)
-                        section.right_margin = Mm(6)
+                        section.left_margin = Mm(2)
+                        section.right_margin = Mm(3)
 
                         total_processed_word = 0
-                        first_nota = True
 
                         for sheet_name, (
                             df_s,
@@ -1326,10 +1331,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 filtered_items = [i for i in items if i["KG"] > 0]
 
                                 if filtered_items:
-                                    if not first_nota:
-                                        # Gunakan Section Break / Page Break Bersih
-                                        doc_bulk.add_section()
-                                    
                                     append_word_nota_to_doc(
                                         doc=doc_bulk,
                                         tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
@@ -1340,19 +1341,21 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                         logo_path=logo_filename,
                                         no_bakul=no_val,
                                     )
-                                    first_nota = False
+                                    p_space = doc_bulk.add_paragraph()
+                                    p_space.paragraph_format.space_before = Pt(8)
+                                    p_space.paragraph_format.space_after = Pt(0)
                                     total_processed_word += 1
 
                         if total_processed_word > 0:
                             output_word_bulk = io.BytesIO()
                             doc_bulk.save(output_word_bulk)
 
-                            st.success(f"✅ Berhasil mengeksport {total_processed_word} nota ke Word!")
+                            st.success(f"✅ Berhasil mengeksport {total_processed_word} nota ke Word (Portrait)!")
                             st.download_button(
-                                label="📥 Download File Word All Nota",
+                                label="📥 Download File Word All Nota (Portrait)",
                                 data=output_word_bulk.getvalue(),
                                 file_name=(
-                                    "WORD_ALL_NOTA_"
+                                    "WORD_ALL_NOTA_PORTRAIT_"
                                     f"{tanggal_transaksi.strftime('%Y%m%d')}.docx"
                                 ),
                                 mime=(
