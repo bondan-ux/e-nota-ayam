@@ -10,7 +10,7 @@ from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
-from docx.shared import Mm, Pt, RGBColor
+from docx.shared import Inches, Mm, Pt, RGBColor
 import pandas as pd
 import streamlit as st
 
@@ -81,7 +81,7 @@ def set_table_borders(table):
 
 
 def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
-    """Menambahkan 1 Nota ke dalam dokumen Word dengan spasi ramping anti-offside"""
+    """Menambahkan 1 Nota ke dalam dokumen Word"""
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
@@ -135,7 +135,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(4)  # Dikurangi agar tidak turun
+    p_r.paragraph_format.space_before = Pt(4)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.0
 
@@ -252,7 +252,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_l.paragraph_format.space_before = Pt(14)  # Dipangkas agar pas di kotak perforasi
+    p_f2_l.paragraph_format.space_before = Pt(14)
     p_f2_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f2_l.add_run("( ........... )")
     r_tl.font.name = "Courier New"
@@ -260,7 +260,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     p_f2_r = cell_f2_r.paragraphs[0]
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_r.paragraph_format.space_before = Pt(14)  # Dipangkas agar pas di kotak perforasi
+    p_f2_r.paragraph_format.space_before = Pt(14)
     p_f2_r.paragraph_format.space_after = Pt(0)
     r_tr = p_f2_r.add_run("( ........... )")
     r_tr.font.name = "Courier New"
@@ -1167,7 +1167,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                         start_row=current_start_row,
                                     )
                                     
-                                    current_start_row += 15  # Disesuaikan jadi 15 baris
+                                    current_start_row += 15
                                     total_processed += 1
 
                         if total_processed > 0:
@@ -1327,7 +1327,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
 
                                 if filtered_items:
                                     if not first_nota:
-                                        doc_bulk.add_page_break()
+                                        # Gunakan Section Break / Page Break Bersih
+                                        doc_bulk.add_section()
                                     
                                     append_word_nota_to_doc(
                                         doc=doc_bulk,
