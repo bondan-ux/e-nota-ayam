@@ -86,7 +86,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     section = doc.sections[0]
     section.page_width = Mm(130)
     section.page_height = Mm(105)
-    section.top_margin = Mm(5)      # Diperkecil agar lebih atas
+    section.top_margin = Mm(8)      # Diperkecil agar lebih atas
     section.bottom_margin = Mm(3)   # Diperkecil agar lebih bawah
     section.left_margin = Mm(1)     # Mepet ke kiri (ubah dari Mm(2) ke Mm(1))
     section.right_margin = Mm(8)    # Sisi kanan dibuat lebih lega
