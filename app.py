@@ -270,8 +270,8 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Inches(4.13)
-    section.page_height = Inches(5.83)
+    section.page_width = Inches(5.83)
+    section.page_height = Inches(4.13)
     section.top_margin = Mm(3)
     section.bottom_margin = Mm(2)
     section.left_margin = Mm(1)
