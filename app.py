@@ -135,12 +135,12 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     run_title = p_txt.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
-    run_title.font.size = Pt(9.5)
+    run_title.font.size = Pt(11)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_txt.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
-    run_sub.font.size = Pt(6.5)
+    run_sub.font.size = Pt(7.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     # Info No, Tanggal, Bakul, Group di Kanan
@@ -153,7 +153,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     info_text = f"No: {no_bakul}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     r_info = p_r.add_run(info_text)
     r_info.font.name = "Courier New"
-    r_info.font.size = Pt(7)
+    r_info.font.size = Pt(9)
 
     p_spacer = doc.add_paragraph()
     p_spacer.paragraph_format.space_before = Pt(1)
