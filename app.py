@@ -111,8 +111,8 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     tbl_brand.autofit = False
 
     b_cell_img, b_cell_txt = tbl_brand.rows[0].cells
-    b_cell_img.width = Mm(12)
-    b_cell_txt.width = Mm(53)
+    b_cell_img.width = Mm(20)
+    b_cell_txt.width = Mm(45)
 
     set_cell_margins(b_cell_img, top=0, bottom=0, left=0, right=0)
     set_cell_margins(b_cell_txt, top=0, bottom=0, left=0, right=0)
