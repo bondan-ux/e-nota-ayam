@@ -432,19 +432,19 @@ def generate_image_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
 
 def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     """Generate nota as real Excel data (not image) with formulas for TOTAL.
-    Layout matches the Word nota as closely as possible.
-    Page size is set small similar to Word (approx 130mm x 105mm).
+    Layout dibuat sedekat mungkin dengan Word nota:
+    - Landscape / lebar (mirip 130mm x 105mm)
+    - Logo + judul kiri, info (No/Tanggal/Bakul/Group) kanan
+    - Tabel + TOTAL formula + tanda tangan
     """
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Nota"
 
-    # ===== Page setup (mirip ukuran Word 130x105 mm) =====
-    # PAPERSIZE_A5 = 11, A6 tidak selalu ada di semua versi
-    ws.page_setup.paperSize = 11  # A5 (closest small)
-    ws.page_setup.orientation = "portrait"
-    ws.page_margins = PageMargins(left=0.3, right=0.3, top=0.4, bottom=0.3)
-    ws.print_area = "A1:F20"
+    # ===== Page setup (landscape, mirip Word 130x105 mm) =====
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.paperSize = 11  # A5
+    ws.page_margins = PageMargins(left=0.4, right=0.4, top=0.35, bottom=0.3)
     try:
         ws.sheet_properties.pageSetUpPr.fitToPage = True
     except Exception:
@@ -452,13 +452,15 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
     ws.page_setup.fitToWidth = 1
     ws.page_setup.fitToHeight = 1
 
-    # Column widths (narrow, receipt-like)
-    ws.column_dimensions["A"].width = 3
-    ws.column_dimensions["B"].width = 18
-    ws.column_dimensions["C"].width = 11
-    ws.column_dimensions["D"].width = 12
-    ws.column_dimensions["E"].width = 13
-    ws.column_dimensions["F"].width = 3
+    # Column widths - lebih lebar biar total tidak ####
+    # A=spacer | B=BARANG | C=QTY | D=HARGA | E=JUMLAH | F=spacer kanan info
+    ws.column_dimensions["A"].width = 2.5
+    ws.column_dimensions["B"].width = 16
+    ws.column_dimensions["C"].width = 10
+    ws.column_dimensions["D"].width = 13
+    ws.column_dimensions["E"].width = 15
+    ws.column_dimensions["F"].width = 2
+    ws.column_dimensions["G"].width = 22  # area info kanan
 
     thin = Border(
         left=Side(style="thin", color="000000"),
@@ -467,25 +469,23 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
         bottom=Side(style="thin", color="000000"),
     )
     header_fill = PatternFill(start_color="EAEAEA", end_color="EAEAEA", fill_type="solid")
-    red_font = Font(name="Courier New", size=11, bold=True, color="C62828")
-    title_font = Font(name="Courier New", size=12, bold=True, color="C62828")
-    normal_font = Font(name="Courier New", size=9)
-    bold_font = Font(name="Courier New", size=9, bold=True)
-    small_font = Font(name="Courier New", size=8)
-    total_font = Font(name="Courier New", size=12, bold=True, color="C62828")
+    title_font = Font(name="Courier New", size=14, bold=True, color="C62828")
+    normal_font = Font(name="Courier New", size=10)
+    bold_font = Font(name="Courier New", size=10, bold=True)
+    small_font = Font(name="Courier New", size=9)
+    total_font = Font(name="Courier New", size=13, bold=True, color="C62828")
+    info_font = Font(name="Courier New", size=9)
 
-    # ===== HEADER =====
-    # Logo
+    # ===== HEADER KIRI: Logo + Judul + Alamat =====
     if logo_path and os.path.exists(logo_path):
         try:
             img = OpenPyXLImage(logo_path)
-            img.width = 38
-            img.height = 38
+            img.width = 42
+            img.height = 42
             ws.add_image(img, "B1")
         except Exception:
             pass
 
-    # Title & address
     ws.merge_cells("C1:E1")
     cell_title = ws["C1"]
     cell_title.value = "AYAM SEGAR TUMPANG"
@@ -498,29 +498,37 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
     cell_addr.font = small_font
     cell_addr.alignment = Alignment(horizontal="left", vertical="top")
 
-    # Info kanan (No, Tanggal, Bakul, Group)
-    ws["B3"] = f"No: {no_bakul}"
-    ws["B3"].font = small_font
-    ws["B4"] = f"Tanggal: {tgl}"
-    ws["B4"].font = small_font
-    ws["B5"] = f"Pembeli / Bakul: {bakul}"
-    ws["B5"].font = small_font
-    ws["B6"] = f"Group: {group}"
-    ws["B6"].font = small_font
+    # ===== HEADER KANAN: No, Tanggal, Bakul, Group (sejajar kanan) =====
+    ws["G1"] = f"No: {no_bakul}"
+    ws["G1"].font = info_font
+    ws["G1"].alignment = Alignment(horizontal="right")
 
-    # ===== TABLE HEADER =====
+    ws["G2"] = f"Tanggal: {tgl}"
+    ws["G2"].font = info_font
+    ws["G2"].alignment = Alignment(horizontal="right")
+
+    ws["G3"] = f"Pembeli / Bakul: {bakul}"
+    ws["G3"].font = info_font
+    ws["G3"].alignment = Alignment(horizontal="right")
+
+    ws["G4"] = f"Group: {group}"
+    ws["G4"].font = info_font
+    ws["G4"].alignment = Alignment(horizontal="right")
+
+    # ===== TABLE HEADER (baris 6) =====
     headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     cols = ["B", "C", "D", "E"]
-    for col, h in zip(cols, headers):
-        cell = ws[f"{col}8"]
+    aligns = ["left", "center", "right", "right"]
+    for col, h, al in zip(cols, headers, aligns):
+        cell = ws[f"{col}6"]
         cell.value = h
         cell.font = bold_font
         cell.fill = header_fill
         cell.border = thin
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.alignment = Alignment(horizontal=al, vertical="center")
 
     # ===== DATA ROWS =====
-    start_row = 9
+    start_row = 7
     for i, item in enumerate(items):
         r = start_row + i
         kg_val = item["KG"]
@@ -543,23 +551,23 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
         cell_c.border = thin
         cell_c.alignment = Alignment(horizontal="center", vertical="center")
 
-        # HARGA (number, biar bisa diedit)
+        # HARGA (angka, bisa diedit)
         cell_d = ws[f"D{r}"]
         cell_d.value = item["Harga"]
         cell_d.font = normal_font
         cell_d.border = thin
         cell_d.alignment = Alignment(horizontal="right", vertical="center")
-        cell_d.number_format = '"Rp "#,##0'
+        cell_d.number_format = '"Rp" #,##0'
 
-        # JUMLAH = QTY * HARGA (FORMULA supaya otomatis update)
+        # JUMLAH = formula QTY * HARGA
         cell_e = ws[f"E{r}"]
         cell_e.value = f"=C{r}*D{r}"
         cell_e.font = normal_font
         cell_e.border = thin
         cell_e.alignment = Alignment(horizontal="right", vertical="center")
-        cell_e.number_format = '"Rp "#,##0'
+        cell_e.number_format = '"Rp" #,##0'
 
-    end_row = start_row + len(items) - 1
+    end_row = start_row + len(items) - 1 if items else start_row
 
     # ===== TOTAL (FORMULA) =====
     total_row = end_row + 1
@@ -576,7 +584,7 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
         cell_tot.value = 0
     cell_tot.font = total_font
     cell_tot.alignment = Alignment(horizontal="right", vertical="center")
-    cell_tot.number_format = '"Rp "#,##0'
+    cell_tot.number_format = '"Rp" #,##0'
     cell_tot.border = thin
 
     # ===== TANDA TANGAN =====
@@ -585,6 +593,7 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
     ws[f"B{sig_row}"].font = small_font
     ws[f"B{sig_row}"].alignment = Alignment(horizontal="center")
 
+    ws.merge_cells(f"D{sig_row}:E{sig_row}")
     ws[f"D{sig_row}"] = "Hormat Kami,"
     ws[f"D{sig_row}"].font = small_font
     ws[f"D{sig_row}"].alignment = Alignment(horizontal="center")
@@ -593,19 +602,25 @@ def generate_excel_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bak
     ws[f"B{sig_row + 3}"].font = small_font
     ws[f"B{sig_row + 3}"].alignment = Alignment(horizontal="center")
 
+    ws.merge_cells(f"D{sig_row + 3}:E{sig_row + 3}")
     ws[f"D{sig_row + 3}"] = "( ........... )"
     ws[f"D{sig_row + 3}"].font = small_font
     ws[f"D{sig_row + 3}"].alignment = Alignment(horizontal="center")
 
     # Row heights
-    for r in range(1, 8):
-        ws.row_dimensions[r].height = 15
-    ws.row_dimensions[1].height = 18
-    ws.row_dimensions[8].height = 18
-    for r in range(start_row, end_row + 1):
-        ws.row_dimensions[r].height = 16
+    ws.row_dimensions[1].height = 20
+    ws.row_dimensions[2].height = 16
+    ws.row_dimensions[3].height = 14
+    ws.row_dimensions[4].height = 14
+    ws.row_dimensions[5].height = 8
+    ws.row_dimensions[6].height = 18
+    for r in range(start_row, end_row + 2):
+        ws.row_dimensions[r].height = 17
 
-    # Save to bytes
+    # Print area
+    last_row = sig_row + 4
+    ws.print_area = f"A1:G{last_row}"
+
     output = io.BytesIO()
     wb.save(output)
     return output.getvalue()
