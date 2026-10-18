@@ -80,15 +80,17 @@ def set_table_borders(table):
     tblPr.append(borders)
 
 
-def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
-    """Menambahkan 1 Nota ke dalam dokumen Word dengan ukuran lebar 5.83 inchi & tinggi 4.13 inchi"""
+def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul="", is_bulk=False):
+    """Menambahkan 1 Nota ke Word dengan tinggi fisik pas setengah kertas Letter Continuous Form (5.5 Inch)"""
+    
+    # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
 
     cell_l, cell_r = tbl_hdr.rows[0].cells
-    cell_l.width = Mm(65)
-    cell_r.width = Mm(55)
+    cell_l.width = Mm(90)
+    cell_r.width = Mm(80)
 
     set_cell_margins(cell_l, top=0, bottom=0, left=0, right=0)
     set_cell_margins(cell_r, top=0, bottom=0, left=0, right=0)
@@ -102,7 +104,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     b_cell_img, b_cell_txt = tbl_brand.rows[0].cells
     b_cell_img.width = Mm(12)
-    b_cell_txt.width = Mm(53)
+    b_cell_txt.width = Mm(78)
 
     set_cell_margins(b_cell_img, top=0, bottom=0, left=0, right=0)
     set_cell_margins(b_cell_txt, top=0, bottom=0, left=0, right=0)
@@ -115,7 +117,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     p_img.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
         run_img = p_img.add_run()
-        run_img.add_picture(logo_path, width=Mm(10.5))
+        run_img.add_picture(logo_path, width=Mm(10))
 
     p_txt = b_cell_txt.paragraphs[0]
     p_txt.paragraph_format.space_before = Pt(0)
@@ -125,31 +127,31 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     run_title = p_txt.add_run("AYAM SEGAR TUMPANG\n")
     run_title.bold = True
     run_title.font.name = "Courier New"
-    run_title.font.size = Pt(9)
+    run_title.font.size = Pt(9.5)
     run_title.font.color.rgb = RGBColor(198, 40, 40)
 
     run_sub = p_txt.add_run("Ds. Kambingan - Tumpang - Malang")
     run_sub.font.name = "Courier New"
-    run_sub.font.size = Pt(6)
+    run_sub.font.size = Pt(6.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    p_r.paragraph_format.space_before = Pt(4)
+    p_r.paragraph_format.space_before = Pt(0)
     p_r.paragraph_format.space_after = Pt(0)
     p_r.paragraph_format.line_spacing = 1.0
 
     info_text = f"No: {no_bakul}\nTanggal: {tgl}\nPembeli / Bakul: {bakul}\nGroup: {group}"
     r_info = p_r.add_run(info_text)
     r_info.font.name = "Courier New"
-    r_info.font.size = Pt(6.5)
+    r_info.font.size = Pt(7)
 
-    # Tabel Barang
+    # 2. TABEL BARANG
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
 
-    col_widths = [Mm(46), Mm(20), Mm(27), Mm(27)]
+    col_widths = [Mm(70), Mm(30), Mm(35), Mm(35)]
     headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     alignments = [
         WD_ALIGN_PARAGRAPH.LEFT,
@@ -164,7 +166,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
     for i, h_text in enumerate(headers):
         hdr_cells[i].width = col_widths[i]
         set_cell_background(hdr_cells[i], "EAEAEA")
-        set_cell_margins(hdr_cells[i], top=6, bottom=6, left=10, right=10)
+        set_cell_margins(hdr_cells[i], top=4, bottom=4, left=8, right=8)
         p = hdr_cells[i].paragraphs[0]
         p.alignment = alignments[i]
         p.paragraph_format.space_before = Pt(0)
@@ -172,7 +174,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
         r = p.add_run(h_text)
         r.bold = True
         r.font.name = "Courier New"
-        r.font.size = Pt(7.5)
+        r.font.size = Pt(8)
 
     for item in items:
         row_cells = tbl_items.add_row().cells
@@ -192,21 +194,21 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
         vals = [f" {item['Nama Barang']}", kg_str, h_str, j_str]
         for i, val in enumerate(vals):
             row_cells[i].width = col_widths[i]
-            set_cell_margins(row_cells[i], top=6, bottom=6, left=10, right=10)
+            set_cell_margins(row_cells[i], top=4, bottom=4, left=8, right=8)
             p = row_cells[i].paragraphs[0]
             p.alignment = alignments[i]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
             r = p.add_run(val)
             r.font.name = "Courier New"
-            r.font.size = Pt(7.5)
+            r.font.size = Pt(8)
 
-    # Footer & Tanda Tangan
+    # 3. FOOTER & TANDA TANGAN
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
 
-    f_widths = [Mm(65), Mm(55)]
+    f_widths = [Mm(90), Mm(80)]
     for row in tbl_footer.rows:
         for i, cell in enumerate(row.cells):
             cell.width = f_widths[i]
@@ -252,7 +254,7 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_l.paragraph_format.space_before = Pt(12)
+    p_f2_l.paragraph_format.space_before = Pt(10)
     p_f2_l.paragraph_format.space_after = Pt(0)
     r_tl = p_f2_l.add_run("( ........... )")
     r_tl.font.name = "Courier New"
@@ -260,24 +262,31 @@ def append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_pat
 
     p_f2_r = cell_f2_r.paragraphs[0]
     p_f2_r.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_f2_r.paragraph_format.space_before = Pt(12)
+    p_f2_r.paragraph_format.space_before = Pt(10)
     p_f2_r.paragraph_format.space_after = Pt(0)
     r_tr = p_f2_r.add_run("( ........... )")
     r_tr.font.name = "Courier New"
     r_tr.font.size = Pt(7)
 
+    # Spasi Bawah Penskalaan
+    if is_bulk:
+        p_gap = doc.add_paragraph()
+        p_gap.paragraph_format.space_before = Pt(18)
+        p_gap.paragraph_format.space_after = Pt(0)
+
 
 def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_bakul=""):
     doc = Document()
     section = doc.sections[0]
-    section.page_width = Inches(5.83)
-    section.page_height = Inches(4.13)
-    section.top_margin = Mm(3)
-    section.bottom_margin = Mm(2)
-    section.left_margin = Mm(1)
-    section.right_margin = Mm(6)
+    # Ukuran Fisik Kertas Continuous Form 1/2 Letter: 8.5 x 5.5 inchi
+    section.page_width = Inches(8.5)
+    section.page_height = Inches(5.5)
+    section.top_margin = Mm(5)
+    section.bottom_margin = Mm(3)
+    section.left_margin = Mm(5)
+    section.right_margin = Mm(5)
 
-    append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul)
+    append_word_nota_to_doc(doc, tgl, bakul, group, items, total_bayar, logo_path, no_bakul, is_bulk=False)
 
     target_stream = io.BytesIO()
     doc.save(target_stream)
@@ -1199,15 +1208,15 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                     ):
                         doc_bulk = Document()
                         section = doc_bulk.sections[0]
-                        section.page_width = Inches(5.83)
-                        section.page_height = Inches(4.13)
-                        section.top_margin = Mm(3)
-                        section.bottom_margin = Mm(2)
-                        section.left_margin = Mm(1)
-                        section.right_margin = Mm(6)
+                        # Set ke Ukuran Fisik Pas Setengah Letter Continuous Form
+                        section.page_width = Inches(8.5)
+                        section.page_height = Inches(5.5)
+                        section.top_margin = Mm(5)
+                        section.bottom_margin = Mm(3)
+                        section.left_margin = Mm(5)
+                        section.right_margin = Mm(5)
 
                         total_processed_word = 0
-                        first_nota = True
 
                         for sheet_name, (
                             df_s,
@@ -1326,9 +1335,6 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 filtered_items = [i for i in items if i["KG"] > 0]
 
                                 if filtered_items:
-                                    if not first_nota:
-                                        doc_bulk.add_page_break()
-                                    
                                     append_word_nota_to_doc(
                                         doc=doc_bulk,
                                         tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
@@ -1338,8 +1344,8 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                         total_bayar=tot_bayar,
                                         logo_path=logo_filename,
                                         no_bakul=no_val,
+                                        is_bulk=True,
                                     )
-                                    first_nota = False
                                     total_processed_word += 1
 
                         if total_processed_word > 0:
