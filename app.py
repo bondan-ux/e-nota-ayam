@@ -125,7 +125,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_img.paragraph_format.space_after = Pt(0)
     if logo_path and os.path.exists(logo_path):
         run_img = p_img.add_run()
-        run_img.add_picture(logo_path, width=Mm(12.5))
+        run_img.add_picture(logo_path, width=Mm(18))
 
     p_txt = b_cell_txt.paragraphs[0]
     p_txt.paragraph_format.space_before = Pt(0)
