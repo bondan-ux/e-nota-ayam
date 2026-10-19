@@ -522,9 +522,9 @@ if not st.session_state.logged_in:
 # ==========================================
 FILE_HARGA = "master_harga.json"
 default_harga = {
-    "glondong": 28500,
-    "jeroan": 10000,
-    "usus": 16500,
+    "glondong": 0,
+    "jeroan": 8000,
+    "usus": 17500,
     "telur_a": 269000,
     "telur_b": 150000,
     "telur_bt": 150000,
