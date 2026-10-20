@@ -280,10 +280,6 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 
 
 def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, no_bakul=""):
-    """
-    Menulis blok nota ke dalam worksheet Excel menggunakan data sel murni
-    dengan lebar kolom optimal agar tidak muncul tanda '##########'.
-    """
     thin_border = Border(
         left=Side(style='thin', color='000000'),
         right=Side(style='thin', color='000000'),
@@ -301,7 +297,6 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
     font_tot_val = Font(name="Courier New", size=12, bold=True, color="C62828")
     font_sign = Font(name="Courier New", size=8)
 
-    # Lebar kolom dioptimalkan agar tidak ada nilai yang terpotong / '####'
     ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 14
     ws.column_dimensions["C"].width = 18
@@ -309,18 +304,22 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
 
     r = start_row
 
-    # Header Nota
     if logo_path and os.path.exists(logo_path):
         try:
             img = openpyxl.drawing.image.Image(logo_path)
-            img.width = 50
-            img.height = 50
+            img.width = 45
+            img.height = 45
             ws.add_image(img, f"A{r}")
         except Exception:
             pass
 
-    ws.cell(row=r, column=1, value="AYAM SEGAR TUMPANG").font = font_title
-    ws.cell(row=r+2, column=1, value="Ds. Kambingan - Tumpang - Malang").font = font_sub
+    prefix_space = "       " if (logo_path and os.path.exists(logo_path)) else ""
+
+    cell_title = ws.cell(row=r, column=1, value=f"{prefix_space}AYAM SEGAR TUMPANG")
+    cell_title.font = font_title
+    
+    cell_sub = ws.cell(row=r+2, column=1, value=f"{prefix_space}Ds. Kambingan - Tumpang - Malang")
+    cell_sub.font = font_sub
 
     ws.cell(row=r, column=3, value=f"No: {no_bakul}").font = font_info
     ws.cell(row=r, column=3).alignment = Alignment(horizontal="right")
@@ -340,7 +339,6 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
 
     r += 5
 
-    # Tabel Barang Header
     headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
     aligns = ["left", "center", "right", "right"]
 
@@ -384,7 +382,6 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
 
     last_item_row = r - 1
 
-    # Total & Formula SUM
     r += 1
     cell_lbl = ws.cell(row=r, column=3, value="TOTAL :")
     cell_lbl.font = font_tot_label
@@ -397,7 +394,6 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
     ws.row_dimensions[r].height = 22
     r += 2
 
-    # Tanda Tangan
     ws.cell(row=r, column=1, value="Penerima,").font = font_sign
     ws.cell(row=r, column=1).alignment = Alignment(horizontal="center")
     ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
