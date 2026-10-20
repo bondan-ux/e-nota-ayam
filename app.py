@@ -297,7 +297,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 # ---------------------------------------------------------------
 # GENERATOR EXCEL NOTA (pengganti JPG/PNG)
 # Layout disamakan dengan generate_word_nota:
-#   - Kertas A6 landscape (148 x 105 mm), margin atas 8 / bawah 3 / kiri 1 / kanan 8 mm
+#   - Kertas landscape (ukuran ikut custom form printer), margin atas 8 / bawah 3 / kiri 1 / kanan 8 mm
 #   - Lebar konten 120 mm  (46 + 20 + 27 + 27 mm, sama dengan tabel barang di Word)
 #   - Font Courier New, ukuran font sama dengan Word
 # Isi nota berupa SEL BENERAN (bukan gambar): JUMLAH = QTY x HARGA, TOTAL = SUM.
@@ -487,7 +487,9 @@ def generate_excel_nota(notas, tgl, logo_path, sheet_title="NOTA"):
 
     # ---------- PENGATURAN CETAK ----------
     ws.print_area = f"A1:E{last_row}"
-    ws.page_setup.paperSize = 70            # A6
+    # Ukuran kertas SENGAJA tidak dikunci (jangan A6!). Form fisik 14 cm (arah kertas keluar)
+    # x 9,5 cm harus dibuat sebagai Custom Form di printer, lalu dipilih di Excel/printer default.
+    # Kalau mau dikunci ke ukuran standar Excel, isi kode kertasnya di sini, mis. ws.page_setup.paperSize = 70 (A6).
     ws.page_setup.orientation = "landscape"
     ws.page_setup.scale = 100               # jangan fit-to-page (manual page break harus jalan)
     ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=False)
