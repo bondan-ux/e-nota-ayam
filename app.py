@@ -4,7 +4,13 @@ import io
 import json
 import os
 import openpyxl
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.drawing.image import Image as XLImage
+from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, OneCellAnchor
+from openpyxl.drawing.xdr import XDRPositiveSize2D
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.worksheet.page import PageMargins
+from openpyxl.worksheet.pagebreak import Break
+from openpyxl.worksheet.properties import PageSetupProperties
 from docx import Document
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -12,6 +18,7 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Mm, Pt, RGBColor
 import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
 import streamlit as st
 
 # ==========================================
@@ -85,11 +92,12 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     section = doc.sections[0]
     section.page_width = Mm(130)
     section.page_height = Mm(105)
-    section.top_margin = Mm(8)
-    section.bottom_margin = Mm(3)
-    section.left_margin = Mm(1)
-    section.right_margin = Mm(8)
+    section.top_margin = Mm(8)      # Diperkecil agar lebih atas
+    section.bottom_margin = Mm(3)   # Diperkecil agar lebih bawah
+    section.left_margin = Mm(1)     # Mepet ke kiri (ubah dari Mm(2) ke Mm(1))
+    section.right_margin = Mm(8)    # Sisi kanan dibuat lebih lega
 
+    # 1. HEADER NOTA
     tbl_hdr = doc.add_table(rows=1, cols=2)
     tbl_hdr.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_hdr.autofit = False
@@ -141,6 +149,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     run_sub.font.size = Pt(7.5)
     run_sub.font.color.rgb = RGBColor(90, 90, 90)
 
+    # Info No, Tanggal, Bakul, Group di Kanan
     p_r = cell_r.paragraphs[0]
     p_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     p_r.paragraph_format.space_before = Pt(18)
@@ -156,6 +165,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     p_spacer.paragraph_format.space_before = Pt(1)
     p_spacer.paragraph_format.space_after = Pt(1)
 
+    # 2. TABEL BARANG (BARANG di kolom 1, QTY di kolom 2)
     tbl_items = doc.add_table(rows=1, cols=4)
     tbl_items.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_items.autofit = False
@@ -212,6 +222,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
             r.font.name = "Courier New"
             r.font.size = Pt(8)
 
+    # 3. TOTAL & TANDA TANGAN
     tbl_footer = doc.add_table(rows=3, cols=2)
     tbl_footer.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_footer.autofit = False
@@ -222,6 +233,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
             cell.width = f_widths[i]
             set_cell_margins(cell, top=1, bottom=1, left=2, right=2)
 
+    # BARIS 0: TOTAL
     cell_f0_l, cell_f0_r = tbl_footer.rows[0].cells
     p_f0_r = cell_f0_r.paragraphs[0]
     p_f0_r.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -240,7 +252,9 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     r_tot.font.size = Pt(12)
     r_tot.font.color.rgb = RGBColor(198, 40, 40)
 
+    # BARIS 1: PENERIMA & HORMAT KAMI
     cell_f1_l, cell_f1_r = tbl_footer.rows[1].cells
+
     p_f1_l = cell_f1_l.paragraphs[0]
     p_f1_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f1_l.paragraph_format.space_before = Pt(4)
@@ -257,7 +271,9 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     r_sr.font.name = "Courier New"
     r_sr.font.size = Pt(7.5)
 
+    # BARIS 2: TANDA TANGAN
     cell_f2_l, cell_f2_r = tbl_footer.rows[2].cells
+
     p_f2_l = cell_f2_l.paragraphs[0]
     p_f2_l.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_f2_l.paragraph_format.space_before = Pt(26)
@@ -277,152 +293,213 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
     target_stream = io.BytesIO()
     doc.save(target_stream)
     return target_stream.getvalue()
-
-
-def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, no_bakul=""):
-    thin_border = Border(
-        left=Side(style='thin', color='000000'),
-        right=Side(style='thin', color='000000'),
-        top=Side(style='thin', color='000000'),
-        bottom=Side(style='thin', color='000000')
-    )
-    fill_header = PatternFill(start_color="EAEAEA", end_color="EAEAEA", fill_type="solid")
-
-    font_title = Font(name="Courier New", size=11, bold=True, color="C62828")
-    font_sub = Font(name="Courier New", size=8, color="5A5A5A")
-    font_info = Font(name="Courier New", size=9)
-    font_tbl_hdr = Font(name="Courier New", size=8, bold=True)
-    font_tbl_cell = Font(name="Courier New", size=8)
-    font_tot_label = Font(name="Courier New", size=9, bold=True)
-    font_tot_val = Font(name="Courier New", size=12, bold=True, color="C62828")
-    font_sign = Font(name="Courier New", size=8)
-
-    ws.column_dimensions["A"].width = 26
-    ws.column_dimensions["B"].width = 14
-    ws.column_dimensions["C"].width = 18
-    ws.column_dimensions["D"].width = 24
-
-    r = start_row
-
-    if logo_path and os.path.exists(logo_path):
-        try:
-            img = openpyxl.drawing.image.Image(logo_path)
-            img.width = 45
-            img.height = 45
-            ws.add_image(img, f"A{r}")
-        except Exception:
-            pass
-
-    prefix_space = "       " if (logo_path and os.path.exists(logo_path)) else ""
-
-    cell_title = ws.cell(row=r, column=1, value=f"{prefix_space}AYAM SEGAR TUMPANG")
-    cell_title.font = font_title
     
-    cell_sub = ws.cell(row=r+2, column=1, value=f"{prefix_space}Ds. Kambingan - Tumpang - Malang")
-    cell_sub.font = font_sub
+# ---------------------------------------------------------------
+# GENERATOR EXCEL NOTA (pengganti JPG/PNG)
+# Layout disamakan dengan generate_word_nota:
+#   - Kertas A6 landscape (148 x 105 mm), margin atas 8 / bawah 3 / kiri 1 / kanan 8 mm
+#   - Lebar konten 120 mm  (46 + 20 + 27 + 27 mm, sama dengan tabel barang di Word)
+#   - Font Courier New, ukuran font sama dengan Word
+# Isi nota berupa SEL BENERAN (bukan gambar): JUMLAH = QTY x HARGA, TOTAL = SUM.
+# ---------------------------------------------------------------
+XL_FONT = "Courier New"
+XL_COL_MM = [20, 26, 20, 27, 27]          # kolom A..E (total 120 mm)
+XL_RP_FORMAT = '"Rp "#,##0'
+XL_PAGE_AVAIL_PT = (105 - 8 - 3) / 25.4 * 72   # tinggi area cetak per halaman (pt)
+XL_RED = "C62828"
 
-    ws.cell(row=r, column=3, value=f"No: {no_bakul}").font = font_info
-    ws.cell(row=r, column=3).alignment = Alignment(horizontal="right")
-    ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
 
-    ws.cell(row=r+1, column=3, value=f"Tanggal: {tgl}").font = font_info
-    ws.cell(row=r+1, column=3).alignment = Alignment(horizontal="right")
-    ws.merge_cells(start_row=r+1, start_column=3, end_row=r+1, end_column=4)
+def _xl_col_width(mm):
+    px = mm / 25.4 * 96
+    return round((px - 5) / 7, 2)
 
-    ws.cell(row=r+2, column=3, value=f"Pembeli / Bakul: {bakul}").font = font_info
-    ws.cell(row=r+2, column=3).alignment = Alignment(horizontal="right")
-    ws.merge_cells(start_row=r+2, start_column=3, end_row=r+2, end_column=4)
 
-    ws.cell(row=r+3, column=3, value=f"Group: {group}").font = font_info
-    ws.cell(row=r+3, column=3).alignment = Alignment(horizontal="right")
-    ws.merge_cells(start_row=r+3, start_column=3, end_row=r+3, end_column=4)
+def _xl_prepare_logo(logo_path, w_mm=18.0, max_h_mm=19.0):
+    """Siapkan logo: ukuran 18 mm (sama dengan Word), tapi dibatasi supaya
+    tidak lebih tinggi dari area header (supaya tidak menimpa tabel)."""
+    if not logo_path or not os.path.exists(logo_path):
+        return None
+    try:
+        im = Image.open(logo_path).convert("RGBA")
+    except Exception:
+        return None
+    iw, ih = im.size
+    w, h = w_mm, w_mm * ih / iw
+    if h > max_h_mm:
+        h = max_h_mm
+        w = h * iw / ih
+    target_w = max(1, int(w / 25.4 * 300))
+    target_h = max(1, int(target_w * ih / iw))
+    im = im.resize((target_w, target_h), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, format="PNG")
+    return buf.getvalue(), w, h
 
-    r += 5
 
-    headers = ["BARANG", "QTY / KG", "HARGA", "JUMLAH"]
-    aligns = ["left", "center", "right", "right"]
+def _xl_style(ws, ref, value=None, size=8, bold=False, color="000000",
+              h="left", v="center", wrap=False, shrink=False, fill=None, fmt=None):
+    c = ws[ref]
+    if value is not None:
+        c.value = value
+    c.font = Font(name=XL_FONT, size=size, bold=bold, color=color)
+    c.alignment = Alignment(horizontal=h, vertical=v, wrap_text=wrap,
+                            shrink_to_fit=shrink)
+    if fill:
+        c.fill = PatternFill("solid", start_color=fill, end_color=fill)
+    if fmt:
+        c.number_format = fmt
+    return c
 
-    for col_idx, (h_text, align_val) in enumerate(zip(headers, aligns), start=1):
-        cell = ws.cell(row=r, column=col_idx, value=h_text)
-        cell.font = font_tbl_hdr
-        cell.fill = fill_header
-        cell.border = thin_border
-        cell.alignment = Alignment(horizontal=align_val, vertical="center")
-    ws.row_dimensions[r].height = 20
+
+def _xl_box(ws, rng):
+    thin = Side(style="thin", color="000000")
+    for row in ws[rng]:
+        for cell in row:
+            cell.border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+
+def _xl_write_nota(ws, r0, nota, tgl, logo):
+    """Tulis 1 nota mulai baris r0. Return (baris_terakhir, tinggi_total_pt)."""
+    heights = {}
+
+    def set_h(r, pt):
+        ws.row_dimensions[r].height = pt
+        heights[r] = pt
+
+    # ---------- HEADER (4 baris): logo | judul + alamat | info ----------
+    hdr_h = [15, 13, 13, 15]
+    for i, hh in enumerate(hdr_h):
+        set_h(r0 + i, hh)
+
+    ws.merge_cells(f"B{r0}:C{r0}")
+    _xl_style(ws, f"B{r0}", "AYAM SEGAR TUMPANG", size=11, bold=True,
+              color=XL_RED, h="left", v="center", shrink=True)
+    ws.merge_cells(f"B{r0 + 1}:C{r0 + 2}")
+    _xl_style(ws, f"B{r0 + 1}", "Ds. Kambingan - Tumpang - Malang", size=7.5,
+              color="5A5A5A", h="left", v="top", wrap=True)
+
+    info = [
+        f"No: {nota.get('no', '')}",
+        f"Tanggal: {tgl}",
+        f"Pembeli / Bakul: {nota['bakul']}",
+        f"Group: {nota['group']}",
+    ]
+    for i, txt in enumerate(info):
+        r = r0 + i
+        ws.merge_cells(f"D{r}:E{r}")
+        _xl_style(ws, f"D{r}", txt, size=9, h="right", v="center", shrink=True)
+
+    if logo:
+        png, w_mm, h_mm = logo
+        img = XLImage(io.BytesIO(png))
+        marker = AnchorMarker(col=0, colOff=int(0.5 * 36000),
+                              row=r0 - 1, rowOff=int(0.3 * 36000))
+        img.anchor = OneCellAnchor(
+            _from=marker,
+            ext=XDRPositiveSize2D(int(w_mm * 36000), int(h_mm * 36000)),
+        )
+        ws.add_image(img)
+
+    # ---------- SPACER ----------
+    r = r0 + 4
+    set_h(r, 10)
+
+    # ---------- TABEL BARANG ----------
     r += 1
+    hdr_row = r
+    set_h(r, 12)
+    ws.merge_cells(f"A{r}:B{r}")
+    _xl_style(ws, f"A{r}", "BARANG", bold=True, h="left", fill="EAEAEA")
+    _xl_style(ws, f"C{r}", "QTY / KG", bold=True, h="center", fill="EAEAEA")
+    _xl_style(ws, f"D{r}", "HARGA", bold=True, h="right", fill="EAEAEA")
+    _xl_style(ws, f"E{r}", "JUMLAH", bold=True, h="right", fill="EAEAEA")
+    _xl_box(ws, f"A{r}:E{r}")
 
-    first_item_row = r
-    for item in items:
-        kg_val = item["KG"]
-        
-        ws.cell(row=r, column=1, value=f" {item['Nama Barang']}").font = font_tbl_cell
-        ws.cell(row=r, column=1).border = thin_border
-        ws.cell(row=r, column=1).alignment = Alignment(horizontal="left", vertical="center")
-
-        cell_kg = ws.cell(row=r, column=2, value=kg_val)
-        cell_kg.font = font_tbl_cell
-        cell_kg.border = thin_border
-        cell_kg.alignment = Alignment(horizontal="center", vertical="center")
-        cell_kg.number_format = '#,##0.00' if isinstance(kg_val, float) and not kg_val.is_integer() else '#,##0'
-
-        cell_price = ws.cell(row=r, column=3, value=item['Harga'])
-        cell_price.font = font_tbl_cell
-        cell_price.border = thin_border
-        cell_price.alignment = Alignment(horizontal="right", vertical="center")
-        cell_price.number_format = '"Rp "#,##0'
-
-        cell_jml = ws.cell(row=r, column=4, value=f"=B{r}*C{r}")
-        cell_jml.font = font_tbl_cell
-        cell_jml.border = thin_border
-        cell_jml.alignment = Alignment(horizontal="right", vertical="center")
-        cell_jml.number_format = '"Rp "#,##0'
-
-        ws.row_dimensions[r].height = 18
+    first_item = r + 1
+    for item in nota["items"]:
         r += 1
+        set_h(r, 12)
+        kg = item["KG"]
+        is_int = float(kg).is_integer()
+        ws.merge_cells(f"A{r}:B{r}")
+        _xl_style(ws, f"A{r}", item["Nama Barang"], h="left")
+        _xl_style(ws, f"C{r}", int(kg) if is_int else float(kg), h="center",
+                  fmt="0" if is_int else "0.00")
+        _xl_style(ws, f"D{r}", float(item["Harga"]), h="right", fmt=XL_RP_FORMAT)
+        _xl_style(ws, f"E{r}", f"=C{r}*D{r}", h="right", fmt=XL_RP_FORMAT)
+        _xl_box(ws, f"A{r}:E{r}")
+    last_item = r
 
-    last_item_row = r - 1
+    # ---------- TOTAL ----------
+    r += 1
+    set_h(r, 20)
+    _xl_style(ws, f"C{r}", "TOTAL :", size=9, bold=True, h="right", v="center")
+    ws.merge_cells(f"D{r}:E{r}")
+    _xl_style(ws, f"D{r}", f"=SUM(E{first_item}:E{last_item})", size=12,
+              bold=True, color=XL_RED, h="right", v="center", shrink=True,
+              fmt=XL_RP_FORMAT)
+
+    # ---------- PENERIMA / HORMAT KAMI ----------
+    r += 1
+    set_h(r, 14)
+    ws.merge_cells(f"A{r}:C{r}")
+    _xl_style(ws, f"A{r}", "Penerima,", size=7.5, h="center", v="bottom")
+    ws.merge_cells(f"D{r}:E{r}")
+    _xl_style(ws, f"D{r}", "Hormat Kami,", size=7.5, h="center", v="bottom")
 
     r += 1
-    cell_lbl = ws.cell(row=r, column=3, value="TOTAL :")
-    cell_lbl.font = font_tot_label
-    cell_lbl.alignment = Alignment(horizontal="right", vertical="center")
+    set_h(r, 36)
+    ws.merge_cells(f"A{r}:C{r}")
+    _xl_style(ws, f"A{r}", "( ........... )", size=7.5, h="center", v="bottom")
+    ws.merge_cells(f"D{r}:E{r}")
+    _xl_style(ws, f"D{r}", "( ........... )", size=7.5, h="center", v="bottom")
 
-    cell_tot = ws.cell(row=r, column=4, value=f"=SUM(D{first_item_row}:D{last_item_row})")
-    cell_tot.font = font_tot_val
-    cell_tot.alignment = Alignment(horizontal="right", vertical="center")
-    cell_tot.number_format = '"Rp "#,##0'
-    ws.row_dimensions[r].height = 22
-    r += 2
-
-    ws.cell(row=r, column=1, value="Penerima,").font = font_sign
-    ws.cell(row=r, column=1).alignment = Alignment(horizontal="center")
-    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-
-    ws.cell(row=r, column=3, value="Hormat Kami,").font = font_sign
-    ws.cell(row=r, column=3).alignment = Alignment(horizontal="center")
-    ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
-
-    r += 3
-    ws.cell(row=r, column=1, value="( ........... )").font = font_sign
-    ws.cell(row=r, column=1).alignment = Alignment(horizontal="center")
-    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
-
-    ws.cell(row=r, column=3, value="( ........... )").font = font_sign
-    ws.cell(row=r, column=3).alignment = Alignment(horizontal="center")
-    ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
-
-    return r + 4
+    return r, sum(heights.values())
 
 
-def generate_excel_nota_single(tgl, bakul, group, items, logo_path, no_bakul=""):
+def generate_excel_nota(notas, tgl, logo_path, sheet_title="NOTA"):
+    """Bikin 1 file Excel, 1 sheet. `notas` = list of dict:
+        {"bakul": str, "group": str, "no": str, "items": [ {Nama Barang, KG, Harga, Jumlah}, ... ]}
+    Semua nota berjejer ke bawah; tiap nota = 1 halaman cetak (A6 landscape).
+    Nota satuan = list berisi 1 nota."""
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Nota"
-    write_excel_nota_block(ws, start_row=2, tgl=tgl, bakul=bakul, group=group, items=items, logo_path=logo_path, no_bakul=no_bakul)
-    
-    stream = io.BytesIO()
-    wb.save(stream)
-    return stream.getvalue()
+    ws.title = sheet_title[:31]
+    ws.sheet_view.showGridLines = False
+
+    for i, mm in enumerate(XL_COL_MM):
+        ws.column_dimensions["ABCDE"[i]].width = _xl_col_width(mm)
+
+    logo = _xl_prepare_logo(logo_path)
+
+    r0 = 1
+    last_row = 1
+    n = len(notas)
+    for idx, nota in enumerate(notas):
+        end_row, h_pt = _xl_write_nota(ws, r0, nota, tgl, logo)
+        last_row = end_row
+        if idx < n - 1:
+            # baris pemisah di bawah nota, lalu page break -> nota berikutnya halaman baru
+            gap_h = max(0, min(12, XL_PAGE_AVAIL_PT - h_pt - 1))
+            ws.row_dimensions[end_row + 1].height = max(gap_h, 1)
+            ws.row_breaks.append(Break(id=end_row + 1))
+            r0 = end_row + 2
+
+    # ---------- PENGATURAN CETAK ----------
+    ws.print_area = f"A1:E{last_row}"
+    ws.page_setup.paperSize = 70            # A6
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.scale = 100               # jangan fit-to-page (manual page break harus jalan)
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=False)
+    ws.page_margins = PageMargins(
+        left=1 / 25.4, right=8 / 25.4, top=8 / 25.4, bottom=3 / 25.4,
+        header=0, footer=0,
+    )
+    ws.print_options.horizontalCentered = False
+
+    out = io.BytesIO()
+    wb.save(out)
+    return out.getvalue()
 
 
 # ==========================================
@@ -949,30 +1026,37 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             )
 
                         with col_btn2:
-                            excel_data = generate_excel_nota_single(
+                            xl_data = generate_excel_nota(
+                                notas=[
+                                    {
+                                        "bakul": selected_bakul,
+                                        "group": selected_sheet,
+                                        "no": no_bakul,
+                                        "items": filtered_items,
+                                    }
+                                ],
                                 tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
-                                bakul=selected_bakul,
-                                group=selected_sheet,
-                                items=filtered_items,
                                 logo_path=logo_filename,
-                                no_bakul=no_bakul,
+                                sheet_title="NOTA",
                             )
                             st.download_button(
                                 label="📊 Download Nota Excel (.xlsx)",
-                                data=excel_data,
+                                data=xl_data,
                                 file_name=(
                                     f"Nota_{selected_bakul}_{tanggal_transaksi.strftime('%Y%m%d')}.xlsx"
                                 ),
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                mime=(
+                                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                ),
                                 use_container_width=True,
                             )
 
             # ==========================================
-            # TAB 2: EXPORT ALL NOTA (FORMAT EXCEL MURNI & FORMULA)
+            # TAB 2: EXPORT ALL NOTA (1 KOLOM BERURUTAN KE BAWAH)
             # ==========================================
             with tab_bulk:
-                st.markdown("### 📄 Export All Nota ke File Excel Berbasis Sel & Rumus")
-                st.caption("Centang nama bakul yang ingin diproses. File Excel yang dihasilkan akan berisi data sel aktif dengan rumus matematika.")
+                st.markdown("### 📄 Export All Nota ke 1 File Excel")
+                st.caption("Centang nama bakul yang ingin diproses.")
 
                 selected_bakul_by_sheet = {}
 
@@ -1010,7 +1094,7 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 select_all = st.checkbox(
                                     "Pilih Semua",
                                     value=True,
-                                    key=f"all_xl_{sheet_name}",
+                                    key=f"all_xl_img_{sheet_name}",
                                 )
 
                             default_selected = list_bakul if select_all else []
@@ -1018,21 +1102,18 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                                 "Daftar Bakul Terpilih:",
                                 options=list_bakul,
                                 default=default_selected,
-                                key=f"ms_xl_{sheet_name}",
+                                key=f"ms_xl_img_{sheet_name}",
                             )
                             selected_bakul_by_sheet[sheet_name] = (df_s, name_c, chosen)
 
                 st.markdown("---")
 
                 if st.button(
-                    "🚀 Generate & Download Excel All Nota (Berisi Data & Formula)",
+                    "🚀 Generate Excel All Nota (1 File, 1 Sheet)",
                     type="primary",
                     use_container_width=True,
                 ):
-                    wb = openpyxl.Workbook()
-                    wb.remove(wb.active)
-
-                    total_processed = 0
+                    semua_nota = []
 
                     for sheet_name, (
                         df_s,
@@ -1042,21 +1123,19 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                         if not chosen_bakul:
                             continue
 
-                        ws = wb.create_sheet(title=sheet_name[:31])
-
                         df_filtered = df_s[
                             df_s[name_c].astype(str).str.strip().isin(chosen_bakul)
                         ].copy()
 
+                        # Cari kolom NO di sheet ini
                         no_col_sheet = next(
                             (c for c in df_s.columns if c in ["NO", "NO.", "NOMOR"]), None
                         )
 
-                        row_position = 2
-
                         for idx, row in df_filtered.iterrows():
                             nama_bakul = str(row[name_c]).strip()
 
+                            # Ambil nomor urut dari Excel
                             if (
                                 no_col_sheet
                                 and pd.notna(row[no_col_sheet])
@@ -1098,64 +1177,87 @@ if selected_menu in ["📄 Nota", "🧾 Nota"]:
                             kg_telur_b = get_val_from_row("TELUR B")
                             kg_telur_bt = get_val_from_row("TELUR BT")
 
+                            tot_glondong = kg_tonase * h_glondong
+                            tot_jeroan = kg_jeroan * h_jeroan
+                            tot_usus = kg_usus * h_usus
+                            tot_telur_a = kg_telur_a * h_telur_a
+                            tot_telur_b = kg_telur_b * h_telur_b
+                            tot_telur_bt = kg_telur_bt * h_telur_bt
+
+                            tot_bayar = (
+                                tot_glondong
+                                + tot_jeroan
+                                + tot_usus
+                                + tot_telur_a
+                                + tot_telur_b
+                                + tot_telur_bt
+                            )
+
                             items = [
                                 {
                                     "Nama Barang": "GLONDONG",
                                     "KG": kg_tonase,
                                     "Harga": h_glondong,
+                                    "Jumlah": tot_glondong,
                                 },
                                 {
                                     "Nama Barang": "JEROAN",
                                     "KG": kg_jeroan,
                                     "Harga": h_jeroan,
+                                    "Jumlah": tot_jeroan,
                                 },
                                 {
                                     "Nama Barang": "USUS B",
                                     "KG": kg_usus,
                                     "Harga": h_usus,
+                                    "Jumlah": tot_usus,
                                 },
                                 {
                                     "Nama Barang": "TELUR A",
                                     "KG": kg_telur_a,
                                     "Harga": h_telur_a,
+                                    "Jumlah": tot_telur_a,
                                 },
                                 {
                                     "Nama Barang": "TELUR B",
                                     "KG": kg_telur_b,
                                     "Harga": h_telur_b,
+                                    "Jumlah": tot_telur_b,
                                 },
                                 {
                                     "Nama Barang": "TELUR BT",
                                     "KG": kg_telur_bt,
                                     "Harga": h_telur_bt,
+                                    "Jumlah": tot_telur_bt,
                                 },
                             ]
 
                             filtered_items = [i for i in items if i["KG"] > 0]
 
                             if filtered_items:
-                                row_position = write_excel_nota_block(
-                                    ws=ws,
-                                    start_row=row_position,
-                                    tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
-                                    bakul=nama_bakul,
-                                    group=sheet_name,
-                                    items=filtered_items,
-                                    logo_path=logo_filename,
-                                    no_bakul=no_val,
+                                semua_nota.append(
+                                    {
+                                        "bakul": nama_bakul,
+                                        "group": sheet_name,
+                                        "no": no_val,
+                                        "items": filtered_items,
+                                    }
                                 )
-                                total_processed += 1
 
-                    if total_processed > 0:
-                        output_excel = io.BytesIO()
-                        wb.save(output_excel)
+                    if semua_nota:
+                        output_excel = generate_excel_nota(
+                            notas=semua_nota,
+                            tgl=tanggal_transaksi.strftime("%d-%m-%Y"),
+                            logo_path=logo_filename,
+                            sheet_title="NOTA",
+                        )
 
                         st.success(
-                            f"✅ Berhasil menyusun {total_processed} nota dalam bentuk tabel Excel interaktif!"
+                            f"✅ Berhasil menyusun {len(semua_nota)} nota berurutan ke bawah dalam 1 sheet Excel!"
                         )
                         st.download_button(
                             label="📥 Download Excel All Nota (.xlsx)",
-                            data=output_excel.getvalue(),
+                            data=output_excel,
                             file_name=(
                                 "EXCEL_ALL_NOTA_"
                                 f"{tanggal_transaksi.strftime('%Y%m%d')}.xlsx"
