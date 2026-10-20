@@ -282,7 +282,7 @@ def generate_word_nota(tgl, bakul, group, items, total_bayar, logo_path, no_baku
 def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, no_bakul=""):
     """
     Menulis blok nota ke dalam worksheet Excel menggunakan data sel murni
-    lengkap dengan formula Excel untuk perkalian jumlah dan penjumlahan total.
+    dengan lebar kolom optimal agar tidak muncul tanda '##########'.
     """
     thin_border = Border(
         left=Side(style='thin', color='000000'),
@@ -301,10 +301,11 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
     font_tot_val = Font(name="Courier New", size=12, bold=True, color="C62828")
     font_sign = Font(name="Courier New", size=8)
 
-    ws.column_dimensions["A"].width = 24
+    # Lebar kolom dioptimalkan agar tidak ada nilai yang terpotong / '####'
+    ws.column_dimensions["A"].width = 26
     ws.column_dimensions["B"].width = 14
-    ws.column_dimensions["C"].width = 16
-    ws.column_dimensions["D"].width = 18
+    ws.column_dimensions["C"].width = 18
+    ws.column_dimensions["D"].width = 24
 
     r = start_row
 
@@ -356,7 +357,6 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
     for item in items:
         kg_val = item["KG"]
         
-        # Tulis baris item dengan rumus formula Excel pada kolom JUMLAH (Kolom D = B * C)
         ws.cell(row=r, column=1, value=f" {item['Nama Barang']}").font = font_tbl_cell
         ws.cell(row=r, column=1).border = thin_border
         ws.cell(row=r, column=1).alignment = Alignment(horizontal="left", vertical="center")
@@ -415,7 +415,7 @@ def write_excel_nota_block(ws, start_row, tgl, bakul, group, items, logo_path, n
     ws.cell(row=r, column=3).alignment = Alignment(horizontal="center")
     ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
 
-    return r + 4  # Jarak antar nota berikutnya ke bawah
+    return r + 4
 
 
 def generate_excel_nota_single(tgl, bakul, group, items, logo_path, no_bakul=""):
